@@ -1,3 +1,3 @@
 rem
 
-cl.exe -MD ..\src\adump\adump.cpp  alloytools1.lib
+cl.exe -MD -D_UNICODE ..\src\adump\adump.cpp  alloytools1.lib
