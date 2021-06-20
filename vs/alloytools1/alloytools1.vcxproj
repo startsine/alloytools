@@ -22,6 +22,9 @@
     <ClCompile Include="..\..\src\alloytools1\dllmain.cpp" />
     <ClCompile Include="..\..\src\alloytools1\dumper_main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\alloytools1\dumper.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
