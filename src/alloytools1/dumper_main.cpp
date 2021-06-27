@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include "dumper.h"
+#include "utils.h"
 
 extern "C" 
 #ifdef _WIN32
@@ -35,10 +36,41 @@ Dumper::~Dumper()
     printf("~dumper()\n");
 }
 
+enum class DetectType
+{
+    unknown, elf, pecoff, msarch, arch, omf
+};
+
 void Dumper::startDump(int argc, char** argv)
 {
     int ret;
     ret = this->params.parseParam(argc, argv);
+
+    auto sources = this->params.getSrc();
+
+    for (auto it = sources.begin(); it != sources.end(); it++) {
+        DetectType type = DetectType::unknown;
+        auto& src = *it;
+        FILE* fp;
+        uint8_t flag[4];
+
+        fp = fopen_utf8_filename(src.c_str(), "rb");
+        if (fp == nullptr) {
+            continue;
+        }
+
+        flag[0] = flag[1] = flag[2] = flag[3] = 0;
+        fread(flag, 1, 4, fp);
+        
+        if (flag[0] == 0x7f && flag[1] == 'E' && flag[2] == 'L' && flag[3] == 'F') {
+            type = DetectType::elf;
+        }
+        else if (flag[0] == 'M' && flag[1] == 'Z') {
+
+        }
+
+        fclose(fp);
+    }
 
 }
 
