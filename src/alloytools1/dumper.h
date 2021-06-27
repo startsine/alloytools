@@ -27,19 +27,19 @@ private:
 class ContentDumper
 {
 public:
-	virtual int dumpContent(const char * filepath, size_t start, size_t size, const DumperParam & param) = 0;
+	virtual int dumpContent(FILE * fp, size_t start, size_t size, const DumperParam & param) = 0;
 };
 
 class ElfDumper : public ContentDumper
 {
 private:
-	virtual int dumpContent(const char* filepath, size_t start, size_t size, const DumperParam& param);
+	virtual int dumpContent(FILE* fp, size_t start, size_t size, const DumperParam& param);
 };
 
 class MsCoffDumper : public ContentDumper
 {
 private:
-	virtual int dumpContent(const char* filepath, size_t start, size_t size, const DumperParam& param);
+	virtual int dumpContent(FILE* fp, size_t start, size_t size, const DumperParam& param);
 };
 
 

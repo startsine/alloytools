@@ -66,7 +66,7 @@ void Dumper::startDump(int argc, char** argv)
             type = DetectType::elf;
         }
         else if (flag[0] == 'M' && flag[1] == 'Z') {
-
+            type = DetectType::pecoff;
         }
 
         fclose(fp);
