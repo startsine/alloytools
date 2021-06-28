@@ -36,7 +36,7 @@ private:
 	virtual int dumpContent(FILE* fp, size_t start, size_t size, const DumperParam& param);
 };
 
-class MsCoffDumper : public ContentDumper
+class PECoffDumper : public ContentDumper
 {
 private:
 	virtual int dumpContent(FILE* fp, size_t start, size_t size, const DumperParam& param);

@@ -38,12 +38,13 @@ Dumper::~Dumper()
 
 enum class DetectType
 {
-    unknown, elf, pecoff, msarch, arch, omf
+    unknown, elf, pecoff, arch, omf
 };
 
 void Dumper::startDump(int argc, char** argv)
 {
     int ret;
+    int i;
     ret = this->params.parseParam(argc, argv);
 
     auto sources = this->params.getSrc();
@@ -52,21 +53,46 @@ void Dumper::startDump(int argc, char** argv)
         DetectType type = DetectType::unknown;
         auto& src = *it;
         FILE* fp;
-        uint8_t flag[4];
+        uint8_t flag[12];
 
         fp = fopen_utf8_filename(src.c_str(), "rb");
         if (fp == nullptr) {
             continue;
         }
 
-        flag[0] = flag[1] = flag[2] = flag[3] = 0;
-        fread(flag, 1, 4, fp);
+        for (i = 0; i < sizeof(flag); i++)
+            flag[i] = 0;
+        fread(flag, 1, 8, fp);
+        fseek(fp, 0, SEEK_SET);
         
         if (flag[0] == 0x7f && flag[1] == 'E' && flag[2] == 'L' && flag[3] == 'F') {
             type = DetectType::elf;
         }
         else if (flag[0] == 'M' && flag[1] == 'Z') {
             type = DetectType::pecoff;
+        }
+        else if (0 == strcmp((char*)flag, "!<arch>\n")) {
+            type = DetectType::arch;
+        }
+
+        //
+        std::shared_ptr<ContentDumper> dumper;
+        switch (type)
+        {
+        case DetectType::elf:
+            dumper = std::make_shared<ElfDumper>();
+            break;
+        case DetectType::pecoff:
+            dumper = std::make_shared<PECoffDumper>();
+            break;
+        case DetectType::arch:
+            dumper = std::make_shared<ElfDumper>();
+            break;
+        default:
+            break;
+        }
+        if (dumper) {
+            dumper->dumpContent(fp, 0, 1000, this->params);
         }
 
         fclose(fp);
