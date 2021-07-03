@@ -27,6 +27,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\alloytools1\dumper.h" />
+    <ClInclude Include="..\..\src\alloytools1\elf.h" />
     <ClInclude Include="..\..\src\alloytools1\utils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

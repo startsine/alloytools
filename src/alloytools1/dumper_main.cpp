@@ -38,7 +38,7 @@ Dumper::~Dumper()
 
 enum class DetectType
 {
-    unknown, elf, pecoff, arch, omf
+    unknown, elf32, elf64, pecoff, arch, omf
 };
 
 void Dumper::startDump(int argc, char** argv)
@@ -66,7 +66,10 @@ void Dumper::startDump(int argc, char** argv)
         fseek(fp, 0, SEEK_SET);
         
         if (flag[0] == 0x7f && flag[1] == 'E' && flag[2] == 'L' && flag[3] == 'F') {
-            type = DetectType::elf;
+            if (flag[4] == 2)
+                type = DetectType::elf64;
+            else
+                type = DetectType::elf32;
         }
         else if (flag[0] == 'M' && flag[1] == 'Z') {
             type = DetectType::pecoff;
@@ -79,8 +82,11 @@ void Dumper::startDump(int argc, char** argv)
         std::shared_ptr<ContentDumper> dumper;
         switch (type)
         {
-        case DetectType::elf:
-            dumper = std::make_shared<ElfDumper>();
+        case DetectType::elf32:
+            dumper = std::make_shared<Elf32Dumper>();
+            break;
+        case DetectType::elf64:
+            dumper = std::make_shared<Elf64Dumper>();
             break;
         case DetectType::pecoff:
             dumper = std::make_shared<PECoffDumper>();
@@ -92,6 +98,7 @@ void Dumper::startDump(int argc, char** argv)
             break;
         }
         if (dumper) {
+            printf("查看的文件：%s\n", it->c_str());
             dumper->dumpContent(fp, 0, 1000, this->params);
         }
 

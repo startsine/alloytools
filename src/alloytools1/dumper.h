@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <list>
 #include <string>
@@ -34,6 +34,21 @@ class ElfDumper : public ContentDumper
 {
 private:
 	virtual int dumpContent(FILE* fp, size_t start, size_t size, const DumperParam& param);
+	virtual void show();
+};
+
+class Elf32Dumper : public ElfDumper
+{
+private:
+	
+};
+
+class Elf64Dumper : public ElfDumper
+{
+private:
+	
+
+	uint8_t			elfHeader[16];
 };
 
 class PECoffDumper : public ContentDumper
