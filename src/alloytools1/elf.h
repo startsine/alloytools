@@ -1,6 +1,11 @@
 ﻿#pragma once
 #include <stdint.h>
 
+#define EI_POS_CLASS 4
+#define EI_POS_DATA 5
+#define EI_POS_VERSION 6
+#define EI_POS_OSABI 7
+#define EI_POS_ABIVERSION 8
 
 typedef struct {
     uint8_t         ident[16];

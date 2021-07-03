@@ -2,6 +2,7 @@
 
 #include <list>
 #include <string>
+#include "elf.h"
 
 class DumperParam
 {
@@ -34,23 +35,32 @@ class ElfDumper : public ContentDumper
 {
 private:
 	virtual int dumpContent(FILE* fp, size_t start, size_t size, const DumperParam& param);
-	virtual void show();
+	virtual int readElfHeader();
+	void showElfHeader();
+	static const char* abistr(uint8_t abi);
+	static const char* cpustr(uint16_t cpu);
+protected:
+	bool				isElf64;
+	FILE*				fp;
+	ELF64Header			header;
 };
 
 class Elf32Dumper : public ElfDumper
 {
 private:
-	
+	virtual int readElfHeader();
 };
 
 class Elf64Dumper : public ElfDumper
 {
 private:
-	
-
-	uint8_t			elfHeader[16];
+	virtual int readElfHeader();
 };
 
+
+/// <summary>
+/// //////////////////////////////////////////////
+/// </summary>
 class PECoffDumper : public ContentDumper
 {
 private:
