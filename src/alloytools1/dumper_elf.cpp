@@ -5,13 +5,17 @@
 #include "dumper.h"
 #include "utils.h"
 
-int ElfDumper::dumpContent(FILE* fp, size_t start, size_t size, const DumperParam& param)
+int ElfDumper::dumpContent(FILE* fp, uint64_t start, uint64_t contentSize, const DumperParam& param)
 {
     int err;
     uint8_t ident[16];
 
-    file_seek(fp, start, SEEK_SET);
+    this->startPosition = start;
+    this->contentSize = contentSize;
     this->fp = fp;
+    this->param = &param;
+
+    file_seek(fp, start, SEEK_SET);
     err = this->readElfHeader();
     if (err) {
         printf("格式错误，遇到不正常的文件结束\n");
@@ -23,8 +27,29 @@ int ElfDumper::dumpContent(FILE* fp, size_t start, size_t size, const DumperPara
         isElf64 = true;
     }
     this->showElfHeader();
+    printf("\n");
     
+    // program header
+    if (header.phnum) {
+        if (header.phnum * (uint64_t)header.phentsize + header.phoff >= contentSize) {
+            printf("格式错误，遇到不正常的文件结束\n");
+            return -1;
+        }
+        file_seek(fp, start + header.phoff, SEEK_SET);
+        this->readProgramHeader();
+        this->showProgramHeader();
+    }
 
+    // section table header
+    if (header.shnum) {
+        if (header.shnum * (uint64_t)header.shentsize + header.shoff >= contentSize) {
+            printf("格式错误，遇到不正常的文件结束\n");
+            return -1;
+        }
+        file_seek(fp, start + header.shoff, SEEK_SET);
+        this->readSectionHeader();
+        this->showSectionHeader();
+    }
 
 
     return 0;
@@ -154,4 +179,197 @@ const char* ElfDumper::cpustr(uint16_t cpu)
 {
     return "AMD64";
 }
+
+int ElfDumper::readProgramHeader()
+{
+    return -1;
+}
+
+int Elf32Dumper::readProgramHeader()
+{
+    ELF64ProgramHeader prgmHeader;
+    for (uint16_t i = 0; i < header.phnum; i++) {
+        prgmHeader.type = fread_u32(fp);
+        prgmHeader.offset = fread_u32(fp);
+        prgmHeader.vaddr = fread_u32(fp);
+        prgmHeader.paddr = fread_u32(fp);
+        prgmHeader.filesz = fread_u32(fp);
+        prgmHeader.memsz = fread_u32(fp);
+        prgmHeader.flags = fread_u32(fp);
+        prgmHeader.align = fread_u32(fp);
+        this->programHeaders.push_back(prgmHeader);
+    }
+    if (feof(fp))
+        return -1;
+    return 0;
+}
+
+int Elf64Dumper::readProgramHeader()
+{
+    ELF64ProgramHeader prgmHeader;
+    for (uint16_t i = 0; i < header.phnum; i++) {
+        prgmHeader.type = fread_u32(fp);
+        prgmHeader.flags = fread_u32(fp);
+        prgmHeader.offset = fread_u64(fp);
+        prgmHeader.vaddr = fread_u64(fp);
+        prgmHeader.paddr = fread_u64(fp);
+        prgmHeader.filesz = fread_u64(fp);
+        prgmHeader.memsz = fread_u64(fp);
+        prgmHeader.align = fread_u64(fp);
+        this->programHeaders.push_back(prgmHeader);
+    }
+    if (feof(fp))
+        return -1;
+    return 0;
+}
+
+void ElfDumper::showProgramHeader()
+{
+    bool largeOffset = false;
+    bool largeVirAddr = false;
+    bool largePhyAddr = false;
+    bool largeFileSize = false;
+    bool largeMemSize = false;
+    char alignText[32];
+    char flagsText[128];
+
+    for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
+        if (it->offset > 0xffffffff) {
+            largeOffset = true;
+            break;
+        }
+    }
+
+    for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
+        if (it->vaddr > 0xffffffff) {
+            largeVirAddr = true;
+            break;
+        }
+    }
+
+    for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
+        if (it->paddr > 0xffffffff) {
+            largePhyAddr = true;
+            break;
+        }
+    }
+
+    for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
+        if (it->filesz > 0xffffffff) {
+            largeFileSize = true;
+            break;
+        }
+    }
+
+    for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
+        if (it->memsz > 0xffffffff) {
+            largeMemSize = true;
+            break;
+        }
+    }
+
+    if (header.phnum == 0)
+        return;
+    printf("程序头表: \n");
+
+    printf("  类型\n");
+    for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
+        printf("  %-14s ", programHeaderTypeStr(it->type));
+        if (largeOffset)
+            printf("0x%016llx ", it->offset);
+        else
+            printf("0x%08x ", (uint32_t)it->offset);
+        if (largeVirAddr)
+            printf("0x%016llx ", it->vaddr);
+        else
+            printf("0x%08x ", (uint32_t)it->vaddr);
+        if (largePhyAddr)
+            printf("0x%016llx ", it->paddr);
+        else
+            printf("0x%08x ", (uint32_t)it->paddr);
+        if (largeFileSize)
+            printf("0x%016llx ", it->filesz);
+        else
+            printf("0x%08x ", (uint32_t)it->filesz);
+        if (largeMemSize)
+            printf("0x%016llx ", it->memsz);
+        else
+            printf("0x%08x ", (uint32_t)it->memsz);
+        if (it->align > 0xffffffff)
+            sprintf(alignText, "%llu", it->align);
+        else
+            sprintf(alignText, "%u", (uint32_t)it->align);
+        printf("%5s ", alignText);
+        flagsText[0] = 0;
+        if (it->flags & 0x4)
+            strcat(flagsText, "READ ");
+        if (it->flags & 0x2)
+            strcat(flagsText, "WRITE ");
+        if (it->flags & 0x1)
+            strcat(flagsText, "EXEC ");
+        printf("%s  ", flagsText);
+        // loader
+        if (it->type == 3) {        // PT_INTERP
+            std::shared_ptr<char> interp(new char[it->filesz + 4](), std::default_delete<char[]>());
+            file_seek(fp, this->startPosition + it->offset, SEEK_SET);
+            fread(interp.get(), 1, it->filesz, this->fp);
+            printf("(%s)", interp.get());
+        }
+        printf(" \n");
+    }
+
+
+    
+}
+
+const char* ElfDumper::programHeaderTypeStr(uint32_t type)
+{
+    static char typeName[12];
+    switch (type)
+    {
+    case 0:
+        return "NULL";
+    case 1:
+        return "LOAD";
+    case 2:
+        return "DYNAMIC";
+    case 3:
+        return "INTERP";
+    case 4:
+        return "NOTE";
+    case 5:
+        return "SHLIB";
+    case 6:
+        return "PHDR";
+    case 0x6474e550:
+        return "GNU_EH_FRAME";
+    case 0x6474e551:
+        return "GNU_STACK";
+    case 0x6474e552:
+        return "GNU_RELRO";
+    default:
+        sprintf(typeName, "%08x", type);
+        return typeName;
+    }
+}
+
+int ElfDumper::readSectionHeader()
+{
+    return -1;
+}
+
+int Elf32Dumper::readSectionHeader()
+{
+    return -1;
+}
+
+int Elf64Dumper::readSectionHeader()
+{
+    return -1;
+}
+
+void ElfDumper::showSectionHeader()
+{
+}
+
 

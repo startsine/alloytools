@@ -7,7 +7,7 @@
 #include "utils.h"
 
 
-int PECoffDumper::dumpContent(FILE* fp, size_t start, size_t size, const DumperParam& param)
+int PECoffDumper::dumpContent(FILE* fp, uint64_t start, uint64_t contentSize, const DumperParam& param)
 {
     return 0;
 }

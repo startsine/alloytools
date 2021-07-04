@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <list>
+#include <vector>
 #include <string>
 #include "elf.h"
 
@@ -28,33 +29,47 @@ private:
 class ContentDumper
 {
 public:
-	virtual int dumpContent(FILE * fp, size_t start, size_t size, const DumperParam & param) = 0;
+	virtual int dumpContent(FILE * fp, uint64_t start, uint64_t contentSize, const DumperParam & param) = 0;
+protected:
+	uint64_t			startPosition;
+	uint64_t			contentSize;
+	FILE*				fp;
+	const DumperParam*	param;
 };
 
 class ElfDumper : public ContentDumper
 {
 private:
-	virtual int dumpContent(FILE* fp, size_t start, size_t size, const DumperParam& param);
+	virtual int dumpContent(FILE* fp, uint64_t start, uint64_t contentSize, const DumperParam& param);
 	virtual int readElfHeader();
+	virtual int readProgramHeader();
+	virtual int readSectionHeader();
 	void showElfHeader();
+	void showProgramHeader();
+	void showSectionHeader();
 	static const char* abistr(uint8_t abi);
 	static const char* cpustr(uint16_t cpu);
+	static const char* programHeaderTypeStr(uint32_t type);
 protected:
 	bool				isElf64;
-	FILE*				fp;
 	ELF64Header			header;
+	std::vector<ELF64ProgramHeader>  programHeaders;
 };
 
 class Elf32Dumper : public ElfDumper
 {
 private:
 	virtual int readElfHeader();
+	virtual int readProgramHeader();
+	virtual int readSectionHeader();
 };
 
 class Elf64Dumper : public ElfDumper
 {
 private:
 	virtual int readElfHeader();
+	virtual int readProgramHeader();
+	virtual int readSectionHeader();
 };
 
 
@@ -64,7 +79,7 @@ private:
 class PECoffDumper : public ContentDumper
 {
 private:
-	virtual int dumpContent(FILE* fp, size_t start, size_t size, const DumperParam& param);
+	virtual int dumpContent(FILE* fp, uint64_t start, uint64_t contentSize, const DumperParam& param);
 };
 
 

@@ -99,7 +99,8 @@ void Dumper::startDump(int argc, char** argv)
         }
         if (dumper) {
             printf("查看的文件：%s\n", it->c_str());
-            dumper->dumpContent(fp, 0, 1000, this->params);
+
+            dumper->dumpContent(fp, 0, get_filesize(fp), this->params);
         }
 
         fclose(fp);

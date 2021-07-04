@@ -42,4 +42,39 @@ typedef struct
     uint16_t        shstrndx;           // Section name string table index
 } ELF64Header;
 
+typedef struct {
+    uint32_t        type;
+    uint32_t        offset;
+    uint32_t        vaddr;
+    uint32_t        paddr;
+    uint32_t        filesz;
+    uint32_t        memsz;
+    uint32_t        flags;
+    uint32_t        align;
+} ELF32ProgramHeader;
+
+typedef struct
+{
+    uint32_t        type;               // Type of segment 
+    uint32_t        flags;              // Segment attributes 
+    uint64_t        offset;             // Offset in file 
+    uint64_t        vaddr;              // Virtual address in memory 
+    uint64_t        paddr;              // Reserved 
+    uint64_t        filesz;             // Size of segment in file 
+    uint64_t        memsz;              // Size of segment in memory 
+    uint64_t        align;              // Alignment of segment 
+} ELF64ProgramHeader;
+
+
+
+
+
+
+
+
+
+
+
+
+
 

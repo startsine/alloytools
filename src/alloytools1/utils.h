@@ -13,4 +13,4 @@ uint64_t fread_u64(FILE* fp);
 size_t fwrite_u16(FILE* fp, uint16_t value);
 size_t fwrite_u32(FILE* fp, uint32_t value);
 size_t fwrite_u64(FILE* fp, uint64_t value);
-
+uint64_t get_filesize(FILE* fp);

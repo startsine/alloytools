@@ -133,6 +133,13 @@ size_t fwrite_u64(FILE* fp, uint64_t value)
     return 0;
 }
 
-
+uint64_t get_filesize(FILE* fp)
+{
+#ifdef _WIN32
+    return _filelengthi64(_fileno(fp));
+#else
+    return 0;
+#endif
+}
 
 
