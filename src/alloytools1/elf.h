@@ -65,9 +65,32 @@ typedef struct
     uint64_t        align;              // Alignment of segment 
 } ELF64ProgramHeader;
 
+typedef struct {
+    uint32_t        name;
+    uint32_t        type;
+    uint32_t        flags;
+    uint32_t        addr;
+    uint32_t        offset;
+    uint32_t        size;
+    uint32_t        link;
+    uint32_t        info;
+    uint32_t        addralign;
+    uint32_t        entsize;
+} Elf32SectionHeader;
 
-
-
+typedef struct
+{
+    uint32_t        name;               // Section name 
+    uint32_t        type;               // Section type 
+    uint64_t        flags;              // Section attributes 
+    uint64_t        addr;               // Virtual address in memory 
+    uint64_t        offset;             // Offset in file 
+    uint64_t        size;               // Size of section 
+    uint32_t        link;               // Link to other section 
+    uint32_t        info;               // Miscellaneous information 
+    uint64_t        addralign;          // Address alignment boundary 
+    uint64_t        entsize;            // Size of entries, if section has table 
+} Elf64SectionHeader;
 
 
 

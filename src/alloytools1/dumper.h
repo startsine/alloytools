@@ -3,6 +3,7 @@
 #include <list>
 #include <vector>
 #include <string>
+#include <memory>
 #include "elf.h"
 
 class DumperParam
@@ -50,10 +51,13 @@ private:
 	static const char* abistr(uint8_t abi);
 	static const char* cpustr(uint16_t cpu);
 	static const char* programHeaderTypeStr(uint32_t type);
+	static const char* sectionTypeStr(uint32_t type);
 protected:
 	bool				isElf64;
 	ELF64Header			header;
 	std::vector<ELF64ProgramHeader>  programHeaders;
+	std::vector<Elf64SectionHeader>	 sectionHeaders;
+	std::shared_ptr<char>		     secNameStrTab;
 };
 
 class Elf32Dumper : public ElfDumper

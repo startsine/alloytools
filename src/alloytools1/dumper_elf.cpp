@@ -31,24 +31,26 @@ int ElfDumper::dumpContent(FILE* fp, uint64_t start, uint64_t contentSize, const
     
     // program header
     if (header.phnum) {
-        if (header.phnum * (uint64_t)header.phentsize + header.phoff >= contentSize) {
+        if (header.phnum * (uint64_t)header.phentsize + header.phoff > contentSize) {
             printf("格式错误，遇到不正常的文件结束\n");
             return -1;
         }
         file_seek(fp, start + header.phoff, SEEK_SET);
         this->readProgramHeader();
         this->showProgramHeader();
+        printf("\n");
     }
 
     // section table header
     if (header.shnum) {
-        if (header.shnum * (uint64_t)header.shentsize + header.shoff >= contentSize) {
+        if (header.shnum * (uint64_t)header.shentsize + header.shoff > contentSize) {
             printf("格式错误，遇到不正常的文件结束\n");
             return -1;
         }
         file_seek(fp, start + header.shoff, SEEK_SET);
         this->readSectionHeader();
         this->showSectionHeader();
+        printf("\n");
     }
 
 
@@ -360,16 +362,172 @@ int ElfDumper::readSectionHeader()
 
 int Elf32Dumper::readSectionHeader()
 {
-    return -1;
+    Elf64SectionHeader section;
+    for (uint16_t i = 0; i < header.shnum; i++) {
+        section.name = fread_u32(fp);
+        section.type = fread_u32(fp);
+        section.flags = fread_u32(fp);
+        section.addr = fread_u32(fp);
+        section.offset = fread_u32(fp);
+        section.size = fread_u32(fp);
+        section.link = fread_u32(fp);
+        section.info = fread_u32(fp);
+        section.addralign = fread_u32(fp);
+        section.entsize = fread_u32(fp);
+        this->sectionHeaders.push_back(section);
+    }
+    if (feof(fp))
+        return -1;
+    return 0;
 }
 
 int Elf64Dumper::readSectionHeader()
 {
-    return -1;
+    Elf64SectionHeader section;
+    for (uint16_t i = 0; i < header.shnum; i++) {
+        section.name = fread_u32(fp);
+        section.type = fread_u32(fp);
+        section.flags = fread_u64(fp);
+        section.addr = fread_u64(fp);
+        section.offset = fread_u64(fp);
+        section.size = fread_u64(fp);
+        section.link = fread_u32(fp);
+        section.info = fread_u32(fp);
+        section.addralign = fread_u64(fp);
+        section.entsize = fread_u64(fp);
+        this->sectionHeaders.push_back(section);
+    }
+    if (feof(fp))
+        return -1;
+    return 0;
 }
 
 void ElfDumper::showSectionHeader()
 {
+    int sectionId;
+    bool largeOffset = false;
+    bool largeAddr = false;
+    bool largeSize = false;
+    char flagsText[16];
+    
+    for (auto it = sectionHeaders.begin(); it != sectionHeaders.end(); it++) {
+        if (it->offset > 0xffffffff) {
+            largeOffset = true;
+            break;
+        }
+    }
+
+    for (auto it = sectionHeaders.begin(); it != sectionHeaders.end(); it++) {
+        if (it->addr > 0xffffffff) {
+            largeAddr = true;
+            break;
+        }
+    }
+
+    for (auto it = sectionHeaders.begin(); it != sectionHeaders.end(); it++) {
+        if (it->size > 0xffffffff) {
+            largeSize = true;
+            break;
+        }
+    }
+
+    if (header.shnum == 0)
+        return;
+    printf("节表: \n");
+    printf("  # \n");
+
+    // load section name strtab
+    if (header.shstrndx < header.shnum) {
+        auto & sec = sectionHeaders[header.shstrndx];
+        auto size = sec.size;
+        if (sec.offset + this->startPosition + size <= this->contentSize) {
+            secNameStrTab = std::shared_ptr<char> (new char[size + 4](), std::default_delete<char[]>());
+            file_seek(fp, sec.offset + this->startPosition, SEEK_SET);
+            fread(secNameStrTab.get(), 1, size, fp);
+        }
+    }
+
+    sectionId = 0;
+    for (auto it = sectionHeaders.begin(); it != sectionHeaders.end(); it++) {
+        printf("  ");
+        if (header.shnum < 10)
+            printf("%d ", sectionId);
+        else if (header.shnum < 100)
+            printf("%02d ", sectionId);
+        else if (header.shnum < 1000)
+            printf("%03d ", sectionId);
+        else if (header.shnum < 10000)
+            printf("%04d ", sectionId);
+        else
+            printf("%05d ", sectionId);
+        printf("%8s ", sectionTypeStr(it->type));
+        if (largeAddr)
+            printf("0x%016llx ", it->addr);
+        else
+            printf("0x%08x ", (uint32_t)it->addr);
+        if (largeOffset)
+            printf("0x%016llx ", it->offset);
+        else
+            printf("0x%08x ", (uint32_t)it->offset);
+        if (largeSize)
+            printf("0x%016llx ", it->size);
+        else
+            printf("0x%08x ", (uint32_t)it->size);
+        printf("%8llu ", it->entsize);
+        printf("%5d ", it->link);
+        printf("%5lld ", it->addralign);
+        flagsText[0] = 0;
+        if (it->flags & 0x0001)
+            strcat(flagsText, "W");
+        if (it->flags & 0x0002)
+            strcat(flagsText, "A");
+        if (it->flags & 0x0004)
+            strcat(flagsText, "E");
+        printf("%5s ", flagsText);
+        printf("%5d ", it->info);
+
+        if (secNameStrTab) {
+            auto p = secNameStrTab.get();
+            printf(" %s ", &p[it->name]);
+        }
+
+        sectionId++;
+        printf("\n");
+    }
+
 }
 
-
+const char* ElfDumper::sectionTypeStr(uint32_t type)
+{
+    static char typeName[12];
+    switch (type)
+    {
+    case 0x00:
+        return "NULL";
+    case 0x01:
+        return "PROGBITS";
+    case 0x02:
+        return "SYMTAB";
+    case 0x03:
+        return "STRTAB";
+    case 0x04:
+        return "RELA";
+    case 0x05:
+        return "HASH";
+    case 0x06:
+        return "DYNAMIC";
+    case 0x07:
+        return "NOTE";
+    case 0x08:
+        return "NOBITS";
+    case 0x09:
+        return "REL";
+    case 0x0A:
+        return "SHLIB";
+    case 0x0B:
+        return "DYNSYM";
+    default:
+        sprintf(typeName, "%08x", type);
+        return typeName;
+    }
+}
