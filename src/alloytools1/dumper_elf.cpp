@@ -53,6 +53,10 @@ int ElfDumper::dumpContent(FILE* fp, uint64_t start, uint64_t contentSize, const
         printf("\n");
     }
 
+    // map
+    if (header.phnum && header.shnum) {
+        this->showProgramHeaderMapSection();
+    }
 
     return 0;
 }
@@ -232,6 +236,7 @@ void ElfDumper::showProgramHeader()
     bool largePhyAddr = false;
     bool largeFileSize = false;
     bool largeMemSize = false;
+    int  programHeaderId;
     char alignText[32];
     char flagsText[128];
 
@@ -275,8 +280,20 @@ void ElfDumper::showProgramHeader()
     printf("程序头表: \n");
 
     printf("  类型\n");
+    programHeaderId = 0;
     for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
-        printf("  %-14s ", programHeaderTypeStr(it->type));
+        if (header.phnum < 10)
+            printf("  %d ", programHeaderId);
+        else if (header.phnum < 100)
+            printf("  %02d ", programHeaderId);
+        else if (header.phnum < 1000)
+            printf("  %03d ", programHeaderId);
+        else if (header.phnum < 10000)
+            printf("  %04d ", programHeaderId);
+        else
+            printf("  %05d ", programHeaderId);
+
+        printf("%-14s ", programHeaderTypeStr(it->type));
         if (largeOffset)
             printf("0x%016llx ", it->offset);
         else
@@ -318,6 +335,7 @@ void ElfDumper::showProgramHeader()
             printf("(%s)", interp.get());
         }
         printf(" \n");
+        programHeaderId++;
     }
 
 
@@ -531,3 +549,38 @@ const char* ElfDumper::sectionTypeStr(uint32_t type)
         return typeName;
     }
 }
+
+void ElfDumper::showProgramHeaderMapSection()
+{
+    size_t maxTypeLen = 0;
+    char maxTypeLenSF[16];
+    int programHeaderId;
+
+    for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
+        auto str = programHeaderTypeStr(it->type);
+        auto curLen = strlen(str);
+        if (maxTypeLen < curLen) {
+            maxTypeLen = curLen;
+        }
+    }
+    maxTypeLen++;
+    sprintf(maxTypeLenSF, "%%-%ds ", maxTypeLen);
+
+    programHeaderId = 0;
+    for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
+        if (header.phnum < 10)
+            printf("  %d ", programHeaderId);
+        else if (header.phnum < 100)
+            printf("  %02d ", programHeaderId);
+        else if (header.phnum < 1000)
+            printf("  %03d ", programHeaderId);
+        else if (header.phnum < 10000)
+            printf("  %04d ", programHeaderId);
+        else
+            printf("  %05d ", programHeaderId);
+
+        programHeaderId++;
+        printf("\n");
+    }
+}
+

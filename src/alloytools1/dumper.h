@@ -48,6 +48,7 @@ private:
 	void showElfHeader();
 	void showProgramHeader();
 	void showSectionHeader();
+	void showProgramHeaderMapSection();
 	static const char* abistr(uint8_t abi);
 	static const char* cpustr(uint16_t cpu);
 	static const char* programHeaderTypeStr(uint32_t type);
