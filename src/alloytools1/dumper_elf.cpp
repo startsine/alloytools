@@ -568,6 +568,21 @@ void ElfDumper::showProgramHeaderMapSection()
 
     programHeaderId = 0;
     for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
+        std::vector<std::string> secList;
+        for (auto it2 = sectionHeaders.begin(); it2 != sectionHeaders.end(); it2++) {
+            if (it2->offset >= it->offset && (it2->offset + it2->size) <= (it->offset + it->filesz)) {
+                if (secNameStrTab) {
+                    auto p = secNameStrTab.get();
+                    secList.push_back(&p[it2->name]);
+                }
+            }
+        }
+
+        if (secList.size() == 0) {
+            programHeaderId++;
+            continue;
+        }
+
         if (header.phnum < 10)
             printf("  %d ", programHeaderId);
         else if (header.phnum < 100)
@@ -578,6 +593,13 @@ void ElfDumper::showProgramHeaderMapSection()
             printf("  %04d ", programHeaderId);
         else
             printf("  %05d ", programHeaderId);
+
+        printf("%-14s ", programHeaderTypeStr(it->type));
+        printf("( ");
+        for (auto it3 = secList.begin(); it3 != secList.end(); it3++) {
+            printf("%s ", it3->c_str());
+        }
+        printf(")");
 
         programHeaderId++;
         printf("\n");
