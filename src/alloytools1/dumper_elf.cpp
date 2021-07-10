@@ -58,6 +58,15 @@ int ElfDumper::dumpContent(FILE* fp, uint64_t start, uint64_t contentSize, const
         this->showProgramHeaderMapSection();
     }
 
+    // exe/so dynamic info
+    if (existDynamicProgramHeader()) {
+
+    }
+    else {
+        printf("不存在动态链接信息 \n");
+    }
+
+
     return 0;
 }
 
@@ -279,7 +288,7 @@ void ElfDumper::showProgramHeader()
         return;
     printf("程序头表: \n");
 
-    printf("  类型\n");
+    printf("  #  类型           文件偏移   虚拟地址   物理地址   文件大小   内存大小    对齐 属性\n");
     programHeaderId = 0;
     for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
         if (header.phnum < 10)
@@ -452,7 +461,7 @@ void ElfDumper::showSectionHeader()
     if (header.shnum == 0)
         return;
     printf("节表: \n");
-    printf("  # \n");
+    printf("  #  类型     虚拟地址   文件偏移   数据大小     项大小  link  对齐  属性  info  节名\n");
 
     // load section name strtab
     if (header.shstrndx < header.shnum) {
@@ -566,14 +575,25 @@ void ElfDumper::showProgramHeaderMapSection()
     maxTypeLen++;
     sprintf(maxTypeLenSF, "%%-%ds ", maxTypeLen);
 
+    printf("映射表: \n");
+
     programHeaderId = 0;
-    for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
+    for (auto itp = programHeaders.begin(); itp != programHeaders.end(); itp++) {
         std::vector<std::string> secList;
-        for (auto it2 = sectionHeaders.begin(); it2 != sectionHeaders.end(); it2++) {
-            if (it2->offset >= it->offset && (it2->offset + it2->size) <= (it->offset + it->filesz)) {
+        for (auto its = sectionHeaders.begin(); its != sectionHeaders.end(); its++) {
+            if (its->type == ELF_SECTION_TYPE_NULL)
+                continue;
+            if (its->offset >= itp->offset && (its->offset + its->size) <= (itp->offset + itp->filesz)) {
                 if (secNameStrTab) {
                     auto p = secNameStrTab.get();
-                    secList.push_back(&p[it2->name]);
+                    secList.push_back(&p[its->name]);
+                }
+            }
+            else if (its->type == ELF_SECTION_TYPE_NOBITS && itp->type == ELF_PROGRAM_TYPE_LOAD &&
+                (its->addr >= itp->vaddr && (its->addr + its->size) <= (itp->vaddr + itp->memsz))) {
+                if (secNameStrTab) {
+                    auto p = secNameStrTab.get();
+                    secList.push_back(&p[its->name]);
                 }
             }
         }
@@ -594,7 +614,7 @@ void ElfDumper::showProgramHeaderMapSection()
         else
             printf("  %05d ", programHeaderId);
 
-        printf("%-14s ", programHeaderTypeStr(it->type));
+        printf("%-14s ", programHeaderTypeStr(itp->type));
         printf("( ");
         for (auto it3 = secList.begin(); it3 != secList.end(); it3++) {
             printf("%s ", it3->c_str());
@@ -606,3 +626,14 @@ void ElfDumper::showProgramHeaderMapSection()
     }
 }
 
+bool ElfDumper::existDynamicProgramHeader()
+{
+    bool exist = false;
+    for (auto itp = programHeaders.begin(); itp != programHeaders.end(); itp++) {
+        if (itp->type == ELF_PROGRAM_TYPE_DYNAMIC) {
+            exist = true;
+            break;
+        }
+    }
+    return exist;
+}

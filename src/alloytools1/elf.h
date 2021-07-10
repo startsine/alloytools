@@ -65,6 +65,9 @@ typedef struct
     uint64_t        align;              // Alignment of segment 
 } ELF64ProgramHeader;
 
+#define ELF_PROGRAM_TYPE_LOAD           0x01
+#define ELF_PROGRAM_TYPE_DYNAMIC        0x02
+
 typedef struct {
     uint32_t        name;
     uint32_t        type;
@@ -92,7 +95,8 @@ typedef struct
     uint64_t        entsize;            // Size of entries, if section has table 
 } Elf64SectionHeader;
 
-
+#define ELF_SECTION_TYPE_NULL           0x00
+#define ELF_SECTION_TYPE_NOBITS         0x08
 
 
 

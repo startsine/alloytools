@@ -49,6 +49,7 @@ private:
 	void showProgramHeader();
 	void showSectionHeader();
 	void showProgramHeaderMapSection();
+	bool existDynamicProgramHeader();
 	static const char* abistr(uint8_t abi);
 	static const char* cpustr(uint16_t cpu);
 	static const char* programHeaderTypeStr(uint32_t type);
