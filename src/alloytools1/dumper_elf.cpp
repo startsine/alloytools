@@ -56,11 +56,24 @@ int ElfDumper::dumpContent(FILE* fp, uint64_t start, uint64_t contentSize, const
     // map
     if (header.phnum && header.shnum) {
         this->showProgramHeaderMapSection();
+        printf("\n");
     }
 
     // exe/so dynamic info
     if (existDynamicProgramHeader()) {
-
+        int dynCount = 0;
+        for (auto itp = programHeaders.begin(); itp != programHeaders.end(); itp++) {
+            if (itp->type == ELF_PROGRAM_TYPE_DYNAMIC) {
+                if (itp->offset + itp->filesz > contentSize) {
+                    printf("格式错误，遇到不正常的文件结束\n");
+                    continue;
+                }
+                //
+                file_seek(fp, start + itp->offset, SEEK_SET);
+                this->readDynamicInfo(*itp);
+                this->showDynamicInfo(dynCount);
+            }
+        }
     }
     else {
         printf("不存在动态链接信息 \n");
@@ -637,3 +650,187 @@ bool ElfDumper::existDynamicProgramHeader()
     }
     return exist;
 }
+
+int ElfDumper::readDynamicInfo(const ELF64ProgramHeader& proHeader)
+{
+    return -1;
+}
+
+int Elf32Dumper::readDynamicInfo(const ELF64ProgramHeader& proHeader)
+{
+    dynInfos.clear();
+    uint64_t datasize = proHeader.filesz;
+    uint64_t entryCount = datasize / sizeof(Elf32DynEntry);
+    for (uint64_t i = 0; i < entryCount; i++) {
+        Elf64DynEntry entry;
+        entry.tag = fread_u32(fp);
+        entry.un.val = fread_u32(fp);
+        dynInfos.push_back(entry);
+    }
+    if (feof(fp))
+        return -1;
+    return 0;
+}
+
+int Elf64Dumper::readDynamicInfo(const ELF64ProgramHeader& proHeader)
+{
+    dynInfos.clear();
+    uint64_t datasize = proHeader.filesz;
+    uint64_t entryCount = datasize / sizeof(Elf64DynEntry);
+    for (uint64_t i = 0; i < entryCount; i++) {
+        Elf64DynEntry entry;
+        entry.tag = fread_u64(fp);
+        entry.un.val = fread_u64(fp);
+        dynInfos.push_back(entry);
+    }
+    if (feof(fp))
+        return -1;
+    return 0;
+}
+
+void ElfDumper::showDynamicInfo(int dynIndex)
+{
+    bool error;
+    bool existStrSize = false;
+    uint64_t valueStrSize = 0;
+    bool existStrTab = false;
+    uint64_t valueStrTab = 0;
+    uint64_t offsetStrTab = 0;
+    std::shared_ptr<char> strtab;
+
+    valueStrSize = getDynamicValue(existStrSize, ELF_DT_STRSZ);
+    valueStrTab = getDynamicValue(existStrTab, ELF_DT_STRTAB);
+    offsetStrTab = programHeaderAddrToFileOffset(error, valueStrTab);
+    if (error) {
+        printf("格式错误，无法定位虚拟地址0x%08llx到文件偏移\n", valueStrTab);
+        return;
+    }
+    strtab = std::shared_ptr<char>(new char[valueStrSize + 4](), std::default_delete<char[]>());
+    file_seek(fp, startPosition + offsetStrTab, SEEK_SET);
+    fread(strtab.get(), 1, valueStrSize, fp);
+
+    printf("动态链接信息  #%d:\n", dynIndex);
+    printf("    TAG         类型             值 \n");
+    for (auto it = dynInfos.begin(); it != dynInfos.end(); it++) {
+        if (it->tag == 0)
+            continue;
+        printf("    0x%08llx  %-12s ", it->tag, dynamicTagToStr(it->tag));
+        if (it->tag == ELF_DT_NEEDED) {
+            printf("0x%08llx  ", it->un.val);
+            if (strtab) {
+                printf("(%s)", &(strtab.get()[it->un.val]));
+            }
+        }
+        else if (it->tag == ELF_DT_INIT_ARRAYSZ || it->tag == ELF_DT_FINI_ARRAYSZ || it->tag == ELF_DT_STRSZ || it->tag == ELF_DT_PLTRELSZ ||
+            it->tag == ELF_DT_SYMENT) {
+            printf("0x%08llx  ", it->un.val);
+            printf("(%lld 字节)", it->un.val);
+        }
+        else {
+            printf("0x%08llx", it->un.val);
+        }
+        printf("\n");
+    }
+}
+
+uint64_t ElfDumper::getDynamicValue(bool& exist, uint64_t tag)
+{
+    for (auto it = dynInfos.begin(); it != dynInfos.end(); it++) {
+        if (it->tag == tag) {
+            exist = true;
+            return it->un.val;
+        }
+    }
+    exist = false;
+    return 0;
+}
+
+const char* ElfDumper::dynamicTagToStr(uint64_t tag) {
+    static char tagName[24];
+    switch (tag) {
+    case ELF_DT_NULL:
+        return "NULL";
+    case ELF_DT_NEEDED:
+        return "NEEDED";
+    case ELF_DT_PLTRELSZ:
+        return "PLTRELSZ";
+    case ELF_DT_PLTGOT:
+        return "PLTGOT";
+    case ELF_DT_HASH:
+        return "HASH";
+    case ELF_DT_STRTAB:
+        return "STRTAB";
+    case ELF_DT_SYMTAB:
+        return "SYMTAB";
+    case ELF_DT_RELA:
+        return "RELA";
+    case ELF_DT_RELASZ:
+        return "RELASZ";
+    case ELF_DT_RELAENT:
+        return "RELAENT";
+    case ELF_DT_STRSZ:
+        return "STRSZ";
+    case ELF_DT_SYMENT:
+        return "SYMENT";
+    case ELF_DT_INIT:
+        return "INIT";
+    case ELF_DT_FINI:
+        return "FINI";
+    case ELF_DT_SONAME:
+        return "SONAME";
+    case ELF_DT_RPATH:
+        return "RPATH";
+    case ELF_DT_SYMBOLIC:
+        return "SYMBOLIC";
+    case ELF_DT_REL:
+        return "REL";
+    case ELF_DT_RELSZ:
+        return "RELSZ";
+    case ELF_DT_RELENT:
+        return "RELENT";
+    case ELF_DT_PLTREL:
+        return "PLTREL";
+    case ELF_DT_DEBUG:
+        return "DEBUG";
+    case ELF_DT_TEXTREL:
+        return "TEXTREL";
+    case ELF_DT_JMPREL:
+        return "JMPREL";
+    case ELF_DT_BIND_NOW:
+        return "BIND_NOW";
+    case ELF_DT_INIT_ARRAY:
+        return "INIT_ARRAY";
+    case ELF_DT_FINI_ARRAY:
+        return "FINI_ARRAY";
+    case ELF_DT_INIT_ARRAYSZ:
+        return "INIT_ARRAYSZ";
+    case ELF_DT_FINI_ARRAYSZ:
+        return "FINI_ARRAYSZ";
+    case ELF_DT_LOOS:
+        return "LOOS";
+    case ELF_DT_GNU_HASH:
+        return "GNU_HASH";
+    case ELF_DT_HIOS:
+        return "HIOS";
+    case ELF_DT_LOPROC:
+        return "LOPROC";
+    case ELF_DT_HIPROC:
+        return "HIPROC";
+    default:
+        sprintf(tagName, "0x%08llx", tag);
+        return tagName;
+    }
+}
+
+uint64_t ElfDumper::programHeaderAddrToFileOffset(bool& error, uint64_t vaddr)
+{
+    for (auto it = programHeaders.begin(); it != programHeaders.end(); it++) {
+        if (vaddr >= it->vaddr && vaddr <= (it->vaddr + it->memsz)) {
+            error = false;
+            return it->offset + (vaddr - it->vaddr);
+        }
+    }
+    error = true;
+    return 0;
+}
+

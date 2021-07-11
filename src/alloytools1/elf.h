@@ -98,10 +98,75 @@ typedef struct
 #define ELF_SECTION_TYPE_NULL           0x00
 #define ELF_SECTION_TYPE_NOBITS         0x08
 
+typedef struct {
+    uint32_t        name;
+    uint32_t        value;
+    uint32_t        size;
+    unsigned char   info;
+    unsigned char   other;
+    uint16_t        shndx;
+} Elf32SymEntry;
 
+typedef struct
+{
+    uint32_t        name;               // Symbol name 
+    unsigned char   info;               // Type and Binding attributes 
+    unsigned char   other;              // Reserved 
+    uint16_t        shndx;              // Section table index 
+    uint64_t        value;              // Symbol value 
+    uint64_t        size;               // Size of object (e.g., common) 
+} Elf64SymEntry;
 
+typedef struct {
+    int32_t         tag;
+    union {
+        uint32_t    val;
+        uint32_t    ptr;
+    } un;
+} Elf32DynEntry;
 
+typedef struct
+{
+    int64_t         tag;
+    union {
+        uint64_t    val;
+        uint64_t    ptr;
+    } un;
+} Elf64DynEntry;
 
-
+#define ELF_DT_NULL         0
+#define ELF_DT_NEEDED       1
+#define ELF_DT_PLTRELSZ     2
+#define ELF_DT_PLTGOT       3
+#define ELF_DT_HASH         4
+#define ELF_DT_STRTAB       5
+#define ELF_DT_SYMTAB       6
+#define ELF_DT_RELA         7
+#define ELF_DT_RELASZ       8
+#define ELF_DT_RELAENT      9
+#define ELF_DT_STRSZ        10
+#define ELF_DT_SYMENT       11
+#define ELF_DT_INIT         12
+#define ELF_DT_FINI         13
+#define ELF_DT_SONAME       14
+#define ELF_DT_RPATH        15
+#define ELF_DT_SYMBOLIC     16
+#define ELF_DT_REL          17
+#define ELF_DT_RELSZ        18
+#define ELF_DT_RELENT       19
+#define ELF_DT_PLTREL       20
+#define ELF_DT_DEBUG        21
+#define ELF_DT_TEXTREL      22
+#define ELF_DT_JMPREL       23
+#define ELF_DT_BIND_NOW     24
+#define ELF_DT_INIT_ARRAY   25
+#define ELF_DT_FINI_ARRAY   26
+#define ELF_DT_INIT_ARRAYSZ 27
+#define ELF_DT_FINI_ARRAYSZ 28
+#define ELF_DT_LOOS         0x60000000
+#define ELF_DT_GNU_HASH     0x6ffffef5
+#define ELF_DT_HIOS         0x6FFFFFFF
+#define ELF_DT_LOPROC       0x70000000
+#define ELF_DT_HIPROC       0x7FFFFFFF
 
 
