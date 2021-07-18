@@ -40,18 +40,20 @@ protected:
 
 class ElfDumper : public ContentDumper
 {
-private:
+protected:
 	virtual int dumpContent(FILE* fp, uint64_t start, uint64_t contentSize, const DumperParam& param);
 	virtual int readElfHeader();
 	virtual int readProgramHeader();
 	virtual int readSectionHeader();
 	virtual int readDynamicInfo(const ELF64ProgramHeader& proHeader);
+	virtual int readDynamicSymTab(const ELF64ProgramHeader& proHeader);
 	void showElfHeader();
 	void showProgramHeader();
 	void showSectionHeader();
 	void showProgramHeaderMapSection();
 	bool existDynamicProgramHeader();
 	void showDynamicInfo(int dynIndex);
+	void showDynamicSymTab(int dynIndex);
 	uint64_t getDynamicValue(bool & exist, uint64_t tag);
 	uint64_t programHeaderAddrToFileOffset(bool & error, uint64_t vaddr);
 	static const char* abistr(uint8_t abi);
@@ -60,12 +62,14 @@ private:
 	static const char* sectionTypeStr(uint32_t type);
 	static const char* dynamicTagToStr(uint64_t tag);
 protected:
-	bool				isElf64;
-	ELF64Header			header;
-	std::vector<ELF64ProgramHeader>  programHeaders;
-	std::vector<Elf64SectionHeader>	 sectionHeaders;
-	std::shared_ptr<char>		     secNameStrTab;
-	std::vector<Elf64DynEntry>		 dynInfos;
+	bool								isElf64;
+	ELF64Header							header;
+	std::vector<ELF64ProgramHeader>		programHeaders;
+	std::vector<Elf64SectionHeader>		sectionHeaders;
+	std::shared_ptr<char>				secNameStrTab;
+	std::vector<Elf64DynEntry>			dynInfos;
+	int64_t								dynStrTabSize;
+	std::shared_ptr<char>				dynStrTab;
 };
 
 class Elf32Dumper : public ElfDumper
@@ -75,6 +79,7 @@ private:
 	virtual int readProgramHeader();
 	virtual int readSectionHeader();
 	virtual int readDynamicInfo(const ELF64ProgramHeader& proHeader);
+	virtual int readDynamicSymTab(const ELF64ProgramHeader& proHeader);
 };
 
 class Elf64Dumper : public ElfDumper
@@ -84,6 +89,7 @@ private:
 	virtual int readProgramHeader();
 	virtual int readSectionHeader();
 	virtual int readDynamicInfo(const ELF64ProgramHeader& proHeader);
+	virtual int readDynamicSymTab(const ELF64ProgramHeader& proHeader);
 };
 
 

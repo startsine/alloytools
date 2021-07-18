@@ -72,6 +72,10 @@ int ElfDumper::dumpContent(FILE* fp, uint64_t start, uint64_t contentSize, const
                 file_seek(fp, start + itp->offset, SEEK_SET);
                 this->readDynamicInfo(*itp);
                 this->showDynamicInfo(dynCount);
+                //
+                this->readDynamicSymTab(*itp);
+                this->showDynamicSymTab(dynCount);
+
             }
         }
     }
@@ -586,7 +590,7 @@ void ElfDumper::showProgramHeaderMapSection()
         }
     }
     maxTypeLen++;
-    sprintf(maxTypeLenSF, "%%-%ds ", maxTypeLen);
+    sprintf(maxTypeLenSF, "%%-%ds ", (int32_t)maxTypeLen);
 
     printf("映射表: \n");
 
@@ -692,22 +696,20 @@ void ElfDumper::showDynamicInfo(int dynIndex)
 {
     bool error;
     bool existStrSize = false;
-    uint64_t valueStrSize = 0;
     bool existStrTab = false;
     uint64_t valueStrTab = 0;
     uint64_t offsetStrTab = 0;
-    std::shared_ptr<char> strtab;
 
-    valueStrSize = getDynamicValue(existStrSize, ELF_DT_STRSZ);
+    dynStrTabSize = getDynamicValue(existStrSize, ELF_DT_STRSZ);
     valueStrTab = getDynamicValue(existStrTab, ELF_DT_STRTAB);
     offsetStrTab = programHeaderAddrToFileOffset(error, valueStrTab);
     if (error) {
         printf("格式错误，无法定位虚拟地址0x%08llx到文件偏移\n", valueStrTab);
         return;
     }
-    strtab = std::shared_ptr<char>(new char[valueStrSize + 4](), std::default_delete<char[]>());
+    dynStrTab = std::shared_ptr<char>(new char[dynStrTabSize + 4](), std::default_delete<char[]>());
     file_seek(fp, startPosition + offsetStrTab, SEEK_SET);
-    fread(strtab.get(), 1, valueStrSize, fp);
+    fread(dynStrTab.get(), 1, dynStrTabSize, fp);
 
     printf("动态链接信息  #%d:\n", dynIndex);
     printf("    TAG         类型             值 \n");
@@ -717,8 +719,8 @@ void ElfDumper::showDynamicInfo(int dynIndex)
         printf("    0x%08llx  %-12s ", it->tag, dynamicTagToStr(it->tag));
         if (it->tag == ELF_DT_NEEDED) {
             printf("0x%08llx  ", it->un.val);
-            if (strtab) {
-                printf("(%s)", &(strtab.get()[it->un.val]));
+            if (dynStrTab) {
+                printf("(%s)", &(dynStrTab.get()[it->un.val]));
             }
         }
         else if (it->tag == ELF_DT_INIT_ARRAYSZ || it->tag == ELF_DT_FINI_ARRAYSZ || it->tag == ELF_DT_STRSZ || it->tag == ELF_DT_PLTRELSZ ||
@@ -834,3 +836,45 @@ uint64_t ElfDumper::programHeaderAddrToFileOffset(bool& error, uint64_t vaddr)
     return 0;
 }
 
+int ElfDumper::readDynamicSymTab(const ELF64ProgramHeader& proHeader)
+{
+    return -1;
+}
+
+int Elf32Dumper::readDynamicSymTab(const ELF64ProgramHeader& proHeader)
+{
+    bool error;
+    bool existSynSymTab = false;
+    bool existSynSymEntrySize = false;
+    uint64_t valueDynSymTab;
+    uint64_t valueDynSymEntrySize;
+    uint64_t offsetDynSymTab;
+    valueDynSymTab = getDynamicValue(existSynSymTab, ELF_DT_SYMTAB);
+    valueDynSymEntrySize = getDynamicValue(existSynSymEntrySize, ELF_DT_SYMENT);
+    offsetDynSymTab = programHeaderAddrToFileOffset(error, valueDynSymTab);
+
+    dynInfos.clear();
+    uint64_t datasize = proHeader.filesz;
+    uint64_t entryCount = datasize / sizeof(Elf32DynEntry);
+    for (uint64_t i = 0; i < entryCount; i++) {
+        Elf64DynEntry entry;
+        entry.tag = fread_u32(fp);
+        entry.un.val = fread_u32(fp);
+        dynInfos.push_back(entry);
+    }
+    if (feof(fp))
+        return -1;
+    return 0;
+
+    //return -1;
+}
+
+int Elf64Dumper::readDynamicSymTab(const ELF64ProgramHeader& proHeader)
+{
+    return -1;
+}
+
+void ElfDumper::showDynamicSymTab(int dynIndex)
+{
+
+}
