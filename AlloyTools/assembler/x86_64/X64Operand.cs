@@ -5,13 +5,16 @@ namespace AlloyTools.Assembler.AMD64
     public enum X64OperandType
     {
         Unknown = 0,                    // 未知类型
-        Immediate,                      // 立即数
         Register,                       // 寄存器
         MemoryAddress,                  // 内存寻址
+        Symbol,                         // 符号
+        ImmediateValue,                 // 立即数(已经转换为ulong,无论整数负数都转换为ulong)
+        ImmediateRaw,                   // 立即数(保留原始字符串表达,需要时再转换,通常是浮点数或者是超大整数)
+        ImmediateString,                // 立即数(字符串-用引号括起来的字符串)
     }
 
     [Flags]
-    public enum X64RegValue: uint
+    public enum X64RegValue : uint
     {
         None = 0,
         //
@@ -99,8 +102,8 @@ namespace AlloyTools.Assembler.AMD64
         //
         REXPreflx_E = REXPreflx_40 | 0x8000,        // 需要扩展REX.R / REX.X / REX.B (reg、r/m、SIB域) 、扩展到8~15号寄存器
         //
-        R8B =  Common | REG_8bit | REXPreflx_E | REG_VALUE_8,
-        R9B =  Common | REG_8bit | REXPreflx_E | REG_VALUE_9,
+        R8B = Common | REG_8bit | REXPreflx_E | REG_VALUE_8,
+        R9B = Common | REG_8bit | REXPreflx_E | REG_VALUE_9,
         R10B = Common | REG_8bit | REXPreflx_E | REG_VALUE_10,
         R11B = Common | REG_8bit | REXPreflx_E | REG_VALUE_11,
         R12B = Common | REG_8bit | REXPreflx_E | REG_VALUE_12,
@@ -108,8 +111,8 @@ namespace AlloyTools.Assembler.AMD64
         R14B = Common | REG_8bit | REXPreflx_E | REG_VALUE_14,
         R15B = Common | REG_8bit | REXPreflx_E | REG_VALUE_15,
         //
-        R8W =  Common | REG_16bit | REXPreflx_E | REG_VALUE_8,
-        R9W =  Common | REG_16bit | REXPreflx_E | REG_VALUE_9,
+        R8W = Common | REG_16bit | REXPreflx_E | REG_VALUE_8,
+        R9W = Common | REG_16bit | REXPreflx_E | REG_VALUE_9,
         R10W = Common | REG_16bit | REXPreflx_E | REG_VALUE_10,
         R11W = Common | REG_16bit | REXPreflx_E | REG_VALUE_11,
         R12W = Common | REG_16bit | REXPreflx_E | REG_VALUE_12,
@@ -117,8 +120,8 @@ namespace AlloyTools.Assembler.AMD64
         R14W = Common | REG_16bit | REXPreflx_E | REG_VALUE_14,
         R15W = Common | REG_16bit | REXPreflx_E | REG_VALUE_15,
         //
-        R8D =  Common | REG_32bit | REXPreflx_E | REG_VALUE_8,
-        R9D =  Common | REG_32bit | REXPreflx_E | REG_VALUE_9,
+        R8D = Common | REG_32bit | REXPreflx_E | REG_VALUE_8,
+        R9D = Common | REG_32bit | REXPreflx_E | REG_VALUE_9,
         R10D = Common | REG_32bit | REXPreflx_E | REG_VALUE_10,
         R11D = Common | REG_32bit | REXPreflx_E | REG_VALUE_11,
         R12D = Common | REG_32bit | REXPreflx_E | REG_VALUE_12,
@@ -126,8 +129,8 @@ namespace AlloyTools.Assembler.AMD64
         R14D = Common | REG_32bit | REXPreflx_E | REG_VALUE_14,
         R15D = Common | REG_32bit | REXPreflx_E | REG_VALUE_15,
         //
-        R8 =  Common | REG_64bit | REXPreflx_W | REXPreflx_E | REG_VALUE_8,
-        R9 =  Common | REG_64bit | REXPreflx_W | REXPreflx_E | REG_VALUE_9,
+        R8 = Common | REG_64bit | REXPreflx_W | REXPreflx_E | REG_VALUE_8,
+        R9 = Common | REG_64bit | REXPreflx_W | REXPreflx_E | REG_VALUE_9,
         R10 = Common | REG_64bit | REXPreflx_W | REXPreflx_E | REG_VALUE_10,
         R11 = Common | REG_64bit | REXPreflx_W | REXPreflx_E | REG_VALUE_11,
         R12 = Common | REG_64bit | REXPreflx_W | REXPreflx_E | REG_VALUE_12,
@@ -315,13 +318,108 @@ namespace AlloyTools.Assembler.AMD64
         //
     }
 
+    public enum SymbolModifier
+    {
+        None = 0,
+        Offset = 1,                 // 用 offset 修饰 （取地址，产生 ADDR64 重定位）
+        ImageRel = 2,               // 用 imagerel 修饰 （取RVA地址，产生 REL32NB 重定位）
+    }
+
+    public enum MemoryAddressModifier
+    {
+        None = 0,
+        BytePtr = 1,                // 用 byte ptr 修饰寻址
+        WordPtr = 2,                // 用 word ptr 修饰寻址
+        DWordPtr = 4,               // 用 dword ptr 修饰寻址
+        QWordPtr = 8,               // 用 qword ptr 修饰寻址
+    }
+
+    [Flags]
+    public enum MemoryAddressType
+    {
+        None = 0,
+        hasReg1 = 0x01,             // 有寄存器1
+        hasReg2 = 0x02,             // 有寄存器2 （当有两个寄存器的时候，一定是SIB基址加变址，这时也一定有index比例因子，隐藏的因子为1）
+        hasDisp = 0x04,             // 是否有数值上的偏移量
+        hasSymbol = 0x08,           // 是否由符号来寻址(由符号来决定偏移量)
+    }
+
+    public class MemoryAddressInfo
+    {
+        public MemoryAddressModifier modifier;  // 寻址目标大小修饰
+        public MemoryAddressType type;          // 寻址类型
+        public X64RegValue indirectReg;         // 间接寻址寄存器(寄存器间接寻址是mod==00, 寄存器间接寻址不能是rsp/r12,带rsp/r12的必须转变为基址+变址寻址)
+        public int disp32;                      // 偏移量(mod==01为带8位偏移量, mod==10为带32位偏移量, mod=11为直接表示寄存器本身)
+        public X64RegValue baseReg;             // 基址寄存器信息(rm==100时，才有SIB字节) [rsp 寄存器不能做为 index 寄存器，只能做 base 寄存器]
+        public X64RegValue indexReg;            // 变址寄存器信息(rm==100时，才有SIB字节)
+        public byte index;                      // 比例因子(rm==100时，才有SIB字节)
+        public string symName;                  // 符号寻址(规定rbp/r13必须带偏移量,如果mod==00,rm=101时表示直接用一个32位数值来寻址,这里一般是指符号地址)
+        public ulong symIndex;                  // 符号在符号列表的索引(为0表示找不到)
+
+        public MemoryAddressInfo()
+        {
+            symName = "";
+        }
+    }
+
     public class X64Operand
     {
-        public X64OperandType Type;
-        public ulong IntValue;
-        public X64RegValue regValue;
+        public X64OperandType type;
+        public X64RegValue regValue;            // type 为 X64OperandType.Register 时有效
+        public ulong ulongValue;                // type 为 X64OperandType.ImmediateValue 时有效
+        public byte[]? bstr;                    // type 为 X64OperandType.ImmediateString 时有效
+        public ulong symIndex;                  // type 为 X64OperandType.Symbol 时有效,在符号列表的索引(为0表示找不到)
+        public string str;                      // type 为 X64OperandType.Symbol 或 X64OperandType.ImmediateRaw 时有效,存符号字符串,或者立即数的字符串表达
 
-        public X64Operand() { }
+        public X64Operand(ulong newValue)
+        {
+            type = X64OperandType.ImmediateValue;
+            ulongValue = newValue;
+            regValue = X64RegValue.None;
+            bstr = null;
+            symIndex = 0;
+            str = "";
+        }
+
+        public X64Operand(X64RegValue newValue)
+        {
+            type = X64OperandType.Register;
+            regValue = newValue;
+            ulongValue = 0;
+            bstr = null;
+            symIndex = 0;
+            str = "";
+        }
+
+        public X64Operand(byte[] rawStr)
+        {
+            type = X64OperandType.ImmediateString;
+            regValue = X64RegValue.None;
+            ulongValue = 0;
+            bstr = rawStr;
+            symIndex = 0;
+            str = "";
+        }
+
+        public X64Operand(X64OperandType type1, string str1)
+        {
+            type = type1;
+            regValue = X64RegValue.None;
+            ulongValue = 0;
+            bstr = null;
+            symIndex = 0;
+            str = str1;
+        }
+
+        public X64Operand(X64OperandType type1, string str1, ulong symIndex1)
+        {
+            type = type1;
+            regValue = X64RegValue.None;
+            ulongValue = 0;
+            bstr = null;
+            symIndex = symIndex1;
+            str = str1;
+        }
     }
 }
 
