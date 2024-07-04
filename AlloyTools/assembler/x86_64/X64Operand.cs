@@ -11,6 +11,7 @@ namespace AlloyTools.Assembler.AMD64
         ImmediateValue,                 // 立即数(已经转换为ulong,无论整数负数都转换为ulong)
         ImmediateRaw,                   // 立即数(保留原始字符串表达,需要时再转换,通常是浮点数或者是超大整数)
         ImmediateString,                // 立即数(字符串-用引号括起来的字符串)
+        MemoryAddressInfo,              // 内存寻址(寻址信息还没有完全，只能做中间值)
     }
 
     [Flags]
@@ -320,9 +321,10 @@ namespace AlloyTools.Assembler.AMD64
 
     public enum SymbolModifier
     {
-        None = 0,
+        None = 0,                   // 默认情况下，符号会产生 REL32+n 重定位（RIP相对寻址,相对下一条指令的地址）
         Offset = 1,                 // 用 offset 修饰 （取地址，产生 ADDR64 重定位）
         ImageRel = 2,               // 用 imagerel 修饰 （取RVA地址，产生 REL32NB 重定位）
+        Addr32 = 3,                 // 用 addr32 修饰 （取地址，产生 ADDR32 重定位）
     }
 
     public enum MemoryAddressModifier
@@ -338,25 +340,55 @@ namespace AlloyTools.Assembler.AMD64
     public enum MemoryAddressType
     {
         None = 0,
-        hasReg1 = 0x01,             // 有寄存器1
-        hasReg2 = 0x02,             // 有寄存器2 （当有两个寄存器的时候，一定是SIB基址加变址，这时也一定有index比例因子，隐藏的因子为1）
-        hasDisp = 0x04,             // 是否有数值上的偏移量
-        hasSymbol = 0x08,           // 是否由符号来寻址(由符号来决定偏移量)
+        // 源码层面的信息
+        hasReg1 = 0x01,                 // 有寄存器1
+        hasReg2 = 0x02,                 // 有寄存器2 （当有两个寄存器的时候，一定是SIB基址加变址，这时也一定有scale比例因子，隐藏的因子为1）
+        hasExplicitScale = 0x04,        // 源码中有显式的比例因子(如果有显式的比例因子，则reg1和reg2不能互相调换基址寄存器和变址寄存器来适应一些特殊寄存器要求)
+        hasDisp = 0x08,                 // 是否有数值上的偏移量
+        hasSymbol = 0x10,               // 是否由符号来寻址(由符号来决定偏移量)
+        // 机器层面
+        withModRM = 0x1000,             // 此项其实一定有
+        withSIB = 0x2000,
+        withDisp8 = 0x4000,
+        withDisp32 = 0x8000,
+        withSegment = 0x10000,          // 带有段前缀
+        withNumericDisp = 0x20000,      // 源码层面带有数值上的偏移量
+        withSymbolDisp = 0x40000,       // 源码层面带有符号上的偏移量 (如果此项目有，则 withDisp32 一定有)
+        with32bitRegAddr = 0x80000,     // 使用了32位寄存器来寻址(如果此项目有，则要加0x67前缀)
+        with32bitImmBase = 0x100000,    // 使用32位的无符号立即数做基址(此时 withSIB 一定有，withDisp32 一定有)
+                                        // 注：规定rbp/r13做基址时必须带偏移量，rsp禁止做变址（rsp做变址表示没有变址也没有比例因子）
+                                        //    所以如果mod==00，并且base==rbp/r13, index==rsp时，表示使用一个无符号的32位数值做基地址(这时可能会产生ADDR32重定位)
     }
 
+    // 源码层面的寻址信息
     public class MemoryAddressInfo
+    {
+        public MemoryAddressType type;          // 寻址类型
+        public X64RegValue reg1;                // 寄存器1
+        public X64RegValue reg2;                // 寄存器2
+        public byte scale;                      // 比例因子
+        public int disp32;
+        // public X64RegValue seg;              // 段前缀 // 此标志注释掉，段前缀不应该放在源码层面，就是[]中括号内不应该有段前缀，段前缀应该放[]前面，例如 fs:[rbx]
+        public string symName = "";
+        public ulong symIndex;
+    }
+
+    // 机器层面的寻址信息
+    public class MemoryAddressResult
     {
         public MemoryAddressModifier modifier;  // 寻址目标大小修饰
         public MemoryAddressType type;          // 寻址类型
         public X64RegValue indirectReg;         // 间接寻址寄存器(寄存器间接寻址是mod==00, 寄存器间接寻址不能是rsp/r12,带rsp/r12的必须转变为基址+变址寻址)
         public int disp32;                      // 偏移量(mod==01为带8位偏移量, mod==10为带32位偏移量, mod=11为直接表示寄存器本身)
-        public X64RegValue baseReg;             // 基址寄存器信息(rm==100时，才有SIB字节) [rsp 寄存器不能做为 index 寄存器，只能做 base 寄存器]
+        public X64RegValue baseReg;             // 基址寄存器信息(rm==100时，才有SIB字节) [rsp 寄存器不能做为 index 寄存器，只能做 base 寄存器, rsp做index表示没有变址, 而r12却可以做index]
         public X64RegValue indexReg;            // 变址寄存器信息(rm==100时，才有SIB字节)
-        public byte index;                      // 比例因子(rm==100时，才有SIB字节)
+        public byte sacle;                      // 比例因子(rm==100时，才有SIB字节)
         public string symName;                  // 符号寻址(规定rbp/r13必须带偏移量,如果mod==00,rm=101时表示直接用一个32位数值来寻址,这里一般是指符号地址)
         public ulong symIndex;                  // 符号在符号列表的索引(为0表示找不到)
+                                                // 另一种情况，mod==00，并且base==rbp/r13, index==rsp时，表示使用一个无符号的32位绝对数值(可以是变量符号)做基地址进行ADDR32寻址
+        public X64RegValue segReg;              // 段前缀用的段寄存器
 
-        public MemoryAddressInfo()
+        public MemoryAddressResult()
         {
             symName = "";
         }
@@ -365,11 +397,13 @@ namespace AlloyTools.Assembler.AMD64
     public class X64Operand
     {
         public X64OperandType type;
-        public X64RegValue regValue;            // type 为 X64OperandType.Register 时有效
-        public ulong ulongValue;                // type 为 X64OperandType.ImmediateValue 时有效
-        public byte[]? bstr;                    // type 为 X64OperandType.ImmediateString 时有效
-        public ulong symIndex;                  // type 为 X64OperandType.Symbol 时有效,在符号列表的索引(为0表示找不到)
-        public string str;                      // type 为 X64OperandType.Symbol 或 X64OperandType.ImmediateRaw 时有效,存符号字符串,或者立即数的字符串表达
+        public X64RegValue regValue;            // type 为 Register 时有效
+        public ulong ulongValue;                // type 为 ImmediateValue 时有效
+        public byte[]? bstr;                    // type 为 ImmediateString 时有效
+        public ulong symIndex;                  // type 为 Symbol 时有效,在符号列表的索引(为0表示找不到)
+        public string str;                      // type 为 Symbol 或 ImmediateRaw 时有效,存符号字符串,或者立即数的字符串表达
+        public MemoryAddressInfo? addressInfo;  // type 为 MemoryAddressInfo时有效（为内存寻址的中间值，以 [ 开头产生此类型值）
+        public MemoryAddressResult? addressRes; // type 为 MemoryAddress 时有效（为内存寻址结果值，以 ] 结尾则产生此类型值）
 
         public X64Operand(ulong newValue)
         {
@@ -379,6 +413,8 @@ namespace AlloyTools.Assembler.AMD64
             bstr = null;
             symIndex = 0;
             str = "";
+            addressInfo = null;
+            addressRes = null;
         }
 
         public X64Operand(X64RegValue newValue)
@@ -389,6 +425,8 @@ namespace AlloyTools.Assembler.AMD64
             bstr = null;
             symIndex = 0;
             str = "";
+            addressInfo = null;
+            addressRes = null;
         }
 
         public X64Operand(byte[] rawStr)
@@ -399,6 +437,8 @@ namespace AlloyTools.Assembler.AMD64
             bstr = rawStr;
             symIndex = 0;
             str = "";
+            addressInfo = null;
+            addressRes = null;
         }
 
         public X64Operand(X64OperandType type1, string str1)
@@ -409,6 +449,8 @@ namespace AlloyTools.Assembler.AMD64
             bstr = null;
             symIndex = 0;
             str = str1;
+            addressInfo = null;
+            addressRes = null;
         }
 
         public X64Operand(X64OperandType type1, string str1, ulong symIndex1)
@@ -419,6 +461,32 @@ namespace AlloyTools.Assembler.AMD64
             bstr = null;
             symIndex = symIndex1;
             str = str1;
+            addressInfo = null;
+            addressRes = null;
+        }
+
+        public X64Operand(MemoryAddressInfo info)
+        {
+            type = X64OperandType.MemoryAddressInfo;
+            ulongValue = 0;
+            regValue = X64RegValue.None;
+            bstr = null;
+            symIndex = 0;
+            str = "";
+            addressInfo = info;
+            addressRes = null;
+        }
+
+        public X64Operand(MemoryAddressResult res)
+        {
+            type = X64OperandType.MemoryAddressInfo;
+            ulongValue = 0;
+            regValue = X64RegValue.None;
+            bstr = null;
+            symIndex = 0;
+            str = "";
+            addressInfo = null;
+            addressRes = res;
         }
     }
 }
