@@ -1,10 +1,12 @@
-﻿namespace asmx64
+﻿using AlloyTools.Assembler.AMD64;
+
+namespace asmx64
 {
     internal class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello, World!");
+            X64Assembler.Start(args);
         }
     }
 }

@@ -5,13 +5,16 @@ VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AlloyTools", "AlloyTools\AlloyTools.csproj", "{EAD7F43F-1278-4233-9519-DB66B66737D7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "asmx64", "asmx64\asmx64.csproj", "{7A39292D-CC5E-4F54-AD93-6F8036733534}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "asmx64", "asmx64\asmx64.csproj", "{7A39292D-CC5E-4F54-AD93-6F8036733534}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EAD7F43F-1278-4233-9519-DB66B66737D7} = {EAD7F43F-1278-4233-9519-DB66B66737D7}
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "asma64", "asma64\asma64.csproj", "{5C4BF2A4-0F2A-4548-B73D-D87E4832A39F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "asma64", "asma64\asma64.csproj", "{5C4BF2A4-0F2A-4548-B73D-D87E4832A39F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "asmla64", "asmla64\asmla64.csproj", "{3314F511-4BD1-481E-8760-009EC95B5263}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "asmla64", "asmla64\asmla64.csproj", "{3314F511-4BD1-481E-8760-009EC95B5263}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "alink", "alink\alink.csproj", "{0F7165D9-6CE0-4FE2-87B4-B06038A74D3C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "alink", "alink\alink.csproj", "{0F7165D9-6CE0-4FE2-87B4-B06038A74D3C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
