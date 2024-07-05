@@ -8,8 +8,8 @@ namespace AlloyTools.Assembler.AMD64
 {
     public class X64Assembler
     {
-        private static List<SourceLinePre>? sourceLinesP = null;
-        private static List<SourceLine>?    sourceLines = null;
+        private static LargeList<SourceLinePre>? sourceLinesP = null;
+        private static LargeList<SourceLine>?    sourceLines = null;
         public static void Start(string[] args)
         {
             if (args.Length > 0) {
@@ -20,17 +20,15 @@ namespace AlloyTools.Assembler.AMD64
         private static void Assembler(string filepath)
         {
             var loader = new SourceLoader();
-            byte[]? src = loader.LoadFile(filepath);
-            if (src != null) {
-                sourceLinesP = new List<SourceLinePre>();
-                var parser = new SourceParser(sourceLinesP, src);
-                parser.Parse();
+            loader.LoadFile(filepath);
 
-                //Console.WriteLine("open ok");
-                string s = Encoding.UTF8.GetString(src);
-                //Console.WriteLine(s);
+            sourceLinesP = new LargeList<SourceLinePre>();
+            var parser = new SourceParser(sourceLinesP, loader);
+            parser.Parse();
 
-            }
+            //Console.WriteLine("open ok");
+            //string s = Encoding.UTF8.GetString(src);
+            //Console.WriteLine(s);
         }
     }
 }

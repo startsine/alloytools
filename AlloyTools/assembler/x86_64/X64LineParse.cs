@@ -1,5 +1,8 @@
 
 
+using AlloyTools.utils;
+
+
 namespace AlloyTools.Assembler.AMD64
 {
     // 未经过预处理的行
@@ -16,23 +19,27 @@ namespace AlloyTools.Assembler.AMD64
 
     public class SourceParser
     {
-        private List<SourceLinePre> lines;
-        private byte[] srcBuffer;
+        private LargeList<SourceLinePre> lines;
+        private SourceLoader loader;
         //private byte[] tokenTemp;
 
-        public SourceParser(List<SourceLinePre> lines, byte[] srcBuffer) 
+        public SourceParser(LargeList<SourceLinePre> lines, SourceLoader loader) 
         {
             this.lines = lines;
-            this.srcBuffer = srcBuffer;
+            this.loader = loader;
         }
 
         public bool Parse()
         {
-            byte ch, ch_next;
-            for (int i = 0;  i < srcBuffer.Length; i++) {
-                ch = srcBuffer[i];
-                ch_next = (i + 1) < srcBuffer.Length ? srcBuffer[i + 1] : (byte)0;
-                var tt = lines;
+            byte ch, ch_next, ch_next2;
+            bool eof = false;
+            while (true) {
+                ch = loader.GetByte(ref eof);
+                if (ch == 0 && eof) {
+                    break;
+                }
+                ch_next = loader.PreGet();
+                ch_next2 = loader.PreGetNext();
             }
             return true; 
         }
