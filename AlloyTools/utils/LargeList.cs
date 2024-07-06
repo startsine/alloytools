@@ -27,6 +27,7 @@ namespace AlloyTools.utils
                 lastBlockIndex = blockCount - 1;
             }
             allList[lastBlockIndex].Add(e);
+            _count++;
         }
 
         public T this[ulong index] {
