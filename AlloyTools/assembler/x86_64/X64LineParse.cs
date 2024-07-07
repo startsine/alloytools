@@ -319,7 +319,7 @@ namespace AlloyTools.Assembler.AMD64
                 }
             }
             fs.Close();
-            //
+            // DEBUG OUTPUT END
             return true; 
         }
 
