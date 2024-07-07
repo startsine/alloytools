@@ -88,7 +88,7 @@ namespace AlloyTools.Assembler.AMD64
                 if (tokenPtr >= TOKEN_MAX_SIZE) {
                 }
                 // 只要不是换行和回车,把字符添加到行缓冲区(\n==0x0A，\r==0x0D, 0x0C==换页)
-                if (ch != 0x0A && ch != 0x0D && ch != 0x0C)
+                if (ch != 0x0A && ch != 0x0D && ch != 0x0C && ch != 0)
                     lineBuff[linePtr++] = ch;
                 //
                 ch_next = loader.PreGet();
@@ -97,7 +97,9 @@ namespace AlloyTools.Assembler.AMD64
                 switch (tokenType) {
                     case CuurTokenStartType.None: {
                             // 标识符起始字符
-                            if (isIdentifierStart(ch)) {
+                            if (ch == 0x20 || ch == '\t') {
+                                // 空格不做任何处理
+                            } else if (isIdentifierStart(ch)) {
                                 tokenType = CuurTokenStartType.Identifier;
                                 tokenBuff[tokenPtr++] = ch;
                                 // 如果下一个字符不是标识符后继字符
@@ -116,19 +118,63 @@ namespace AlloyTools.Assembler.AMD64
                                     ch = loader.GetByte(ref eof);
                                 }
                                 //
-                                if (curLine != null) {
+                                if (linePtr > 0) {
                                     curLine.rawLine = new byte[linePtr];
                                     Array.Copy(lineBuff, curLine.rawLine, linePtr);
-                                    lines.Add(curLine);
-                                    linePtr = 0;
                                 }
+                                lines.Add(curLine);
+                                linePtr = 0;
                                 curLine = new SourceLinePre();                              // 设置当前行为新行 
                             } else if (ch == ';') {     // 分号开始是注释，直到换一行 
                                 tokenType = CuurTokenStartType.Comment;
+                            } else if (ch == '\'' || ch == '\"') {
+                                tokenPtr = 0;
+                                tokenBuff[tokenPtr++] = ch;
+                                add_curr_token();
+                                tokenPtr = 0;
+                                if (ch == '\'')
+                                    tokenType = CuurTokenStartType.StringSingleQuote;
+                                else
+                                    tokenType = CuurTokenStartType.StringDoubleQuote;
+                            } else if (ch == '&') {
+                                tokenPtr = 0;
+                                tokenBuff[tokenPtr++] = ch;
+                                if (ch_next == '&') {
+                                    ch = loader.GetByte(ref eof);
+                                    tokenBuff[tokenPtr++] = ch;
+                                    lineBuff[linePtr++] = ch;
+                                }
+                                add_curr_token();
+                            } else if (ch == '|') {
+                                tokenPtr = 0;
+                                tokenBuff[tokenPtr++] = ch;
+                                if (ch_next == '|') {
+                                    ch = loader.GetByte(ref eof);
+                                    tokenBuff[tokenPtr++] = ch;
+                                    lineBuff[linePtr++] = ch;
+                                }
+                                add_curr_token();
+                            }
+                            else if (ch == '=') {
+                                tokenPtr = 0;
+                                tokenBuff[tokenPtr++] = ch;
+                                if (ch_next == '=') {
+                                    ch = loader.GetByte(ref eof);
+                                    tokenBuff[tokenPtr++] = ch;
+                                    lineBuff[linePtr++] = ch;
+                                }
+                                add_curr_token();
+                            }
+                            else if (ch == ',' || ch == '(' || ch == ')' || ch == '[' || ch == ']' || ch == '+' || ch == '-' || ch == '*' || ch == '/' ||
+                                ch == ':' || ch == '!' || ch == '#' || ch == '%' || ch == '<' || ch == '>' || ch == '\\' || ch == '^' || ch == '`' ||
+                                ch == '{' || ch == '}' || ch == '~') {          // 单字符符号
+                                tokenPtr = 0;
+                                tokenBuff[tokenPtr++] = ch;
+                                add_curr_token();
                             }
                             else {
+                                // 当空格处理，忽略
                             }
-
                         }
                         break;
                     case CuurTokenStartType.Identifier: {
@@ -143,9 +189,17 @@ namespace AlloyTools.Assembler.AMD64
                         }
                         break;
                     case CuurTokenStartType.Numeric: {
-                            if (ch == (byte)('e') || ch == (byte)('E')) {
+                            if (ch == (byte)('e') || ch == (byte)('E')) {                               // 匹配例如 3.14E+48, 5.9687e-102 这样的浮点数
                                 if (ch_next == (byte)('+') || ch_next == (byte)('-')) {
-
+                                    if (ch_next2 >= '0' && ch_next2 <= '9') {
+                                        if (testTokenBuffIsAllDecimal(tokenBuff, tokenPtr)) {
+                                            tokenBuff[tokenPtr++] = ch;
+                                            ch = loader.GetByte(ref eof);
+                                            tokenBuff[tokenPtr++] = ch;
+                                            lineBuff[linePtr++] = ch;
+                                            continue;
+                                        }
+                                    }
                                 }
                             }
                             // 标识符后继字符
@@ -159,26 +213,69 @@ namespace AlloyTools.Assembler.AMD64
                         }
                         break;
                     case CuurTokenStartType.Comment: {
-                            if (ch == '\n' || ch == '\r' || ch == 0x0C || ch == 0) {  // 注释以 换行、回车、换页结束
+                            if (ch == '\n' || ch == '\r' || ch == 0x0C || ch == 0) {  // 注释以 换行、回车、换页结束 (这里处理的是分号紧跟回车的情况)
                                 if (ch == '\r' && ch_next == '\n') {
                                     ch = loader.GetByte(ref eof);
                                 }
                                 //
-                                if (curLine != null) {
+                                if (linePtr > 0) {
                                     curLine.rawLine = new byte[linePtr];
                                     Array.Copy(lineBuff, curLine.rawLine, linePtr);
-                                    lines.Add(curLine);
-                                    linePtr = 0;
                                 }
+                                lines.Add(curLine);
+                                linePtr = 0;
                                 curLine = new SourceLinePre();                              // 设置当前行为新行 
                                 tokenType = CuurTokenStartType.None;
+                                continue;
                             }
-                            else {
-                                //tokenBuff[tokenPtr++] = ch;
+                            //
+                            if (ch_next == '\n' || ch_next == '\r' || ch_next == 0x0C || ch_next == 0) {
+                                tokenType = CuurTokenStartType.None;
                             }
                         }
                         break;
-
+                    case CuurTokenStartType.StringSingleQuote:
+                    case CuurTokenStartType.StringDoubleQuote: {
+                            if ((ch == '\'' && tokenType == CuurTokenStartType.StringSingleQuote) ||
+                                (ch == '\"' && tokenType == CuurTokenStartType.StringDoubleQuote)) { // 这里处理的是引号跟紧引号的情况
+                                tokenPtr = 0;
+                                tokenBuff[tokenPtr++] = ch;
+                                add_curr_token();
+                                tokenPtr = 0;
+                                tokenType = CuurTokenStartType.None;
+                                continue;
+                            }
+                            else if (ch == '\n' || ch == '\r' || ch == 0x0C || ch == 0) {           // 这里判断引号之后紧跟回车的情况
+                                if (ch == '\r' && ch_next == '\n') {
+                                    ch = loader.GetByte(ref eof);
+                                }
+                                if (linePtr > 0) {
+                                    curLine.rawLine = new byte[linePtr];
+                                    Array.Copy(lineBuff, curLine.rawLine, linePtr);
+                                }
+                                lines.Add(curLine);
+                                linePtr = 0;
+                                curLine = new SourceLinePre();                              // 设置当前行为新行 
+                                tokenType = CuurTokenStartType.None;
+                                continue;
+                            }
+                            else {
+                                tokenBuff[tokenPtr++] = ch;
+                            }
+                            // 
+                            if ((ch_next == '\'' && tokenType == CuurTokenStartType.StringSingleQuote) ||
+                                (ch_next == '\"' && tokenType == CuurTokenStartType.StringDoubleQuote)) {   // 下一个字符是引号，表示结束字符串 
+                                add_curr_token();
+                                ch = loader.GetByte(ref eof);
+                                tokenBuff[tokenPtr++] = ch;
+                                lineBuff[linePtr++] = ch;
+                                add_curr_token();
+                            }
+                            else if (ch_next == '\n' || ch_next == '\r' || ch_next == 0x0C || ch_next == 0) {
+                                add_curr_token();
+                            }
+                        }
+                        break;
 
                 }
                 /*
@@ -191,6 +288,12 @@ namespace AlloyTools.Assembler.AMD64
         StringDoubleQuote,              // 双引号开始的字符串
                  */
             }
+            if (linePtr > 0) {
+                curLine.rawLine = new byte[linePtr];
+                Array.Copy(lineBuff, curLine.rawLine, linePtr);
+            }
+            lines.Add(curLine);
+            //
             // DEBUG OUTPUT
             var fs = new FileStream("test.output.token.txt", FileMode.Create);
             fs.Position = 0;
@@ -254,6 +357,16 @@ namespace AlloyTools.Assembler.AMD64
             if (ch >= 0x30 && ch <= 0x39) return true;              // 0-9
             if (isIdentifierNext(ch)) return true;
             return false;
+        }
+
+        private bool testTokenBuffIsAllDecimal(byte[] buffer, int size) {   // 测试指定tiken缓冲区是否全是10进制数字表示式（0-9加上小数点）
+            for (int i = 0; i < size; i++) {
+                if (buffer[i] >= '0' && buffer[i] <= '9' || buffer[i] == '.') {
+                    continue;
+                }
+                break;
+            }
+            return true;
         }
     }
 }
