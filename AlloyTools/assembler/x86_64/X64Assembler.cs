@@ -2,6 +2,7 @@
 
 
 using AlloyTools.utils;
+using System.Collections;
 using System.Text;
 
 namespace AlloyTools.Assembler.AMD64
@@ -26,6 +27,9 @@ namespace AlloyTools.Assembler.AMD64
             var parser = new SourceParser(sourceLinesP, loader);
             parser.Parse();
 
+
+            Hashtable ht = new Hashtable();
+            var ss = ht.Count;
             //Console.WriteLine("open ok");
             //string s = Encoding.UTF8.GetString(src);
             //Console.WriteLine(s);

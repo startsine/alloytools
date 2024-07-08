@@ -324,9 +324,12 @@ namespace AlloyTools.Assembler.AMD64
         None = 0,                   // 默认情况下，符号会产生 REL32+n 重定位（RIP相对寻址,相对下一条指令的地址）
         Offset = 1,                 // 用 offset 修饰 （取地址，产生 ADDR64 重定位）
         ImageRel = 2,               // 用 imagerel 修饰 （取RVA地址，产生 REL32NB 重定位）
-        Addr32 = 3,                 // 用 addr32 修饰 （取地址，产生 ADDR32 重定位）
+        Addr32 = 3,                 // 用 addr32 修饰 （取地址，产生 ADDR32 重定位）, 例如: mov rbx, [addr32 labelSymbol]
+        Addr64 = 4,                 // 用 addr64 修饰 （用64位寻址，产生 ADDR64 重定位)
+                                    // 注：只能有 mov al/ax/eax/rax, [addr64 labelSymbol] 和 mov [addr64 labelSymbol], al/ax/eax/rax）两种指令,只能R0，不能其他寄存器,R8也不行 
     }
 
+    [Flags]
     public enum MemoryAddressModifier
     {
         None = 0,
@@ -334,6 +337,11 @@ namespace AlloyTools.Assembler.AMD64
         WordPtr = 2,                // 用 word ptr 修饰寻址
         DWordPtr = 4,               // 用 dword ptr 修饰寻址
         QWordPtr = 8,               // 用 qword ptr 修饰寻址
+        MmWord = 0x10,              // 用 mmword ptr 修饰寻址(同qword ptr)
+        XmmWordPtr = 0x20,          // 用 xmmword ptr 修饰寻址
+        YmmWordPtr = 0x40,          // 用 ymmword ptr 修饰寻址
+        Addr32 = 0x10000000,        // 用 Addr32 修饰过的符号来寻址（32位截断绝对地址寻址）
+        Addr64 = 0x20000000,        // 用 Addr64 修饰过的符号来寻址（64位绝对地址寻址）
     }
 
     [Flags]
@@ -353,11 +361,12 @@ namespace AlloyTools.Assembler.AMD64
         withDisp32 = 0x8000,
         withSegment = 0x10000,          // 带有段前缀
         withNumericDisp = 0x20000,      // 源码层面带有数值上的偏移量
-        withSymbolDisp = 0x40000,       // 源码层面带有符号上的偏移量 (如果此项目有，则 withDisp32 一定有)
+        withSymbol = 0x40000,           // 源码层面带有符号上的偏移量 (如果此项目有，则 withDisp32 或 with64bitAbsAddr 一定有其一)
         with32bitRegAddr = 0x80000,     // 使用了32位寄存器来寻址(如果此项目有，则要加0x67前缀)
         with32bitImmBase = 0x100000,    // 使用32位的无符号立即数做基址(此时 withSIB 一定有，withDisp32 一定有)
                                         // 注：规定rbp/r13做基址时必须带偏移量，rsp禁止做变址（rsp做变址表示没有变址也没有比例因子）
                                         //    所以如果mod==00，并且base==rbp/r13, index==rsp时，表示使用一个无符号的32位数值做基地址(这时可能会产生ADDR32重定位)
+        with64bitAbsAddr = 0x200000,    // 使用64位绝对地址来寻址，
     }
 
     // 源码层面的寻址信息
