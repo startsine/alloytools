@@ -19,7 +19,10 @@ namespace AlloyTools.Assembler.AMD64
     // 经过预处理之后的行
     public class SourceLine
     {
-        public byte[]? rawContent;                   // 源码行的原始内容
+        public byte[]? rawContent;                  // 源码行的原始内容
+        public List<X64Token>? tokens = null;       // token列表
+        public int insnStartIdx = 0;                // 当前行中，指令的token的起始索引
+        public int operandStartIdx = 0;             // 当前行中，操作数的token的起始索引
     }
 
     enum CuurTokenStartType                         // 当前词法分析的Token起始类型

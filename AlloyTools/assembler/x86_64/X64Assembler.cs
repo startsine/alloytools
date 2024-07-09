@@ -10,8 +10,15 @@ namespace AlloyTools.Assembler.AMD64
 {
     public class X64Assembler
     {
-        private static LargeList<SourceLinePre>? sourceLinesP = null;
-        private static LargeList<SourceLine>?    sourceLines = null;
+        private static LargeList<SourceLinePre> sourceLinesP;
+        private static LargeList<SourceLine>    sourceLines;
+
+        static X64Assembler()
+        {
+            sourceLinesP = new LargeList<SourceLinePre>();
+            sourceLines = new LargeList<SourceLine>();
+        }
+
         public static void Start(string[] args)
         {
             if (args.Length > 0) {
@@ -24,11 +31,11 @@ namespace AlloyTools.Assembler.AMD64
             var loader = new SourceLoader();
             loader.LoadFile(filepath);
 
-            sourceLinesP = new LargeList<SourceLinePre>();
             var parser = new SourceParser(sourceLinesP, loader);
             parser.Parse();
             //
-
+            
+            AssemblerPass1();
 
             Hashtable ht = new Hashtable();
             var ss = ht.Count;
@@ -37,7 +44,7 @@ namespace AlloyTools.Assembler.AMD64
             //Console.WriteLine(s);
         }
 
-        private void AssemblerPass1()
+        private static void AssemblerPass1()
         {
             if (sourceLines == null)
                 return;
@@ -48,8 +55,13 @@ namespace AlloyTools.Assembler.AMD64
             ulong lineTotal = sourceLinesP!.Count;
             for (lineCnt = 0; lineCnt < lineTotal; lineCnt++) {
                 SourceLinePre curLine = sourceLinesP[lineCnt];
+                SourceLine parsedLine = new SourceLine();
+                parsedLine.rawContent = curLine.rawLine;
+                sourceLines.Add(parsedLine);
+                //
                 if (curLine.tokens == null || curLine.tokens.Count == 0)
                     continue;
+                parsedLine.tokens = new List<X64Token>();
                 operandStartIdx = 0;
                 if (curLine.tokens.Count >= 2) {
                     var token0 = curLine.tokens[0];
@@ -59,19 +71,19 @@ namespace AlloyTools.Assembler.AMD64
                             insnStartIdx = 2;
                             operandStartIdx = 3;
                         }
-                        else if (X64Token.isWithNamePseudoInstruction(token1.str)) {    // 是否允许name在前面的伪指令 
+                        else if (X64Token.isAllowNamePseudoInstruction(token1.str)) {    // 是否为 允许name在前面的伪指令 
                             insnStartIdx = 1;
                             operandStartIdx = 2;
                         }
                     }
                 }
 
-                if (curLine.tokens != null) {
+                parsedLine.insnStartIdx = insnStartIdx;
+                parsedLine.operandStartIdx = operandStartIdx;
 
-                    int tokenTotal = curLine.tokens.Count;
-                    for (tokenCnt = 0; tokenCnt < tokenTotal; tokenCnt++) {
+                int tokenTotal = curLine.tokens.Count;
+                for (tokenCnt = 0; tokenCnt < tokenTotal; tokenCnt++) {
 
-                    }
                 }
             }
         }
