@@ -37,6 +37,7 @@ namespace AlloyTools.Assembler.AMD64
         public ulong symbolIndex;                           // 符号在符号表中的索引, tokenType 为 Symbol 时有效
 
         private static Hashtable htAllowNamePseudoInstruction = new Hashtable();
+        private static Hashtable htInstructionPrefix = new Hashtable();
 
         static X64Token()
         {
@@ -55,6 +56,11 @@ namespace AlloyTools.Assembler.AMD64
             htAllowNamePseudoInstruction.Add("ends", 1);
         }
 
+        private static void initInstructionPrefix()
+        {
+            htInstructionPrefix.Add("rep", 1);
+        }
+
         // 判断字符串是否为数字token
         public static bool isNumericStr(string str)
         {
@@ -67,9 +73,37 @@ namespace AlloyTools.Assembler.AMD64
         }
 
         // 是否是允许带name的伪指令
-        public static bool isAllowNamePseudoInstruction(string str) {
-            return htAllowNamePseudoInstruction.ContainsKey(str);
+        public static bool isAllowNamePseudoInstruction(string str) 
+        {
+            string str2 = str.ToLower();
+            return htAllowNamePseudoInstruction.ContainsKey(str2);
         }
+
+        // 是否指令前缀
+        public static bool isInstructionPrefix(string str) 
+        {
+            string str2 = str.ToLower();
+            return htInstructionPrefix.ContainsKey(str2);
+        }
+
+        // 获得指令前缀的ID值
+        public static CpuInsnPrefixID getInstructionPrefixValue(string str)
+        {
+            string str2 = str.ToLower();
+            var obj = htInstructionPrefix[str2];
+            if (obj == null) {
+                return CpuInsnPrefixID.None;
+            }
+            return (CpuInsnPrefixID)obj;
+        }
+
+        // 是否CPU指令
+        public static bool isCpuInstruction(string str)
+        {
+            return X64CpuInsnList.Instance.isCpuInstruction(str);
+        }
+
+        
     }
 }
 

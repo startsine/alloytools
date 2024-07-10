@@ -70,16 +70,40 @@ namespace AlloyTools.Assembler.AMD64
                         if (token1.str == ":") {
                             insnStartIdx = 2;
                             operandStartIdx = 3;
+                            parsedLine.hasLabel = true;
+                            parsedLine.labelStr = token0.str;
                         }
                         else if (X64Token.isAllowNamePseudoInstruction(token1.str)) {    // 是否为 允许name在前面的伪指令 
                             insnStartIdx = 1;
                             operandStartIdx = 2;
+                            parsedLine.hasLabel = true;
+                            parsedLine.labelStr = token0.str;
                         }
                     }
                 }
+                // 找出所有前缀
+                int j = insnStartIdx;
+                while (j < curLine.tokens.Count) {
+                    if (X64Token.isInstructionPrefix(curLine.tokens[j].str)) {
+                        var prefixId = X64Token.getInstructionPrefixValue(curLine.tokens[j].str);
+                        parsedLine.hasInsnPrefix = true;
+                        parsedLine.prefixs |= prefixId;
+                    } 
+                    else {
+                        break;
+                    }
+                    j++;
+                }
+                insnStartIdx = j;
 
-                parsedLine.insnStartIdx = insnStartIdx;
-                parsedLine.operandStartIdx = operandStartIdx;
+                //
+                if (insnStartIdx < curLine.tokens.Count) {
+
+                }
+
+
+                //parsedLine.insnStartIdx = insnStartIdx;
+                //parsedLine.operandStartIdx = operandStartIdx;
 
                 int tokenTotal = curLine.tokens.Count;
                 for (tokenCnt = 0; tokenCnt < tokenTotal; tokenCnt++) {

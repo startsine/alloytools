@@ -19,16 +19,18 @@ namespace AlloyTools.Assembler.AMD64
     // 经过预处理之后的行
     public class SourceLine
     {
-        public byte[]? rawContent;                  // 源码行的原始内容
-        public List<X64Token>? tokens = null;       // token列表
-        bool hasLabel = false;                      // 该行是否拥有标签符号
-        string labelStr = "";                       // 标签符号字符串
-        bool hasInsn = false;                       // 该行是否拥有指令(包括指令与伪指令)
-        bool isCpuInsn = false;                     // 如果该行拥有指令，该指令是否CPU真实指令，如果为false则表示是伪指令
-        bool hasInsnPrefix = false;                 // 是否拥有指令前缀
-
-        public int insnStartIdx = 0;                // 当前行中，指令的token的起始索引
-        public int operandStartIdx = 0;             // 当前行中，操作数的token的起始索引
+        public byte[]? rawContent;                          // 源码行的原始内容
+        public List<X64Token>? tokens = null;               // token列表(不再包含标签、指令前缀、指令，只剩下后面的操作数和运算符的token)
+        public bool hasLabel = false;                       // 该行是否拥有标签符号
+        public string labelStr = "";                        // 标签符号字符串
+        public bool hasInsn = false;                        // 该行是否拥有指令(包括指令与伪指令)
+        public bool isCpuInsn = false;                      // 如果该行拥有指令，该指令是否CPU真实指令，如果为false则表示是伪指令
+        public bool hasInsnPrefix = false;                  // 是否拥有指令前缀
+        public CpuInsnPrefixID prefixs = CpuInsnPrefixID.None;  // 指令前缀列表
+        public CpuInsnID cpuInsnID = CpuInsnID.None;            // CPU指令ID (当 hasInsn==true 及 isCpuInsn == true 有效)
+        public PseudoInsnID pseudoInsnID = PseudoInsnID.None;   // 伪指令ID (当 hasInsn==true 及 isCpuInsn == false 有效)
+        public List<X64Operand>? x64Operands = null;        // 操作数列表
+        public uint bytesize = 0;                           // 该行产生的机器代码的字节大小（如果是虚拟指令或者Jcc指令，这里先存放它的可能最长的大小,后面再扫描修正）
     }
 
     enum CuurTokenStartType                         // 当前词法分析的Token起始类型
