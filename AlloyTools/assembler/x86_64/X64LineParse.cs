@@ -20,7 +20,7 @@ namespace AlloyTools.Assembler.AMD64
     public class SourceLine
     {
         public byte[]? rawContent;                          // 源码行的原始内容
-        public List<X64Token>? tokens = null;               // token列表(不再包含标签、指令前缀、指令，只剩下后面的操作数和运算符的token)
+        public List<X64Expression>? expressions = null;     // token列表(不再包含标签、指令前缀、指令，只剩下后面的操作数和运算符的token)
         public bool hasLabel = false;                       // 该行是否拥有标签符号
         public string labelStr = "";                        // 标签符号字符串
         public bool hasInsn = false;                        // 该行是否拥有指令(包括指令与伪指令)

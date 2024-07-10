@@ -61,7 +61,6 @@ namespace AlloyTools.Assembler.AMD64
                 //
                 if (curLine.tokens == null || curLine.tokens.Count == 0)
                     continue;
-                parsedLine.tokens = new List<X64Token>();
                 if (curLine.tokens.Count >= 2) {
                     var token0 = curLine.tokens[0];
                     var token1 = curLine.tokens[1];
@@ -97,6 +96,10 @@ namespace AlloyTools.Assembler.AMD64
                 if (insnStartIdx < curLine.tokens.Count) {
                     if (X64Token.isCpuInstruction(curLine.tokens[insnStartIdx].str)) {
                         operandStartIdx = insnStartIdx + 1;
+                        if (operandStartIdx < curLine.tokens.Count) {
+                            parsedLine.expressions = new List<X64Expression>();
+                            X64Expression.ParseByPreProcessTokens(parsedLine.expressions, curLine.tokens, operandStartIdx);
+                        }
                     }
                     else if (X64Token.isVirtualInstruction(curLine.tokens[insnStartIdx].str)) {
                         operandStartIdx = insnStartIdx + 1;
