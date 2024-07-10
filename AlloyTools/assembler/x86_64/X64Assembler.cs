@@ -98,7 +98,14 @@ namespace AlloyTools.Assembler.AMD64
 
                 //
                 if (insnStartIdx < curLine.tokens.Count) {
-
+                    if (X64Token.isCpuInstruction(curLine.tokens[insnStartIdx].str)) {
+                    }
+                    else if (X64Token.isPseudoInstruction(curLine.tokens[insnStartIdx].str)) {
+                    }
+                    else {
+                        // 不认识的指令，报错
+                        continue;
+                    }
                 }
 
 
