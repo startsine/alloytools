@@ -1,5 +1,6 @@
 
 
+using Microsoft.VisualBasic;
 using System.Collections;
 
 namespace AlloyTools.Assembler.AMD64
@@ -103,7 +104,13 @@ namespace AlloyTools.Assembler.AMD64
             return X64CpuInsnList.Instance.isCpuInstruction(str);
         }
 
-        
+        //  «∑ÒŒ±÷∏¡Ó
+        public static bool isPseudoInstruction(string str)
+        {
+            return X64PseudoInsnList.Instance.isPseudoInstruction(str);
+        }
+
+
     }
 }
 
