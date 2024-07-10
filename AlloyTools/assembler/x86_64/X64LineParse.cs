@@ -21,6 +21,12 @@ namespace AlloyTools.Assembler.AMD64
     {
         public byte[]? rawContent;                  // 源码行的原始内容
         public List<X64Token>? tokens = null;       // token列表
+        bool hasLabel = false;                      // 该行是否拥有标签符号
+        string labelStr = "";                       // 标签符号字符串
+        bool hasInsn = false;                       // 该行是否拥有指令(包括指令与伪指令)
+        bool isCpuInsn = false;                     // 如果该行拥有指令，该指令是否CPU真实指令，如果为false则表示是伪指令
+        bool hasInsnPrefix = false;                 // 是否拥有指令前缀
+
         public int insnStartIdx = 0;                // 当前行中，指令的token的起始索引
         public int operandStartIdx = 0;             // 当前行中，操作数的token的起始索引
     }
