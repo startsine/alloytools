@@ -110,6 +110,12 @@ namespace AlloyTools.Assembler.AMD64
             return X64PseudoInsnList.Instance.isPseudoInstruction(str);
         }
 
+        //  «∑Ò–Èƒ‚÷∏¡Ó
+        public static bool isVirtualInstruction(string str)
+        {
+            return X64VirtualInsnList.Instance.isVirtualInstruction(str);
+        }
+
 
     }
 }
