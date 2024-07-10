@@ -6,7 +6,7 @@ namespace AlloyTools.Assembler.AMD64
     public class X64PseudoInsnList
     {
         private static X64PseudoInsnList? instance = null;
-        private Hashtable htCpuInsns = new Hashtable();
+        private Hashtable htPseudoInsns = new Hashtable();
 
         private X64PseudoInsnList()
         {
@@ -24,7 +24,7 @@ namespace AlloyTools.Assembler.AMD64
         public bool isPseudoInstruction(string str)
         {
             string str2 = str.ToLower();
-            return htCpuInsns.ContainsKey(str2);
+            return htPseudoInsns.ContainsKey(str2);
         }
     }
 }
