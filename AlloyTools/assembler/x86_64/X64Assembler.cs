@@ -62,20 +62,17 @@ namespace AlloyTools.Assembler.AMD64
                 if (curLine.tokens == null || curLine.tokens.Count == 0)
                     continue;
                 parsedLine.tokens = new List<X64Token>();
-                operandStartIdx = 0;
                 if (curLine.tokens.Count >= 2) {
                     var token0 = curLine.tokens[0];
                     var token1 = curLine.tokens[1];
                     if (token1 != null) {
                         if (token1.str == ":") {
                             insnStartIdx = 2;
-                            operandStartIdx = 3;
                             parsedLine.hasLabel = true;
                             parsedLine.labelStr = token0.str;
                         }
                         else if (X64Token.isAllowNamePseudoInstruction(token1.str)) {    // 是否为 允许name在前面的伪指令 
                             insnStartIdx = 1;
-                            operandStartIdx = 2;
                             parsedLine.hasLabel = true;
                             parsedLine.labelStr = token0.str;
                         }
@@ -99,13 +96,13 @@ namespace AlloyTools.Assembler.AMD64
                 //
                 if (insnStartIdx < curLine.tokens.Count) {
                     if (X64Token.isCpuInstruction(curLine.tokens[insnStartIdx].str)) {
-                        //
+                        operandStartIdx = insnStartIdx + 1;
                     }
                     else if (X64Token.isVirtualInstruction(curLine.tokens[insnStartIdx].str)) {
-                        //
+                        operandStartIdx = insnStartIdx + 1;
                     }
                     else if (X64Token.isPseudoInstruction(curLine.tokens[insnStartIdx].str)) {
-                        //
+                        operandStartIdx = insnStartIdx + 1;
                     }
                     else {
                         // 不认识的指令，报错
