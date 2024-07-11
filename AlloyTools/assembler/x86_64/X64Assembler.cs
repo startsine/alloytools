@@ -94,15 +94,23 @@ namespace AlloyTools.Assembler.AMD64
 
                 //
                 if (insnStartIdx < curLine.tokens.Count) {
+                    bool needCalcExpression = false;
+                    //
                     if (X64Token.isCpuInstruction(curLine.tokens[insnStartIdx].str)) {
                         operandStartIdx = insnStartIdx + 1;
                         if (operandStartIdx < curLine.tokens.Count) {
                             parsedLine.expressions = new List<X64Expression>();
                             X64Expression.ParseByPreProcessTokens(parsedLine.expressions, curLine.tokens, operandStartIdx);
+                            needCalcExpression = true;
                         }
                     }
                     else if (X64Token.isVirtualInstruction(curLine.tokens[insnStartIdx].str)) {
                         operandStartIdx = insnStartIdx + 1;
+                        if (operandStartIdx < curLine.tokens.Count) {
+                            parsedLine.expressions = new List<X64Expression>();
+                            X64Expression.ParseByPreProcessTokens(parsedLine.expressions, curLine.tokens, operandStartIdx);
+                            needCalcExpression = true;
+                        }
                     }
                     else if (X64Token.isPseudoInstruction(curLine.tokens[insnStartIdx].str)) {
                         operandStartIdx = insnStartIdx + 1;
@@ -111,15 +119,15 @@ namespace AlloyTools.Assembler.AMD64
                         // 不认识的指令，报错
                         continue;
                     }
-                }
-
-
-                //parsedLine.insnStartIdx = insnStartIdx;
-                //parsedLine.operandStartIdx = operandStartIdx;
-
-                int tokenTotal = curLine.tokens.Count;
-                for (tokenCnt = 0; tokenCnt < tokenTotal; tokenCnt++) {
-
+                    // 初步计算表达式的值
+                    if (needCalcExpression) {
+                        if (parsedLine.expressions != null) {
+                            foreach (X64Expression expr in parsedLine.expressions) {
+                                expr.calc();
+                            }
+                        }
+                        
+                    }
                 }
             }
         }

@@ -4,6 +4,8 @@ namespace AlloyTools.Assembler.AMD64
     public class X64Expression
     {
         public List<X64Token> tokens = new List<X64Token>();
+        public bool calculated = false;                                             // 已经计算标志
+        public X64Operand? operand = null;                                          // 结果操作数
 
         // 把预处理的tokens转换为表达式列表,成功返回true，失败返回false
         public static bool ParseByPreProcessTokens(List<X64Expression> expressions, List<PreProToken> tokens, int startIdx)
@@ -70,6 +72,31 @@ namespace AlloyTools.Assembler.AMD64
                     }
                 }
                 expressions.Add(expr);
+            }
+            return true;
+        }
+
+        // 计算表达式结果，成功返回true，失败返回false
+        public bool calc()
+        {
+            if (calculated)
+                return true;
+            if (tokens == null || tokens.Count == 0) {
+                //// 这里缺处理
+                return false;
+            }
+            if (tokens.Count == 1) {
+                X64Token token = tokens[0];
+                switch (token.tokenType) {
+                    case X64TokenType.Register: {
+                            operand = new X64Operand(token.regValue);
+                            calculated = true;
+                            return true;
+                        }
+                    case X64TokenType.Numeric: { 
+                        }
+                        break;
+                }
             }
             return true;
         }
