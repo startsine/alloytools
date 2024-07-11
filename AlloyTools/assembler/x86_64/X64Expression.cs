@@ -8,7 +8,7 @@ namespace AlloyTools.Assembler.AMD64
         // 把预处理的tokens转换为表达式列表,成功返回true，失败返回false
         public static bool ParseByPreProcessTokens(List<X64Expression> expressions, List<PreProToken> tokens, int startIdx)
         {
-            if (startIdx < expressions.Count) {
+            if (startIdx < tokens.Count) {
                 X64Expression expr = new X64Expression();
                 for (int i = startIdx; i < tokens.Count; i++) {
                     PreProToken token = tokens[i];
@@ -47,11 +47,24 @@ namespace AlloyTools.Assembler.AMD64
                         X64Token exprToken = new X64Token();
                         if (X64Token.isNumericStr(token.str)) {
                             exprToken.tokenType = X64TokenType.Numeric;
+                            exprToken.str = token.str;
                             exprToken.tryParseToUlongValue();
                         }
                         else if (X64Token.isRegister(token.str)) {
                             exprToken.tokenType = X64TokenType.Register;
+                            exprToken.str = token.str;
                             exprToken.regValue = X64Token.getRegisterValue(token.str);
+                        }
+                        else if (X64Token.isOperator(token.str)) {
+                            exprToken.tokenType = X64TokenType.Operator;
+                            exprToken.str = token.str;
+                            exprToken.asmOperator = X64Token.getOperatorValue(token.str);
+                        }
+                        else {  // 标识符的情况
+                            exprToken.tokenType = X64TokenType.Symbol;
+                            exprToken.str = token.str;
+                            // 添加到符号表
+                            exprToken.symbolIndex = 0;                      // 这里要改为符号表索引
                         }
                         expr.tokens.Add(exprToken);
                     }

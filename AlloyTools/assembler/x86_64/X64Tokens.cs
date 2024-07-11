@@ -26,6 +26,12 @@ namespace AlloyTools.Assembler.AMD64
     public enum X64AsmOperator
     {
         None = 0,
+        Plus,               // +
+        Minus,              // -
+        Multiplication,     // *
+        Division,           // /
+        AddressStart,       // [
+        AddressEnd,         // ]
     }
 
     public class X64Token
@@ -43,11 +49,13 @@ namespace AlloyTools.Assembler.AMD64
         private static Hashtable htAllowNamePseudoInstruction = new Hashtable();
         private static Hashtable htInstructionPrefix = new Hashtable();
         private static Hashtable htRegister = new Hashtable();
+        private static Hashtable htOperator = new Hashtable();
 
         static X64Token()
         {
             initWithNamePseudoInstruction();
             initRegisterList();
+            initOperator();
             initInstructionPrefix();
         }
 
@@ -326,6 +334,34 @@ namespace AlloyTools.Assembler.AMD64
             htRegister.Add("gs", X64RegValue.GS);
             //
         }
+
+        private static void initOperator()
+        {
+            htOperator.Add("+", X64AsmOperator.Plus);
+            htOperator.Add("-", X64AsmOperator.Minus);
+            htOperator.Add("*", X64AsmOperator.Multiplication);
+            htOperator.Add("/", X64AsmOperator.Division);
+            htOperator.Add("[", X64AsmOperator.AddressStart);
+            htOperator.Add("]", X64AsmOperator.AddressEnd);
+        }
+
+        public static bool isOperator(string str)
+        {
+            string str2 = str.ToLower();
+            return htOperator.ContainsKey(str2);
+        }
+
+        public static X64AsmOperator getOperatorValue(string str)
+        {
+            string str2 = str.ToLower();
+            var obj = htOperator[str2];
+            if (obj == null) {
+                return X64AsmOperator.None;
+            }
+            return (X64AsmOperator)obj;
+        }
+        
+
     }
 }
 

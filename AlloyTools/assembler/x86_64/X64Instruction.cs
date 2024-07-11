@@ -30,6 +30,7 @@ namespace AlloyTools.Assembler.AMD64
 
         private X64CpuInsnList() 
         {
+            htCpuInsns.Add("mov", 1);
         }
 
         public static X64CpuInsnList Instance {
