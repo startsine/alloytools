@@ -1,5 +1,6 @@
 
 using AlloyTools.utils;
+using System.Collections;
 
 namespace AlloyTools.Assembler.AMD64
 {
@@ -58,30 +59,132 @@ namespace AlloyTools.Assembler.AMD64
     public class X64Fragment
     {
         public string sectionName = "";                                         // 属于哪个 section，默认情况下,代码段是 ".text"，数据段是 ".data"
+        public uint align = 1;                                                  // 对齐
+        public ulong startRecordIdx = 0;                                        // 首个 record 在 records 列表中的第几个
+        public ulong endRecordIdx = 0;                                          // 最后一个 record 在 records 列表中的第几个
+        public bool hasRecord = false;                                          // 此 Fragment 是否有 record
 
-        public X64Fragment(string secName)
+        public X64Fragment(string secName, uint align = 1)
         {
             sectionName = secName;
+            this.align = align;
+        }
+
+        public ulong AddNewRecord(ulong indexOfRecordList)
+        {
+            if (hasRecord) {
+                endRecordIdx = indexOfRecordList;
+            }
+            else {
+                hasRecord = true;
+                startRecordIdx = indexOfRecordList;
+                endRecordIdx = indexOfRecordList;
+            }
+            return indexOfRecordList;
         }
     }
 
     public class X64FragmentList
     {
         public long currFragmentIndex;
-        public static LargeList<X64FragmentList> fragments;
+        public static LargeList<X64Fragment> fragments;
 
         static X64FragmentList()
         {
-            fragments = new LargeList<X64FragmentList>();
+            fragments = new LargeList<X64Fragment>();
         }
 
-        static ulong getCurrFragmentIndex()
+        public static ulong AddFragment(string sectionName)
+        {
+            fragments.Add(new X64Fragment(sectionName));
+            return fragments.Count - 1;
+        }
+
+        public static ulong getCurrFragmentIndex()
         {
             if (fragments.Count == 0) {
+                return AddFragment(".text");
             }
-            return 0;
+            return fragments.Count  - 1;
+        }
+
+        public static X64Fragment GetCurrFragment()
+        {
+            ulong idx = getCurrFragmentIndex();
+            return fragments[idx];
         }
     }
+
+    public class X64RecordList
+    {
+        public static LargeList<X64Record> records;
+        public static long currRecordIndex;                             // 当前的 record 索引，如果当前的值为-1，则需要新建一个
+
+        static X64RecordList()
+        {
+            records = new LargeList<X64Record>();
+            currRecordIndex = -1;
+        }
+
+        public static ulong getCurrRecordtIndex()
+        {
+            if (currRecordIndex < 0) {
+                X64Record newRecord = new X64Record();
+                records.Add(newRecord);
+                X64Fragment currFragment = X64FragmentList.GetCurrFragment();
+                currFragment.AddNewRecord(records.Count - 1);
+                currRecordIndex = (long)(records.Count - 1);
+            }
+            return (ulong)currRecordIndex;
+        }
+
+        public static void endCurrRecord()
+        {
+            currRecordIndex = -1;
+        }
+    }
+
+    public class X64SymbolList
+    {
+        public static LargeList<X64Symbol> symbols;
+        public static Hashtable htSymbol;
+
+        static X64SymbolList()
+        {
+            symbols = new LargeList<X64Symbol>();
+            htSymbol = new Hashtable();
+        }
+
+        public static long AddSymbol(X64Symbol symbol)
+        {
+            ulong idx = 0;
+            if (htSymbol.ContainsKey(symbol.symbolName)) {
+                return -1;
+            }
+            symbols.Add(symbol);
+            idx = symbols.Count - 1;
+            htSymbol.Add(symbol.symbolName, idx);
+            return (long)idx;
+        }
+
+        public static X64Symbol? GetSymbol(string name)
+        {
+            if (htSymbol.ContainsKey(name)) {
+                return null;
+            }
+            var value1 = htSymbol[name];
+            if (value1 == null) {
+                return null;
+            }
+            ulong idx = (ulong)value1;
+            return symbols[idx];
+        }
+
+    }
+
 }
+
+
+
 
 

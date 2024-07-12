@@ -94,10 +94,28 @@ namespace AlloyTools.Assembler.AMD64
                             return true;
                         }
                     case X64TokenType.Numeric: { 
+                            if (token.flag.HasFlag(X64TokenFlag.NumericToBeUlong)) {    // 如果已经转换为ulong
+                                operand = new X64Operand(token.ulongValue);
+                                calculated = true;
+                                return true;
+                            }
                         }
                         break;
                 }
+                return false;
             }
+            //
+
+            return true;
+        }
+
+        // 计算寻址表达式，就是 [] 的部分
+        private bool calcAddressExpression(int start, int end)          // start和end是第一个token和最后一个token的索引，正常来说应该分别是 '[' 和 ']'
+        {
+            if (start >= tokens.Count || end >= tokens.Count)
+                return false;
+
+            //this.tokens
             return true;
         }
     }
