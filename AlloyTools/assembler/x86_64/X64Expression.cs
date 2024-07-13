@@ -109,14 +109,22 @@ namespace AlloyTools.Assembler.AMD64
             return true;
         }
 
-        // 计算寻址表达式，就是 [] 的部分
-        private bool calcAddressExpression(int start, int end)          // start和end是第一个token和最后一个token的索引，正常来说应该分别是 '[' 和 ']'
+        // 计算寻址表达式，就是 [] 的部分, 成功返回 X64Operand，失败返回 null
+        private X64Operand? calcAddressExpression(int start, int end)          // start和end是第一个token和最后一个token的索引，正常来说应该分别是 '[' 和 ']'
         {
             if (start >= tokens.Count || end >= tokens.Count)
-                return false;
-
+                return null;
+            if (tokens[start].tokenType != X64TokenType.Operator || tokens[start].asmOperator != X64AsmOperator.AddressStart)
+                return null;
+            if (tokens[end].tokenType != X64TokenType.Operator || tokens[end].asmOperator != X64AsmOperator.AddressEnd)
+                return null;
+            if (start + 1 >= end)
+                return null;
+            int start1 = start + 1;
+            int end1 = end - 1;
+            
             //this.tokens
-            return true;
+            return null;
         }
     }
 }
