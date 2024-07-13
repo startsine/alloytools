@@ -14,6 +14,7 @@ namespace AlloyTools.Assembler.AMD64
         Register,                                    // 寄存器
         Operator,                                    // 运算符
         Symbol,                                      // 符号
+        TempOperand,                                 // 临时操作数
     }
 
     [Flags]
@@ -32,6 +33,14 @@ namespace AlloyTools.Assembler.AMD64
         Division,           // /
         AddressStart,       // [
         AddressEnd,         // ]
+        ParenthesesL,       // (
+        ParenthesesR,       // )
+        PositiveSign,       // + 单目正号
+        NegativeSign,       // - 单目负号
+        RegPlus,            // 寄存器加
+        RegMinus,           // 寄存器减
+        RegMulti,           // 寄存器乘
+
     }
 
     public class X64Token
@@ -45,11 +54,28 @@ namespace AlloyTools.Assembler.AMD64
         public X64AsmOperator asmOperator;                  // 运算符的值, tokenType 为 Operator 时有效
         public ulong ulongValue;                            // 数字的值, tokenType 为 Numeric 时有效
         public ulong symbolIndex;                           // 符号在符号表中的索引, tokenType 为 Symbol 时有效
+        public X64Operand? tempOperand = null;              // 临时操作数, tokenType 为 TempOperand 时有效, 用于计算表达式时中间值
 
         private static Hashtable htAllowNamePseudoInstruction = new Hashtable();
         private static Hashtable htInstructionPrefix = new Hashtable();
         private static Hashtable htRegister = new Hashtable();
         private static Hashtable htOperator = new Hashtable();
+
+        public X64Token() { }
+
+        public X64Token(X64Token src) 
+        {
+            this.tokenType = src.tokenType;
+            this.flag = src.flag;
+            this.isRawData = src.isRawData;
+            this.str = src.str;
+            this.rawBytes = src.rawBytes;
+            this.regValue = src.regValue;
+            this.asmOperator = src.asmOperator;
+            this.ulongValue = src.ulongValue;
+            this.symbolIndex = src.symbolIndex;
+            this.tempOperand = src.tempOperand;
+        }
 
         static X64Token()
         {
@@ -343,6 +369,8 @@ namespace AlloyTools.Assembler.AMD64
             htOperator.Add("/", X64AsmOperator.Division);
             htOperator.Add("[", X64AsmOperator.AddressStart);
             htOperator.Add("]", X64AsmOperator.AddressEnd);
+            htOperator.Add("(", X64AsmOperator.ParenthesesL);
+            htOperator.Add(")", X64AsmOperator.ParenthesesR);
         }
 
         public static bool isOperator(string str)

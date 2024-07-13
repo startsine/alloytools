@@ -126,5 +126,119 @@ namespace AlloyTools.Assembler.AMD64
             //this.tokens
             return null;
         }
+
+        // 在token-list中查找操作符
+        public static int FindOperator(List<X64Token> xTokens, int startIndex, X64AsmOperator opt)
+        {
+            for (int i = startIndex; i < xTokens.Count; i++) {
+                if (xTokens[i].tokenType == X64TokenType.Operator &&  xTokens[i].asmOperator == opt) 
+                    return i;
+            }
+            return -1;
+        }
+
+        // 计算寻址表达式表达式内部值
+        private static X64Operand? calcAddressExpressionInnerValue(List<X64Token> xTokens)
+        {
+            // 优先级排列
+            // 1. () 括号
+            // 2. * / %
+            // 3. 寄存器 *
+            // 4. +, - 单目
+            // 5. +, - 双目
+            // 6. 寄存器 +,-
+            // 7. << >> 左移右移 - 寻址内部不处理
+            // 8. & 位与 - 寻址内部不处理
+            // 9. ^ 位异或 - 寻址内部不处理
+            // 10. | 位或 - 寻址内部不处理
+            //
+            // 查找首个操作符所在的索引
+
+            if (!xTokens.Any()) 
+                return null;
+            //
+            int findStartIndex = 0;
+            while (true) {
+                int left = FindOperator(xTokens, findStartIndex, X64AsmOperator.ParenthesesL);      // 查找左括号
+                if (left >= 0) {
+                    int right = FindOperator(xTokens, left + 1, X64AsmOperator.ParenthesesR);       // 从左括号后面开始找第一个右括号
+                    //
+                    if (right < 0) {
+                        //// 这里增加报错，找不到右括号与之匹配
+                        return null;
+                    }
+                    int leftNext = FindOperator(xTokens, left + 1, X64AsmOperator.ParenthesesL);    // 找下一个左括号
+                    if ((leftNext >= 0) && (leftNext < right)) {
+                        findStartIndex = leftNext;
+                        continue;
+                    }
+                    List<X64Token> yTokens = new List<X64Token>();
+                    for (int i = left + 1; i < right; i++) {
+                        yTokens.Add(new X64Token(xTokens[i]));
+                    }
+                    X64Operand? tmpOperand = calcAddressExpressionInnerValue(yTokens);              // 递归计算
+                    if (tmpOperand != null) {
+                        X64Token oprdToken = new X64Token();
+                        oprdToken.tokenType = X64TokenType.TempOperand;
+                        oprdToken.tempOperand = tmpOperand;
+                        //
+                        List<X64Token> zTokens = new List<X64Token>();
+                        for (int k = 0; k < left; k++) {
+                            zTokens.Add(xTokens[k]);
+                        }
+                        zTokens.Add(oprdToken);                                                     // 把括号中的表达式计算出值后，重组表达式再次计算
+                        for (int k = right; k < xTokens.Count; k++) {
+                            zTokens.Add(xTokens[k]);
+                        }
+                        return calcAddressExpressionInnerValue(zTokens);
+                    } 
+                    else {
+                        //// 报错
+                        return null;
+                    }
+                    break;
+                }
+                break;
+            }
+            // 将首个 +- 运算符设置为单目+-，将寄存器旁边的 +- 设置为寄存器 +-，将寄存器旁边的* 设置为寄存器* 
+            if (xTokens[0].tokenType == X64TokenType.Operator) {
+                if (xTokens[0].asmOperator == X64AsmOperator.Plus)
+                    xTokens[0].asmOperator = X64AsmOperator.PositiveSign;
+                else if (xTokens[0].asmOperator == X64AsmOperator.Minus)
+                    xTokens[0].asmOperator = X64AsmOperator.NegativeSign;
+            }
+            for (int cur = 1; cur < xTokens.Count; cur++) {
+                if (xTokens[cur].tokenType == X64TokenType.Operator) {
+                    if (xTokens[cur].asmOperator == X64AsmOperator.Plus ||
+                        xTokens[cur].asmOperator == X64AsmOperator.Minus ||
+                        xTokens[cur].asmOperator == X64AsmOperator.Multiplication) {
+                        //
+                        X64AsmOperator willBe;
+                        if (xTokens[cur].asmOperator == X64AsmOperator.Plus)
+                            willBe = X64AsmOperator.RegPlus;
+                        else if (xTokens[cur].asmOperator == X64AsmOperator.Minus)
+                            willBe = X64AsmOperator.RegMinus;
+                        else
+                            willBe = X64AsmOperator.RegMulti;
+                        int prev = cur - 1;
+                        int next = cur + 1;
+                        if (xTokens[prev].tokenType == X64TokenType.Register) {
+                            xTokens[cur].asmOperator = willBe;
+                            continue;
+                        }
+                        if (next < xTokens.Count && xTokens[next].tokenType == X64TokenType.Register) {
+                            xTokens[cur].asmOperator = willBe;
+                            continue;
+                        }
+                    }
+                }
+            }
+            //
+
+
+            return null;
+        }
+
+
     }
 }
