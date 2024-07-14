@@ -137,26 +137,22 @@ namespace AlloyTools.Assembler.AMD64
             return -1;
         }
 
+        // 在token-list中查找任何操作符
+        public static int FindAnyOperator(List<X64Token> xTokens, int startIndex)
+        {
+            for (int i = startIndex; i < xTokens.Count; i++) {
+                if (xTokens[i].tokenType == X64TokenType.Operator)
+                    return i;
+            }
+            return -1;
+        }
+
         // 计算寻址表达式表达式内部值
         private static X64Operand? calcAddressExpressionInnerValue(List<X64Token> xTokens)
         {
-            // 优先级排列
-            // 1. () 括号
-            // 2. * / %
-            // 3. 寄存器 *
-            // 4. +, - 单目
-            // 5. +, - 双目
-            // 6. 寄存器 +,-
-            // 7. << >> 左移右移 - 寻址内部不处理
-            // 8. & 位与 - 寻址内部不处理
-            // 9. ^ 位异或 - 寻址内部不处理
-            // 10. | 位或 - 寻址内部不处理
-            //
-            // 查找首个操作符所在的索引
-
             if (!xTokens.Any()) 
                 return null;
-            //
+            // 查找首个左括号操作符所在的索引
             int findStartIndex = 0;
             while (true) {
                 int left = FindOperator(xTokens, findStartIndex, X64AsmOperator.ParenthesesL);      // 查找左括号
@@ -196,7 +192,6 @@ namespace AlloyTools.Assembler.AMD64
                         //// 报错
                         return null;
                     }
-                    break;
                 }
                 break;
             }
@@ -234,11 +229,85 @@ namespace AlloyTools.Assembler.AMD64
                 }
             }
             //
+            var getOperatorLevel = (X64AsmOperator opt) => {
+                // 优先级排列
+                // 1. () 括号
+                // 2. * / %
+                // 3. 寄存器 *
+                // 4. +, - 单目
+                // 5. +, - 双目
+                // 6. 寄存器 +,-
+                // 7. << >> 左移右移 - 寻址内部不处理
+                // 8. & 位与 - 寻址内部不处理
+                // 9. ^ 位异或 - 寻址内部不处理
+                // 10. | 位或 - 寻址内部不处理
+                switch (opt) {
+                    case X64AsmOperator.Multiplication:
+                    case X64AsmOperator.Division:
+                        return 1;
+                    case X64AsmOperator.RegMulti:
+                        return 2;
+                    case X64AsmOperator.PositiveSign:
+                    case X64AsmOperator.NegativeSign:
+                        return 3;
+                    case X64AsmOperator.Plus:
+                    case X64AsmOperator.Minus:
+                        return 4;
+                    case X64AsmOperator.RegPlus:
+                    case X64AsmOperator.RegMinus:
+                        return 5;
+
+                }
+                return 10000;
+            };
+            //
+            int startIdx = 0;
+            while (true) {
+                List<int> operatorIndexes = new List<int>();        // 操作符的索引列表
+                int foundIdx = FindAnyOperator(xTokens, startIdx);
+                if (foundIdx >= 0) {
+                    if (operatorIndexes.Count > 0) {    //之前存在操作符的情况
+                        int lastIndex = operatorIndexes[operatorIndexes.Count - 1];
+                        int lastLevel = getOperatorLevel(xTokens[lastIndex].asmOperator);       // 上一个操作符的优先级
+                        int currLevel = getOperatorLevel(xTokens[foundIdx].asmOperator);        // 当前操作符的优先级
+                        if (currLevel < lastLevel) {        // level越小，优先级越高
+                            operatorIndexes.Add(foundIdx);
+                            startIdx = foundIdx + 1;
+                        }
+                        else {
+                            // 这里是当前操作符的优先级比上一个低的情况，这种情况应该是先处理上一个运算符的运算
+                            X64Token? left = (lastIndex - 1 >= 0) && (lastIndex - 1 < xTokens.Count) ? xTokens[lastIndex - 1] : null;
+                            X64Token? operatorToken = (lastIndex >= 0) && (lastIndex < xTokens.Count) ? xTokens[lastIndex] : null;
+                            X64Token? right = (lastIndex + 1 >= 0) && (lastIndex + 1 < xTokens.Count) ? xTokens[lastIndex + 1] : null;
+                            var res = calcAddressExpressionMinOperator(left, operatorToken, right);
+                        }
+                    }
+                    else {
+
+                    }
+
+
+                }
+
+
+                break;
+            }
+            
+            
+
+
+
+
 
 
             return null;
         }
 
+        // 计算寻址操作的一个最小单元操作
+        private static X64Operand? calcAddressExpressionMinOperator(X64Token? left, X64Token? operatorToken, X64Token? right)
+        {
+            return null;
+        }
 
     }
 }
