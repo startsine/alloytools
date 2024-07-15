@@ -106,6 +106,15 @@ namespace AlloyTools.Assembler.AMD64
                 }
                 return false;
             }
+            else {
+                int addrStartIdx = FindOperator(this.tokens, 0, X64AsmOperator.AddressStart);
+                int addrEndIndex = FindOperator(this.tokens, 0, X64AsmOperator.AddressEnd);
+                if (addrStartIdx >= 0) {
+                    if (addrEndIndex >= 0 && addrEndIndex > addrStartIdx) {
+                        calcAddressExpression(addrStartIdx, addrEndIndex);
+                    }
+                }
+            }
             //
 
             return true;
@@ -124,7 +133,13 @@ namespace AlloyTools.Assembler.AMD64
                 return null;
             int start1 = start + 1;
             int end1 = end - 1;
-            
+
+            List<X64Token> xTokens = new List<X64Token>();
+            for (int i = start1; i <= end1; i++) {
+                xTokens.Add(tokens[i]);
+            }
+            operand = calcAddressExpressionInnerValue(xTokens);
+
             //this.tokens
             return null;
         }
@@ -267,8 +282,8 @@ namespace AlloyTools.Assembler.AMD64
             int startIdx = 0;
 re_calculate:
             startIdx = 0;
+            List<int> operatorIndexes = new List<int>();        // 操作符的索引列表
             while (true) {
-                List<int> operatorIndexes = new List<int>();        // 操作符的索引列表
                 int foundIdx = FindAnyOperator(aTokens, startIdx);
                 if (foundIdx >= 0) {
                     if (operatorIndexes.Count > 0) {    //之前存在操作符的情况
@@ -426,6 +441,18 @@ re_calculate:
             else {
                 if (left == null || right == null)
                     return null;
+                switch (operatorToken.asmOperator) {
+                    case X64AsmOperator.Plus: {
+                            if (left.tokenType == X64TokenType.Numeric && right.tokenType == X64TokenType.Numeric) {
+                                MemoryAddressInfo memoryAddressInfo = new MemoryAddressInfo();
+                                memoryAddressInfo.type |= MemoryAddressType.hasDisp;
+                                memoryAddressInfo.disp32 = left.ulongValue + right.ulongValue;
+                                X64Operand x64Operand = new X64Operand(memoryAddressInfo);
+                                return x64Operand;
+                            }
+                        }
+                        break;
+                }
             }
             return null;
         }

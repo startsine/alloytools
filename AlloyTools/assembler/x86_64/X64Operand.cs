@@ -395,7 +395,7 @@ namespace AlloyTools.Assembler.AMD64
         public X64RegValue reg1;                // 寄存器1
         public X64RegValue reg2;                // 寄存器2
         public byte scale;                      // 比例因子
-        public int disp32;
+        public ulong disp32;                    // 内部用ulong以方便表达式计算，实际上是需要转回int产生机器码
         // public X64RegValue seg;              // 段前缀 // 此标志注释掉，段前缀不应该放在源码层面，就是[]中括号内不应该有段前缀，段前缀应该放[]前面，例如 fs:[rbx]
         public string symName = "";
         public ulong symIndex;
@@ -407,7 +407,7 @@ namespace AlloyTools.Assembler.AMD64
         public MemoryAddressModifier modifier;  // 寻址目标大小修饰
         public MemoryAddressType type;          // 寻址类型
         public X64RegValue indirectReg;         // 间接寻址寄存器(寄存器间接寻址是mod==00, 寄存器间接寻址不能是rsp/r12,带rsp/r12的必须转变为基址+变址寻址)
-        public int disp32;                      // 偏移量(mod==01为带8位偏移量, mod==10为带32位偏移量, mod=11为直接表示寄存器本身)
+        public ulong disp32;                    // 偏移量(mod==01为带8位偏移量, mod==10为带32位偏移量, mod=11为直接表示寄存器本身) (内部用ulong以方便表达式计算，实际上是需要转回int产生机器码)
         public X64RegValue baseReg;             // 基址寄存器信息(rm==100时，才有SIB字节) [rsp 寄存器不能做为 index 寄存器，只能做 base 寄存器, rsp做index表示没有变址, 而r12却可以做index]
         public X64RegValue indexReg;            // 变址寄存器信息(rm==100时，才有SIB字节)
         public byte sacle;                      // 比例因子(rm==100时，才有SIB字节)
