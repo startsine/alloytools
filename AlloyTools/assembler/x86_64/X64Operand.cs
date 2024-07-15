@@ -317,6 +317,25 @@ namespace AlloyTools.Assembler.AMD64
         TMM6 = TMMReg | REG_VALUE_6,
         TMM7 = TMMReg | REG_VALUE_7,
         //
+        
+    }
+
+    public class X64RegUtil
+    {
+        public static bool Is32BitReg(X64RegValue reg)
+        {
+            return reg.HasFlag(X64RegValue.REG_32bit);
+        }
+
+        public static bool Is64BitReg(X64RegValue reg)
+        {
+            return reg.HasFlag(X64RegValue.REG_64bit);
+        }
+
+        public static bool Is32Or64BitReg(X64RegValue reg)
+        {
+            return reg.HasFlag(X64RegValue.REG_64bit) || reg.HasFlag(X64RegValue.REG_32bit); 
+        }
     }
 
     public enum SymbolModifier

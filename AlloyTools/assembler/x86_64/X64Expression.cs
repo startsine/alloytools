@@ -1,4 +1,6 @@
 
+using System.Collections.Generic;
+
 namespace AlloyTools.Assembler.AMD64
 {
     public class X64Expression
@@ -261,51 +263,170 @@ namespace AlloyTools.Assembler.AMD64
                 return 10000;
             };
             //
+            List<X64Token> aTokens = xTokens;
             int startIdx = 0;
+re_calculate:
+            startIdx = 0;
             while (true) {
                 List<int> operatorIndexes = new List<int>();        // 操作符的索引列表
-                int foundIdx = FindAnyOperator(xTokens, startIdx);
+                int foundIdx = FindAnyOperator(aTokens, startIdx);
                 if (foundIdx >= 0) {
                     if (operatorIndexes.Count > 0) {    //之前存在操作符的情况
                         int lastIndex = operatorIndexes[operatorIndexes.Count - 1];
-                        int lastLevel = getOperatorLevel(xTokens[lastIndex].asmOperator);       // 上一个操作符的优先级
-                        int currLevel = getOperatorLevel(xTokens[foundIdx].asmOperator);        // 当前操作符的优先级
+                        int lastLevel = getOperatorLevel(aTokens[lastIndex].asmOperator);       // 上一个操作符的优先级
+                        int currLevel = getOperatorLevel(aTokens[foundIdx].asmOperator);        // 当前操作符的优先级
                         if (currLevel < lastLevel) {        // level越小，优先级越高
                             operatorIndexes.Add(foundIdx);
                             startIdx = foundIdx + 1;
                         }
                         else {
                             // 这里是当前操作符的优先级比上一个低的情况，这种情况应该是先处理上一个运算符的运算
-                            X64Token? left = (lastIndex - 1 >= 0) && (lastIndex - 1 < xTokens.Count) ? xTokens[lastIndex - 1] : null;
-                            X64Token? operatorToken = (lastIndex >= 0) && (lastIndex < xTokens.Count) ? xTokens[lastIndex] : null;
-                            X64Token? right = (lastIndex + 1 >= 0) && (lastIndex + 1 < xTokens.Count) ? xTokens[lastIndex + 1] : null;
-                            var res = calcAddressExpressionMinOperator(left, operatorToken, right);
+                            X64Token? operatorToken = (lastIndex >= 0) && (lastIndex < aTokens.Count) ? aTokens[lastIndex] : null;
+                            if (operatorToken == null) {
+                                //// 报错
+                                return null;
+                            }
+                            //
+                            X64Operand? res = null;
+                            int restructureIndexValue1;     // 重组索引1
+                            int restructureIndexValue2;     // 重组索引2
+                            if (operatorToken.asmOperator == X64AsmOperator.PositiveSign || operatorToken.asmOperator == X64AsmOperator.NegativeSign) {
+                                X64Token? right = (lastIndex + 1 >= 0) && (lastIndex + 1 < aTokens.Count) ? aTokens[lastIndex + 1] : null;
+                                res = calcAddressExpressionMinOperator(null, operatorToken, right);
+                                restructureIndexValue1 = lastIndex;
+                                restructureIndexValue2 = lastIndex + 2;
+                            }
+                            else {
+                                X64Token? left = (lastIndex - 1 >= 0) && (lastIndex - 1 < aTokens.Count) ? aTokens[lastIndex - 1] : null;
+                                X64Token? right = (lastIndex + 1 >= 0) && (lastIndex + 1 < aTokens.Count) ? aTokens[lastIndex + 1] : null;
+                                res = calcAddressExpressionMinOperator(left, operatorToken, right);
+                                restructureIndexValue1 = lastIndex - 1;
+                                restructureIndexValue2 = lastIndex + 2;
+                            }
+                            if (res != null) {
+                                List <X64Token> restructureTokens = new List < X64Token >();
+                                for (int i = 0; i < restructureIndexValue1; i++) {
+                                    restructureTokens.Add(aTokens[i]);
+                                }
+                                X64Token resToken = new X64Token();
+                                resToken.tokenType = X64TokenType.TempOperand;
+                                resToken.tempOperand = res;
+                                restructureTokens.Add(resToken);
+                                for (int i = restructureIndexValue2; i < aTokens.Count; i++) {
+                                    restructureTokens.Add(aTokens[i]);
+                                }
+                                aTokens = restructureTokens;
+                                goto re_calculate;
+                            }
+                            else {
+                                //// 计算出错，报错？
+                                return null;
+                            }
                         }
                     }
-                    else {
-
+                    else {  // 找到操作符，之前又没有存在操作符的情况 (operatorIndexes.Count==0)
+                        operatorIndexes.Add(foundIdx);
+                        startIdx = foundIdx + 1;
                     }
-
-
                 }
-
-
-                break;
+                else {  // 再也找不到操作符的情况
+                    if (operatorIndexes.Count > 0) {
+                        // 存在操作符列表则从右往左开始计算（因为遇到更高优先级的操作符才会继续 Add 到 operatorIndexes）
+                        List<X64Token> bTokens = aTokens;
+                        X64Operand? result = null;
+                        for (int i = operatorIndexes.Count - 1; i >= 0; i--) {
+                            int optIndex = operatorIndexes[i];
+                            if (bTokens.Count > optIndex + 2) {
+                                //// 报错。操作符右边还有不止一个操作数
+                                return null;
+                            }
+                            X64Token? operatorToken = (optIndex >= 0) && (optIndex < bTokens.Count) ? bTokens[optIndex] : null;
+                            if (operatorToken == null) {
+                                //// 报错
+                                return null;
+                            }
+                            //
+                            X64Operand? res = null;
+                            int restructureIndexValue1;     // 重组索引1
+                            if (operatorToken.asmOperator == X64AsmOperator.PositiveSign || operatorToken.asmOperator == X64AsmOperator.NegativeSign) {
+                                X64Token? right = (optIndex + 1 >= 0) && (optIndex + 1 < bTokens.Count) ? bTokens[optIndex + 1] : null;
+                                res = calcAddressExpressionMinOperator(null, operatorToken, right);
+                                restructureIndexValue1 = optIndex;
+                            }
+                            else {
+                                X64Token? left = (optIndex - 1 >= 0) && (optIndex - 1 < bTokens.Count) ? bTokens[optIndex - 1] : null;
+                                X64Token? right = (optIndex + 1 >= 0) && (optIndex + 1 < bTokens.Count) ? bTokens[optIndex + 1] : null;
+                                res = calcAddressExpressionMinOperator(left, operatorToken, right);
+                                restructureIndexValue1 = optIndex - 1;
+                            }
+                            result = res;
+                            if (res != null) {
+                                List<X64Token> restructureTokens = new List<X64Token>();
+                                for (int j = 0; j < restructureIndexValue1; j++) {
+                                    restructureTokens.Add(bTokens[i]);
+                                }
+                                X64Token resToken = new X64Token();
+                                resToken.tokenType = X64TokenType.TempOperand;
+                                resToken.tempOperand = res;
+                                restructureTokens.Add(resToken);
+                                bTokens = restructureTokens;
+                                continue;
+                            }
+                            else {
+                                //// 计算出错，报错？
+                                return null;
+                            }
+                        }
+                        return result;
+                    }
+                    else { // 没有操作符的情况
+                        if (aTokens.Count == 1) {
+                            /// 这里加入单操作数转换为 操作数
+                            X64Token token = aTokens[0];
+                            if (token.tokenType == X64TokenType.TempOperand) 
+                                return token.tempOperand;
+                            else if (token.tokenType == X64TokenType.Register) {
+                                if (X64RegUtil.Is32Or64BitReg(token.regValue)) {
+                                    MemoryAddressInfo memoryAddressInfo = new MemoryAddressInfo();
+                                    memoryAddressInfo.reg1 = token.regValue;
+                                    memoryAddressInfo.type |= MemoryAddressType.hasReg1;
+                                    X64Operand x64Operand = new X64Operand(memoryAddressInfo);
+                                    return x64Operand;
+                                }
+                                else if (token.tokenType == X64TokenType.Numeric) {
+                                    X64Operand x64Operand = new X64Operand(token.ulongValue);
+                                    return x64Operand;
+                                }
+                                else {
+                                    ////
+                                }
+                                
+                            }
+                        }
+                        else {
+                            //// 报错
+                            return null;
+                        }
+                    }
+                }
             }
-            
-            
-
-
-
-
-
-
-            return null;
         }
 
         // 计算寻址操作的一个最小单元操作
         private static X64Operand? calcAddressExpressionMinOperator(X64Token? left, X64Token? operatorToken, X64Token? right)
         {
+            if (operatorToken == null)
+                return null;
+            if (operatorToken.tokenType != X64TokenType.Operator)
+                return null;
+            if (operatorToken.asmOperator == X64AsmOperator.PositiveSign || operatorToken.asmOperator == X64AsmOperator.NegativeSign) {
+                if (right == null)
+                    return null;
+            }
+            else {
+                if (left == null || right == null)
+                    return null;
+            }
             return null;
         }
 
