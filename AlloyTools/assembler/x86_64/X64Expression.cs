@@ -526,8 +526,33 @@ re_calculate:
                             return x64Operand;
                         }
                     case X64AsmOperator.RegMulti: {
-                            if (left.tokenType == X64TokenType.Register && right.tokenType == X64TokenType.Numeric) {
-
+                            if (getRegCountFromMemoryAddressInfo(op1) + getRegCountFromMemoryAddressInfo(op2) >= 2) {
+                                //// 报错,两边操作数总寄存器个数大于或者等于2
+                                return null;
+                            }
+                            if (op1.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
+                                //// 不能带因子
+                                return null;
+                            }
+                            if (op2.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
+                                //// 不能带因子
+                                return null;
+                            }
+                            if (op1.type.HasFlag(MemoryAddressType.hasReg2)) {
+                                //// 不能带因子
+                                return null;
+                            }
+                            if (op2.type.HasFlag(MemoryAddressType.hasReg2)) {
+                                //// 不能带因子
+                                return null;
+                            }
+                            if (op1.type.HasFlag(MemoryAddressType.hasReg1) && op1.type.HasFlag(MemoryAddressType.hasDisp)) {
+                                //// 不能带带寄存器又带Disp
+                                return null;
+                            }
+                            if (op2.type.HasFlag(MemoryAddressType.hasReg1) && op2.type.HasFlag(MemoryAddressType.hasDisp)) {
+                                //// 不能带Disp
+                                return null;
                             }
                         }
                         break;
