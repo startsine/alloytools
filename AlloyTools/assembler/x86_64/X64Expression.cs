@@ -487,7 +487,7 @@ re_calculate:
                             }
                             else {
                                 if (op2.type.HasFlag(MemoryAddressType.hasDisp)) {
-                                    op2.type |= MemoryAddressType.hasDisp;
+                                    op1.type |= MemoryAddressType.hasDisp;
                                     op1.disp32 = op2.disp32;
                                 }
                             }
