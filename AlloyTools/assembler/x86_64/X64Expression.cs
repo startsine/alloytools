@@ -441,20 +441,131 @@ re_calculate:
             else {
                 if (left == null || right == null)
                     return null;
+                MemoryAddressInfo op1 = toTempMemoryAddressInfo(left);
+                MemoryAddressInfo op2 = toTempMemoryAddressInfo(right);
                 switch (operatorToken.asmOperator) {
-                    case X64AsmOperator.Plus: {
-                            if (left.tokenType == X64TokenType.Numeric && right.tokenType == X64TokenType.Numeric) {
-                                MemoryAddressInfo memoryAddressInfo = new MemoryAddressInfo();
-                                memoryAddressInfo.type |= MemoryAddressType.hasDisp;
-                                memoryAddressInfo.disp32 = left.ulongValue + right.ulongValue;
-                                X64Operand x64Operand = new X64Operand(memoryAddressInfo);
-                                return x64Operand;
+                    case X64AsmOperator.Plus:
+                    case X64AsmOperator.RegPlus: {
+                            if (getRegCountFromMemoryAddressInfo(op1) + getRegCountFromMemoryAddressInfo(op2) >= 3) {
+                                //// 寻址中不循序超过3个寄存器,报错
+                                return null;
+                            }
+                            if (op1.type.HasFlag(MemoryAddressType.hasExplicitScale) && op2.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
+                                //// 寻址中不能有2个变址索引,报错
+                                return null;
+                            }
+                            if (op1.type.HasFlag(MemoryAddressType.hasReg1)) {
+                                if (op2.type.HasFlag(MemoryAddressType.hasReg1)) {
+                                    op1.type |= MemoryAddressType.hasReg2;
+                                    op1.reg2 = op2.reg1;
+                                }
+                                else if (op2.type.HasFlag(MemoryAddressType.hasReg2)) {
+                                    op1.type |= MemoryAddressType.hasReg2;
+                                    op1.reg2 = op2.reg2;
+                                }
+                            }
+                            else {
+                                if (op2.type.HasFlag(MemoryAddressType.hasReg1)) {
+                                    op1.type |= MemoryAddressType.hasReg1;
+                                    op1.reg1 = op2.reg1;
+                                }
+                                else if (op2.type.HasFlag(MemoryAddressType.hasReg2)) {
+                                    op1.type |= MemoryAddressType.hasReg2;
+                                    op1.reg2 = op2.reg2;
+                                }
+                            }
+                            if (op2.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
+                                op1.type |= MemoryAddressType.hasExplicitScale;
+                                op1.scale = op2.scale;
+                            }
+                            if (op1.type.HasFlag(MemoryAddressType.hasDisp)) {
+                                if (op2.type.HasFlag(MemoryAddressType.hasDisp)) {
+                                    unchecked {
+                                        op1.disp32 += op2.disp32;
+                                    }
+                                }
+                            }
+                            else {
+                                if (op2.type.HasFlag(MemoryAddressType.hasDisp)) {
+                                    op2.type |= MemoryAddressType.hasDisp;
+                                    op1.disp32 = op2.disp32;
+                                }
+                            }
+                            X64Operand x64Operand = new X64Operand(op1);
+                            return x64Operand;
+                        }
+                    case X64AsmOperator.Minus:
+                    case X64AsmOperator.RegMinus: {
+                            if (op2.type.HasFlag(MemoryAddressType.hasReg1)) {
+                                //// 被减数不能带寄存器
+                                return null;
+                            }
+                            if (op2.type.HasFlag(MemoryAddressType.hasReg2)) {
+                                //// 被减数不能带寄存器
+                                return null;
+                            }
+                            if (op2.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
+                                //// 被减数不能带因子
+                                return null;
+                            }
+                            if (op1.type.HasFlag(MemoryAddressType.hasDisp)) {
+                                if (op2.type.HasFlag(MemoryAddressType.hasDisp)) {
+                                    unchecked {
+                                        op1.disp32 -= op2.disp32;
+                                    }
+                                }
+                            }
+                            else {
+                                if (op2.type.HasFlag(MemoryAddressType.hasDisp)) {
+                                    unchecked {
+                                        op1.disp32 = (0 - op2.disp32);
+                                    }
+                                }
+                            }
+                            X64Operand x64Operand = new X64Operand(op1);
+                            return x64Operand;
+                        }
+                    case X64AsmOperator.RegMulti: {
+                            if (left.tokenType == X64TokenType.Register && right.tokenType == X64TokenType.Numeric) {
+
                             }
                         }
                         break;
                 }
             }
             return null;
+        }
+
+        private static MemoryAddressInfo toTempMemoryAddressInfo(X64Token token)
+        {
+            MemoryAddressInfo info = new MemoryAddressInfo();
+            switch (token.tokenType) {
+                case X64TokenType.Numeric:
+                    info.type |= MemoryAddressType.hasDisp;
+                    info.disp32 = token.ulongValue;
+                    break;
+                case X64TokenType.Register:
+                    info.type |= MemoryAddressType.hasReg1;
+                    info.reg1 = token.regValue;
+                    break;
+                case X64TokenType.TempOperand:
+                    if (token.tempOperand != null) {
+                        if (token.tempOperand.addressInfo != null)
+                            info = token.tempOperand.addressInfo;
+                    }
+                    break;
+            }
+            return info;
+        }
+
+        private static int getRegCountFromMemoryAddressInfo(MemoryAddressInfo info)
+        {
+            int count = 0;
+            if (info.type.HasFlag(MemoryAddressType.hasReg1))
+                count++;
+            if (info.type.HasFlag(MemoryAddressType.hasReg2))
+                count++;
+            return count;
         }
 
     }
