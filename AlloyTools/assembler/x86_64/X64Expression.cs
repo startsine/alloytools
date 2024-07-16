@@ -378,7 +378,7 @@ re_calculate:
                             if (res != null) {
                                 List<X64Token> restructureTokens = new List<X64Token>();
                                 for (int j = 0; j < restructureIndexValue1; j++) {
-                                    restructureTokens.Add(bTokens[i]);
+                                    restructureTokens.Add(bTokens[j]);
                                 }
                                 X64Token resToken = new X64Token();
                                 resToken.tokenType = X64TokenType.TempOperand;
@@ -654,3 +654,4 @@ re_calculate:
 
     }
 }
+//mov rax, [rcx + rdx * ( 3 + 5) + 96*480 + 17800 * 42 / 10]
