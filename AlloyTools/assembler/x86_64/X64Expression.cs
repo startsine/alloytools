@@ -200,7 +200,7 @@ namespace AlloyTools.Assembler.AMD64
                             zTokens.Add(xTokens[k]);
                         }
                         zTokens.Add(oprdToken);                                                     // 把括号中的表达式计算出值后，重组表达式再次计算
-                        for (int k = right; k < xTokens.Count; k++) {
+                        for (int k = right + 1; k < xTokens.Count; k++) {
                             zTokens.Add(xTokens[k]);
                         }
                         return calcAddressExpressionInnerValue(zTokens);
@@ -539,23 +539,82 @@ re_calculate:
                                 return null;
                             }
                             if (op1.type.HasFlag(MemoryAddressType.hasReg2)) {
-                                //// 不能带因子
+                                //// 不能带reg2
                                 return null;
                             }
                             if (op2.type.HasFlag(MemoryAddressType.hasReg2)) {
-                                //// 不能带因子
+                                //// 不能带reg2
                                 return null;
                             }
                             if (op1.type.HasFlag(MemoryAddressType.hasReg1) && op1.type.HasFlag(MemoryAddressType.hasDisp)) {
-                                //// 不能带带寄存器又带Disp
+                                //// 不能带寄存器又带Disp
                                 return null;
                             }
                             if (op2.type.HasFlag(MemoryAddressType.hasReg1) && op2.type.HasFlag(MemoryAddressType.hasDisp)) {
-                                //// 不能带Disp
+                                //// 不能带寄存器又带Disp
                                 return null;
                             }
+                            // 如果寄存器在右侧，则互换
+                            if (op2.type.HasFlag(MemoryAddressType.hasReg1)) {
+                                MemoryAddressInfo tempForSwap;
+                                tempForSwap = op2;
+                                op2 = op1;
+                                op1 = tempForSwap;
+                            }
+                            //
+                            if (!op2.type.HasFlag(MemoryAddressType.hasDisp)) {
+                                //// 报错,op2必须Disp
+                                return null;
+                            }
+                            if (op2.disp32 != 1 && op2.disp32 != 2 && op2.disp32 != 4 && op2.disp32 != 8) {
+                                //// 报错,op2 disp 不是1/2/4/8
+                                return null;
+                            }
+                            op1.type |= MemoryAddressType.hasExplicitScale;
+                            op1.scale = (byte) op2.disp32;
+                            op1.type |= MemoryAddressType.hasReg2;
+                            op1.reg2 = op1.reg1;
+                            op1.type &= ~MemoryAddressType.hasReg1;
+                            op1.reg1 = X64RegValue.None;
+                            X64Operand x64Operand = new X64Operand(op1);
+                            return x64Operand;
                         }
-                        break;
+                    case X64AsmOperator.Multiplication: {
+                            if (op1.type != MemoryAddressType.hasDisp) {
+                                //// 报错,乘法操作只能纯数字
+                                return null;
+                            }
+                            if (op2.type != MemoryAddressType.hasDisp) {
+                                //// 报错,乘法操作只能纯数字
+                                return null;
+                            }
+                            op1.type |= MemoryAddressType.hasDisp;
+                            unchecked {
+                                op1.disp32 = (ulong)(op1.disp32 * op2.disp32);
+                            }
+                            X64Operand x64Operand = new X64Operand(op1);
+                            return x64Operand;
+                        }
+                    case X64AsmOperator.Division: {
+                            if (op1.type != MemoryAddressType.hasDisp) {
+                                //// 报错,除法操作只能纯数字
+                                return null;
+                            }
+                            if (op2.type != MemoryAddressType.hasDisp) {
+                                //// 报错,除法操作只能纯数字
+                                return null;
+                            }
+                            if (op2.disp32 == 0) {
+                                //// 报错,除法不能除以0
+                                return null;
+                            }
+                            op1.type |= MemoryAddressType.hasDisp;
+                            unchecked {
+                                op1.disp32 = op1.disp32 / op2.disp32;
+                            }
+                            X64Operand x64Operand = new X64Operand(op1);
+                            return x64Operand;
+                        }
                 }
             }
             return null;
