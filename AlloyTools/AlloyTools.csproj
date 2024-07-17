@@ -7,11 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="assembler\x86_64\X64InstructionProcessor.cs" />
+    <Compile Remove="assembler\x86_64\X64Processor.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="assembler\x86_64\X64InstructionProcessor.cs" />
+    <None Include="assembler\x86_64\X64Processor.cs" />
   </ItemGroup>
 
 </Project>

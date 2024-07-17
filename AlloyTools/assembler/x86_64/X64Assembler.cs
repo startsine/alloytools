@@ -48,6 +48,7 @@ namespace AlloyTools.Assembler.AMD64
         {
             if (sourceLines == null)
                 return;
+            InsnProcessor? insnProcessor = null;
             ulong lineCnt = 0;
             int insnStartIdx = 0;                                       // 当前行中，指令的token的起始索引
             int operandStartIdx = 0;                                    // 当前行中，操作数的token的起始索引
@@ -60,8 +61,8 @@ namespace AlloyTools.Assembler.AMD64
                 //
                 if (curLine.tokens == null || curLine.tokens.Count == 0)
                     continue;
-                try 
-                {
+
+                try {
                     if (curLine.tokens.Count >= 2) {
                         var token0 = curLine.tokens[0];
                         var token1 = curLine.tokens[1];
@@ -130,6 +131,9 @@ namespace AlloyTools.Assembler.AMD64
 
                         }
                     }
+
+
+
                 }
                 catch (LineErrorException ex1) {
                 }
