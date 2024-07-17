@@ -6,4 +6,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="assembler\x86_64\X64InstructionProcessor.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="assembler\x86_64\X64InstructionProcessor.cs" />
+  </ItemGroup>
+
 </Project>
