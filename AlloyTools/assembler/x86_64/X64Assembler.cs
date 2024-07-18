@@ -132,6 +132,10 @@ namespace AlloyTools.Assembler.AMD64
                         }
                     }
 
+                    if (insnProcessor is not null) {
+                        insnProcessor.process(parsedLine, 1);
+                    }
+
 
 
                 }

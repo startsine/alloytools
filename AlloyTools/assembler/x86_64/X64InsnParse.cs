@@ -3,9 +3,9 @@
 
 namespace AlloyTools.Assembler.AMD64
 {
-    public class InsnProcessor
+    public abstract class InsnProcessor
     {
-        public int a;
+        public abstract int process(SourceLine sourceLine, int pass);
     }
 }
 
