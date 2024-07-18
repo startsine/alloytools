@@ -123,7 +123,7 @@ namespace AlloyTools.Assembler.AMD64
                         }
                         // 初步计算表达式的值
                         if (needCalcExpression) {
-                            if (parsedLine.expressions != null) {
+                            if (parsedLine.expressions is not null) {
                                 foreach (X64Expression expr in parsedLine.expressions) {
                                     expr.calc();
                                 }
