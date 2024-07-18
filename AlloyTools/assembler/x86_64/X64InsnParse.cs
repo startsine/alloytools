@@ -1,6 +1,9 @@
 
 
 
+using System.Collections.Generic;
+using System.Xml.Linq;
+
 namespace AlloyTools.Assembler.AMD64
 {
     public enum MatchType
@@ -57,12 +60,40 @@ namespace AlloyTools.Assembler.AMD64
 
     public abstract class IInsnProcessor
     {
-        public abstract int process(SourceLine sourceLine, int pass);
+        public abstract int process(string insnStr, SourceLine sourceLine, int pass);
     }
 
     public abstract class BaseInsn: IInsnProcessor
     {
+        protected int processCpuIns(string insnStr, SourceLine sourceLine, int pass, LinkedList<OpcodeInfos> opcodeInfos)
+        {
+            Console.WriteLine("process. " + insnStr);
 
+            LinkedListNode<OpcodeInfos>? currentNode;
+            OpcodeInfos? info = null;
+
+
+            int expressionsCount = sourceLine.expressions != null ? sourceLine.expressions.Count : 0;
+            currentNode = opcodeInfos.First;
+            while (currentNode is not null) {
+                info = currentNode.Value;
+                if (info.numberOfOperand == expressionsCount) {
+                    if (info.numberOfOperand == 0) {
+                        break;                                              // 不需要操作数的指令直接匹配
+                    }
+                }
+                currentNode = currentNode.Next;
+            }
+
+            // info非空则表示匹配
+            if (info is not null) {
+
+            }
+
+
+
+            return 0;
+        }
     }
 }
 

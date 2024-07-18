@@ -1,5 +1,6 @@
 
 
+using AlloyTools.Assembler.AMD64.Instruction;
 using System.Collections;
 
 namespace AlloyTools.Assembler.AMD64
@@ -30,7 +31,7 @@ namespace AlloyTools.Assembler.AMD64
 
         private X64CpuInsnList() 
         {
-            htCpuInsns.Add("mov", 1);
+            htCpuInsns.Add("mov", new MOV());
         }
 
         public static X64CpuInsnList Instance {
@@ -48,10 +49,13 @@ namespace AlloyTools.Assembler.AMD64
             return htCpuInsns.ContainsKey(str2);
         }
 
-        public InsnProcessor? GetInsnProcessor(string insn)
+        public IInsnProcessor? GetInsnProcessor(string insn)
         {
             if (htCpuInsns.ContainsKey(insn)) {
-
+                object? processor = htCpuInsns[insn];
+                if (processor is not null) {
+                    return processor as IInsnProcessor;
+                }
             }
             return null;
         }
