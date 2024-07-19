@@ -149,7 +149,7 @@ namespace AlloyTools.Assembler.AMD64
             return null;
         }
 
-        // 寻址中间值转为结果值
+        // 寻址中间值转为内存寻址的结果值
         private void memoryAddressInfoToRet()
         {
             X64Operand op = operand!;
@@ -157,6 +157,9 @@ namespace AlloyTools.Assembler.AMD64
                 MemoryAddressResult ret = new MemoryAddressResult();
                 MemoryAddressInfo info = op.addressInfo!;
                 bool use64 = false;
+                byte scaleValue = 0;
+                byte indexValue = 0;
+                byte baseValue = 0;
                 //
                 if (info.type.HasFlag(MemoryAddressType.hasReg1) && info.type.HasFlag(MemoryAddressType.hasReg2)) {
                     // 有 reg1 和 reg2 的情况
@@ -208,8 +211,6 @@ namespace AlloyTools.Assembler.AMD64
                     ret.sacle = info.scale;
                     ret.disp32 = info.disp32;
                     //
-                    byte scaleValue = 0;
-                    
                     if (info.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
                         switch (info.scale) {
                             case 1:
@@ -225,16 +226,25 @@ namespace AlloyTools.Assembler.AMD64
                                 scaleValue = 3;
                                 break;
                         }
-                    } 
+                    }
+                    baseValue = (byte)((uint)(info.reg1) & 0x07);
+                    indexValue = (byte)((uint)(info.reg2) & 0x07);
                     //
                     ret.codeSize = 2;
                     ret.code[0] = 0x04;     // 0b00000100, mod未设定, reg未设定, rm=100表示使用SIB
-                    ret.code[1] = (byte)(scaleValue << 6);
+                    ret.code[1] = (byte)(scaleValue << 6);          // SIB的组成是 scale(2bit)、index(3bit)、base(2bit)
+                    ret.code[1] |= (byte)(indexValue << 3);
+                    ret.code[1] |= baseValue;
                     if (ret.type.HasFlag(MemoryAddressType.withDisp8)) {
                         ret.codeSize += 1;
+                        ret.code[2] = (byte)(info.disp32 & 0xff);
                     }
                     else if (ret.type.HasFlag(MemoryAddressType.withDisp32)) {
                         ret.codeSize += 4;
+                        ret.code[2] = (byte)(info.disp32 & 0xff);
+                        ret.code[3] = (byte)((info.disp32 >> 8) & 0xff);
+                        ret.code[4] = (byte)((info.disp32 >> 16) & 0xff);
+                        ret.code[5] = (byte)((info.disp32 >> 24) & 0xff);
                     }
                     
                 }
