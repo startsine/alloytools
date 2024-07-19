@@ -336,6 +336,15 @@ namespace AlloyTools.Assembler.AMD64
         {
             return (reg.HasFlag(X64RegValue.REG_64bit) || reg.HasFlag(X64RegValue.REG_32bit)) && reg.HasFlag(X64RegValue.Common); 
         }
+
+        // 是否是需要REX扩展的寄存器 (8-15)
+        public static bool IsRexExtensionReg(X64RegValue reg)
+        {
+            if (reg.HasFlag(X64RegValue.REXPreflx_E))
+                return true;
+            return false;
+        }
+
     }
 
     public enum SymbolModifier
@@ -374,6 +383,8 @@ namespace AlloyTools.Assembler.AMD64
         hasDisp = 0x08,                 // 是否有数值上的偏移量
         hasSymbol = 0x10,               // 是否由符号来寻址(由符号来决定偏移量)
         // 机器层面
+        withRex_B = 0x100,
+        withRex_X = 0x200,
         withModRM = 0x1000,             // 此项其实一定有(除了 with64bitAbsAddr之外)
         withSIB = 0x2000,
         withDisp8 = 0x4000,

@@ -162,7 +162,7 @@ namespace AlloyTools.Assembler.AMD64
                 byte baseValue = 0;
                 //
                 if (info.type.HasFlag(MemoryAddressType.hasReg1) && info.type.HasFlag(MemoryAddressType.hasReg2)) {
-                    // 有 reg1 和 reg2 的情况
+                    // 下面处理有 reg1 和 reg2 的情况
                     if (X64RegUtil.Is64BitReg(info.reg1) && X64RegUtil.Is64BitReg(info.reg2)) {         //  同时64位基址寄存器和变址寄存器
                         use64 = true;
                     }
@@ -176,6 +176,11 @@ namespace AlloyTools.Assembler.AMD64
                     //
                     if (info.type.HasFlag(MemoryAddressType.hasExplicitScale) && (info.reg2 == X64RegValue.RSP || info.reg2 == X64RegValue.ESP)) {
                         //// 这里报错，RSP/ESP不允许做变址寄存器（注:R12可以做变址寄存器）
+                        return;
+                    }
+                    if ((info.reg1 == X64RegValue.RSP || info.reg1 == X64RegValue.ESP) && (info.reg2 == X64RegValue.RSP || info.reg2 == X64RegValue.ESP)) {
+                        //// 这里报错，RSP/ESP不允许做变址寄存器（注:R12可以做变址寄存器）
+                        //// 基址和变址寄存器都是RSP的情况
                         return;
                     }
                     if ((info.reg2 == X64RegValue.RSP || info.reg2 == X64RegValue.ESP) && (info.reg1 != X64RegValue.RSP && info.reg1 != X64RegValue.ESP)) {
@@ -236,23 +241,127 @@ namespace AlloyTools.Assembler.AMD64
                     ret.code[1] |= (byte)(indexValue << 3);
                     ret.code[1] |= baseValue;
                     if (ret.type.HasFlag(MemoryAddressType.withDisp8)) {
+                        ret.code[0] |= (0x01 << 6);                             // disp8 设置 mod == 01b
                         ret.codeSize += 1;
                         ret.code[2] = (byte)(info.disp32 & 0xff);
                     }
                     else if (ret.type.HasFlag(MemoryAddressType.withDisp32)) {
+                        ret.code[0] |= (0x02 << 6);                             // disp32 设置 mod == 10b
                         ret.codeSize += 4;
                         ret.code[2] = (byte)(info.disp32 & 0xff);
                         ret.code[3] = (byte)((info.disp32 >> 8) & 0xff);
                         ret.code[4] = (byte)((info.disp32 >> 16) & 0xff);
                         ret.code[5] = (byte)((info.disp32 >> 24) & 0xff);
                     }
-                    
+                    // 是否需要扩展 REX
+                    if (X64RegUtil.IsRexExtensionReg(info.reg1))
+                        ret.type |= MemoryAddressType.withRex_B;
+                    if (X64RegUtil.IsRexExtensionReg(info.reg2))
+                        ret.type |= MemoryAddressType.withRex_X;
                 }
                 else if (info.type.HasFlag(MemoryAddressType.hasReg1) && (! info.type.HasFlag(MemoryAddressType.hasReg2))) {
-                    // 有 reg1 , 无 reg2
+                    // 下面处理有 reg1 , 无 reg2 的情况
+                    int dispStart = 1;
+                    use64 = X64RegUtil.Is64BitReg(info.reg1);
+                    //
+                    if (!use64)
+                        ret.type |= MemoryAddressType.with32bitRegAddr;             // 用32位寄存器做内存寻址需要加0x67前缀
+                    //
+                    ret.codeSize = 1;
+                    ret.type |= MemoryAddressType.withModRM;
+                    ret.code[0] = 0;
+                    if (info.type.HasFlag(MemoryAddressType.hasDisp)) {
+                        long disp = (long)info.disp32;
+                        if (disp >= (-128) && disp <= 127) {
+                            ret.type |= MemoryAddressType.withDisp8;
+                        }
+                        else {
+                            ret.type |= MemoryAddressType.withDisp32;
+                        }
+                    }
+                    if (!info.type.HasFlag(MemoryAddressType.hasDisp)) {       // 这里判断没有hasDisp时，基地址又是rbp/r13时，必须默默加一个为 0 的 disp8
+                        if (info.reg1 == X64RegValue.RBP || info.reg1 == X64RegValue.R13 || info.reg1 == X64RegValue.EBP || info.reg1 == X64RegValue.R13D) {
+                            ret.type |= MemoryAddressType.withDisp8;
+                            info.disp32 = 0;
+                        }
+                    }
+                    // 基地址是RSP/R12的，需要用 SIB 来表达
+                    if (info.reg1 == X64RegValue.RSP || info.reg1 == X64RegValue.ESP || info.reg1 == X64RegValue.R12 || info.reg1 == X64RegValue.R12D) {
+                        dispStart++;
+                        ret.codeSize++;
+                        ret.type |= MemoryAddressType.withSIB;
+                        ret.code[0] = 0x04;                             // modRM 中的 r/m 域设置为 100b
+                        ret.code[1] = 0x24;                             // SIB 中的 scale 设置为 00b, index 设置为 100b, base 设置为 100b (index==100b表示 index和sacle无效)
+                    }
+                    else {
+                        baseValue = (byte)((uint)(info.reg1) & 0x07);
+                        ret.code[0] |= baseValue;                       // modRM 中的 r/m 域设置为 寄存器的值
+                    }
+                    //
+                    if (ret.type.HasFlag(MemoryAddressType.withDisp8)) {
+                        ret.code[0] |= (0x01 << 6);                             // disp8 设置 mod == 01b
+                        ret.codeSize += 1;
+                        ret.code[dispStart + 0] = (byte)(info.disp32 & 0xff);
+                    }
+                    else if (ret.type.HasFlag(MemoryAddressType.withDisp32)) {
+                        ret.code[0] |= (0x02 << 6);                             // disp32 设置 mod == 10b
+                        ret.codeSize += 4;
+                        ret.code[dispStart + 0] = (byte)(info.disp32 & 0xff);
+                        ret.code[dispStart + 1] = (byte)((info.disp32 >> 8) & 0xff);
+                        ret.code[dispStart + 2] = (byte)((info.disp32 >> 16) & 0xff);
+                        ret.code[dispStart + 3] = (byte)((info.disp32 >> 24) & 0xff);
+                    }
+                    // 是否需要扩展 REX
+                    if (X64RegUtil.IsRexExtensionReg(info.reg1))
+                        ret.type |= MemoryAddressType.withRex_B;
                 }
                 else if ((!info.type.HasFlag(MemoryAddressType.hasReg1)) && info.type.HasFlag(MemoryAddressType.hasReg2)) {
-                    // 没 reg1 , 有 reg2
+                    // 下面处理没 reg1 , 有 reg2 的情况 (没有基址寄存器，但是有变址寄存器，必须后面带一个disp32作为基地址)
+                    if (info.reg2 == X64RegValue.RSP || info.reg2 == X64RegValue.ESP) {
+                        //// 这里报错，RSP/ESP不允许做变址寄存器（注:R12可以做变址寄存器）
+                        //// 基址和变址寄存器都是RSP的情况
+                        return;
+                    }
+                    //
+                    use64 = X64RegUtil.Is64BitReg(info.reg2);
+                    //
+                    if (!use64)
+                        ret.type |= MemoryAddressType.with32bitRegAddr;             // 用32位寄存器做内存寻址需要加0x67前缀
+                    if (! info.type.HasFlag(MemoryAddressType.hasDisp)) {
+                        info.disp32 = 0;
+                    }
+                    // mod == 00，r/m == 100，base == 101时，base基址寄存器字段并不是表示 RBP/EBP/R13，而是要忽略这个基址寄存器，不存在基址寄存器，只存在变址寄存器，并把一个 32 位的偏移量作为基地址。
+                    if (info.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
+                        switch (info.scale) {
+                            case 1:
+                                scaleValue = 0;
+                                break;
+                            case 2:
+                                scaleValue = 1;
+                                break;
+                            case 4:
+                                scaleValue = 2;
+                                break;
+                            case 8:
+                                scaleValue = 3;
+                                break;
+                        }
+                    }
+                    indexValue = (byte)((uint)(info.reg2) & 0x07);
+                    ret.type |= MemoryAddressType.withSIB;
+                    ret.type |= MemoryAddressType.withModRM;
+                    ret.codeSize = 6;
+                    ret.code[0] = 0x04;     // 0b00000100, mod设为00b, reg未设定, rm=100表示使用SIB
+                    ret.code[1] = (byte)(scaleValue << 6);          // SIB的组成是 scale(2bit)、index(3bit)、base(2bit)
+                    ret.code[1] |= (byte)(indexValue << 3);
+                    ret.code[1] |= 0x05;                            // base设置为 101b (base==101b表示必须带disp做偏移量，此时如果mod==00b，则表示没有基址寄存器,disp的数值作为基址)
+                    ret.code[2] = (byte)(info.disp32 & 0xff);
+                    ret.code[3] = (byte)((info.disp32 >> 8) & 0xff);
+                    ret.code[4] = (byte)((info.disp32 >> 16) & 0xff);
+                    ret.code[5] = (byte)((info.disp32 >> 24) & 0xff);
+                    // 是否需要扩展 REX
+                    if (X64RegUtil.IsRexExtensionReg(info.reg2))
+                        ret.type |= MemoryAddressType.withRex_X;
                 }
 
                 if (info.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
