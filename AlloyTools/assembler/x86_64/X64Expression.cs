@@ -139,9 +139,88 @@ namespace AlloyTools.Assembler.AMD64
                 xTokens.Add(tokens[i]);
             }
             operand = calcAddressExpressionInnerValue(xTokens);
+            if (operand is not null) {
+                if (operand.type == X64OperandType.MemoryAddressInfo) {
+                    memoryAddressInfoToRet();
+                }
+            }
 
             //this.tokens
             return null;
+        }
+
+        // 寻址中间值转为结果值
+        private void memoryAddressInfoToRet()
+        {
+            X64Operand op = operand!;
+            if (op.type == X64OperandType.MemoryAddressInfo) {
+                MemoryAddressResult ret = new MemoryAddressResult();
+                MemoryAddressInfo info = op.addressInfo!;
+                bool use64 = false;
+                //
+                if (info.type.HasFlag(MemoryAddressType.hasReg1) && info.type.HasFlag(MemoryAddressType.hasReg2)) {
+                    // 有 reg1 和 reg2 的情况
+                    if (X64RegUtil.Is64BitReg(info.reg1) && X64RegUtil.Is64BitReg(info.reg2)) {         //  同时64位基址寄存器和变址寄存器
+                        use64 = true;
+                    }
+                    else if (X64RegUtil.Is32BitReg(info.reg1) && X64RegUtil.Is32BitReg(info.reg2)) {    //  同时32位基址寄存器和变址寄存器
+                        use64 = false;
+                    }
+                    else {
+                        //// 报错退出
+                        return;
+                    }
+                    //
+                    if (!use64)
+                        ret.type |= MemoryAddressType.with32bitRegAddr;             // 用32位寄存器做内存寻址需要加0x67前缀
+                    //
+                    ret.type |= MemoryAddressType.withModRM;
+                    //
+                    if (info.type.HasFlag(MemoryAddressType.hasExplicitScale) && (info.reg2 == X64RegValue.RSP || info.reg2 == X64RegValue.ESP)) {
+                        //// 这里报错，RSP/ESP不允许做变址寄存器（注:R12可以做变址寄存器）
+                        return;
+                    }
+                }
+                else if (info.type.HasFlag(MemoryAddressType.hasReg1) && (! info.type.HasFlag(MemoryAddressType.hasReg2))) {
+                    // 有 reg1 , 无 reg2
+                }
+                else if ((!info.type.HasFlag(MemoryAddressType.hasReg1)) && info.type.HasFlag(MemoryAddressType.hasReg2)) {
+                    // 没 reg1 , 有 reg2
+                }
+
+                if (info.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
+                    // 有显示的scale
+                    ret.type |= MemoryAddressType.hasExplicitScale;
+                }
+
+                //MemoryAddress
+            }
+
+            /*
+             public enum MemoryAddressType
+    {
+        None = 0,
+        // 源码层面的信息
+        hasReg1 = 0x01,                 // 有寄存器1
+        hasReg2 = 0x02,                 // 有寄存器2 （当有两个寄存器的时候，一定是SIB基址加变址，这时也一定有scale比例因子，隐藏的因子为1）
+        hasExplicitScale = 0x04,        // 源码中有显式的比例因子(如果有显式的比例因子，则reg1和reg2不能互相调换基址寄存器和变址寄存器来适应一些特殊寄存器要求)
+        hasDisp = 0x08,                 // 是否有数值上的偏移量
+        hasSymbol = 0x10,               // 是否由符号来寻址(由符号来决定偏移量)
+        // 机器层面
+        withModRM = 0x1000,             // 此项其实一定有(除了 with64bitAbsAddr)
+        withSIB = 0x2000,
+        withDisp8 = 0x4000,
+        withDisp32 = 0x8000,
+        withSegment = 0x10000,          // 带有段前缀
+        withNumericDisp = 0x20000,      // 源码层面带有数值上的偏移量
+        withSymbol = 0x40000,           // 源码层面带有符号上的偏移量 (如果此项目有，则 withDisp32 或 with64bitAbsAddr 一定有其一)
+        with32bitRegAddr = 0x80000,     // 使用了32位寄存器来寻址(如果此项目有，则要加0x67前缀)
+        with32bitImmBase = 0x100000,    // 使用32位的无符号立即数做基址(此时 withSIB 一定有，withDisp32 一定有)
+                                        // 注：规定rbp/r13做基址时必须带偏移量，rsp禁止做变址（rsp做变址表示没有变址也没有比例因子）
+                                        //    所以如果mod==00，并且base==rbp/r13, index==rsp时，表示使用一个无符号的32位数值做基地址(这时可能会产生ADDR32重定位)
+        with64bitAbsAddr = 0x200000,    // 使用64位绝对地址来寻址，
+    }
+             */
         }
 
         // 在token-list中查找操作符
