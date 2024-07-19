@@ -324,17 +324,17 @@ namespace AlloyTools.Assembler.AMD64
     {
         public static bool Is32BitReg(X64RegValue reg)
         {
-            return reg.HasFlag(X64RegValue.REG_32bit);
+            return reg.HasFlag(X64RegValue.REG_32bit) && reg.HasFlag(X64RegValue.Common);
         }
 
         public static bool Is64BitReg(X64RegValue reg)
         {
-            return reg.HasFlag(X64RegValue.REG_64bit);
+            return reg.HasFlag(X64RegValue.REG_64bit) && reg.HasFlag(X64RegValue.Common);
         }
 
         public static bool Is32Or64BitReg(X64RegValue reg)
         {
-            return reg.HasFlag(X64RegValue.REG_64bit) || reg.HasFlag(X64RegValue.REG_32bit); 
+            return (reg.HasFlag(X64RegValue.REG_64bit) || reg.HasFlag(X64RegValue.REG_32bit)) && reg.HasFlag(X64RegValue.Common); 
         }
     }
 
@@ -406,6 +406,9 @@ namespace AlloyTools.Assembler.AMD64
     {
         public MemoryAddressModifier modifier;  // 寻址目标大小修饰
         public MemoryAddressType type;          // 寻址类型
+        public byte[] code;                     // 寻址产生的机器码
+        public int codeSize;                    // 机器码长度
+        public int relocOffset;                 // 需要重定位时，重定位位置位于本codebyte数组中的偏移
         public X64RegValue indirectReg;         // 间接寻址寄存器(寄存器间接寻址是mod==00, 寄存器间接寻址不能是rsp/r12,带rsp/r12的必须转变为基址+变址寻址)
         public ulong disp32;                    // 偏移量(mod==01为带8位偏移量, mod==10为带32位偏移量, mod=11为直接表示寄存器本身) (内部用ulong以方便表达式计算，实际上是需要转回int产生机器码)
         public X64RegValue baseReg;             // 基址寄存器信息(rm==100时，才有SIB字节) [rsp 寄存器不能做为 index 寄存器，只能做 base 寄存器, rsp做index表示没有变址, 而r12却可以做index]
@@ -418,6 +421,12 @@ namespace AlloyTools.Assembler.AMD64
 
         public MemoryAddressResult()
         {
+            modifier = MemoryAddressModifier.None;
+            type = MemoryAddressType.None;
+            code = new byte[8];
+            codeSize = 0;
+            relocOffset = 0;
+
             symName = "";
         }
     }

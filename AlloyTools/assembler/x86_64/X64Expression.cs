@@ -171,15 +171,38 @@ namespace AlloyTools.Assembler.AMD64
                         return;
                     }
                     //
-                    if (!use64)
-                        ret.type |= MemoryAddressType.with32bitRegAddr;             // 用32位寄存器做内存寻址需要加0x67前缀
-                    //
-                    ret.type |= MemoryAddressType.withModRM;
-                    //
                     if (info.type.HasFlag(MemoryAddressType.hasExplicitScale) && (info.reg2 == X64RegValue.RSP || info.reg2 == X64RegValue.ESP)) {
                         //// 这里报错，RSP/ESP不允许做变址寄存器（注:R12可以做变址寄存器）
                         return;
                     }
+                    if ((info.reg2 == X64RegValue.RSP || info.reg2 == X64RegValue.ESP) && (info.reg1 != X64RegValue.RSP && info.reg1 != X64RegValue.ESP)) {
+                        // 变址为rsp/rsp时,基址为其他寄存器时，把基址与变址对调 (rsp/esp必须做基址寄存器)
+                        X64RegValue temp;
+                        temp = info.reg2;
+                        info.reg2 = info.reg1;
+                        info.reg1 = temp;
+                    }
+                    //
+                    if (!use64)
+                        ret.type |= MemoryAddressType.with32bitRegAddr;             // 用32位寄存器做内存寻址需要加0x67前缀
+                    //
+                    ret.type |= MemoryAddressType.withModRM;
+                    ret.type |= MemoryAddressType.withSIB;
+                    if (info.type.HasFlag(MemoryAddressType.hasDisp)) {
+                        long disp = (long)info.disp32;
+                        if (disp >= (-128) && disp <= 127) {
+                            ret.type |= MemoryAddressType.withDisp8;
+                        } else {
+                            ret.type |= MemoryAddressType.withDisp32;
+                        }
+                    }
+                    if (!info.type.HasFlag(MemoryAddressType.hasDisp)) {       // 这里判断没有hasDisp时，基地址又是rbp/r13时，必须默默加一个为 0 的 disp8
+                        if (info.reg1 == X64RegValue.RBP || info.reg1 == X64RegValue.R13 || info.reg1 == X64RegValue.EBP || info.reg1 == X64RegValue.R13D) {
+                            ret.type |= MemoryAddressType.withDisp8;
+                            ret.disp32 = 0;
+                        }
+                    }
+                    //
                 }
                 else if (info.type.HasFlag(MemoryAddressType.hasReg1) && (! info.type.HasFlag(MemoryAddressType.hasReg2))) {
                     // 有 reg1 , 无 reg2
