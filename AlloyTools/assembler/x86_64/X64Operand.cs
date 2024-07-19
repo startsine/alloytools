@@ -426,8 +426,14 @@ namespace AlloyTools.Assembler.AMD64
             code = new byte[8];
             codeSize = 0;
             relocOffset = 0;
-
+            indirectReg = X64RegValue.None;
+            disp32 = 0;
+            baseReg = X64RegValue.None;
+            indexReg = X64RegValue.None;
+            sacle = 0;
             symName = "";
+            symIndex = 0;
+            segReg = X64RegValue.None;
         }
     }
 

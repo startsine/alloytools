@@ -199,10 +199,44 @@ namespace AlloyTools.Assembler.AMD64
                     if (!info.type.HasFlag(MemoryAddressType.hasDisp)) {       // 这里判断没有hasDisp时，基地址又是rbp/r13时，必须默默加一个为 0 的 disp8
                         if (info.reg1 == X64RegValue.RBP || info.reg1 == X64RegValue.R13 || info.reg1 == X64RegValue.EBP || info.reg1 == X64RegValue.R13D) {
                             ret.type |= MemoryAddressType.withDisp8;
-                            ret.disp32 = 0;
+                            info.disp32 = 0;
                         }
                     }
                     //
+                    ret.baseReg = info.reg1;
+                    ret.indexReg = info.reg2;
+                    ret.sacle = info.scale;
+                    ret.disp32 = info.disp32;
+                    //
+                    byte scaleValue = 0;
+                    
+                    if (info.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
+                        switch (info.scale) {
+                            case 1:
+                                scaleValue = 0;
+                                break;
+                            case 2:
+                                scaleValue = 1;
+                                break;
+                            case 4:
+                                scaleValue = 2;
+                                break;
+                            case 8:
+                                scaleValue = 3;
+                                break;
+                        }
+                    } 
+                    //
+                    ret.codeSize = 2;
+                    ret.code[0] = 0x04;     // 0b00000100, mod未设定, reg未设定, rm=100表示使用SIB
+                    ret.code[1] = (byte)(scaleValue << 6);
+                    if (ret.type.HasFlag(MemoryAddressType.withDisp8)) {
+                        ret.codeSize += 1;
+                    }
+                    else if (ret.type.HasFlag(MemoryAddressType.withDisp32)) {
+                        ret.codeSize += 4;
+                    }
+                    
                 }
                 else if (info.type.HasFlag(MemoryAddressType.hasReg1) && (! info.type.HasFlag(MemoryAddressType.hasReg2))) {
                     // 有 reg1 , 无 reg2
