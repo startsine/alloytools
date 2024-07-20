@@ -382,6 +382,7 @@ namespace AlloyTools.Assembler.AMD64
         hasExplicitScale = 0x04,        // 源码中有显式的比例因子(如果有显式的比例因子，则reg1和reg2不能互相调换基址寄存器和变址寄存器来适应一些特殊寄存器要求)
         hasDisp = 0x08,                 // 是否有数值上的偏移量
         hasSymbol = 0x10,               // 是否由符号来寻址(由符号来决定偏移量)
+        hasAddr64 = 0x20,               // 使用了ADDR64来修饰的符号或disp寻址
         // 机器层面
         withRex_B = 0x100,
         withRex_X = 0x200,
@@ -412,6 +413,15 @@ namespace AlloyTools.Assembler.AMD64
         public ulong symIndex;
     }
 
+    // 重定位类型
+    public enum RelocType
+    {
+        None = 0,
+        ADDR64,                                 // 64位绝对地址
+        ADDR32,                                 // 32位绝对地址
+        REL32,                                  // 相对下一条指令的相对PC寻址
+    }
+
     // 机器层面的寻址信息
     public class MemoryAddressResult
     {
@@ -429,6 +439,7 @@ namespace AlloyTools.Assembler.AMD64
         public ulong symIndex;                  // 符号在符号列表的索引(为0表示找不到)
                                                 // 另一种情况，mod==00，并且base==rbp/r13, index==rsp时，表示使用一个无符号的32位绝对数值(可以是变量符号)做基地址进行ADDR32寻址
         public X64RegValue segReg;              // 段前缀用的段寄存器
+        public RelocType relocType;             // 重定位类型, 存在 symbol 时才有效
 
         public MemoryAddressResult()
         {
@@ -445,6 +456,7 @@ namespace AlloyTools.Assembler.AMD64
             symName = "";
             symIndex = 0;
             segReg = X64RegValue.None;
+            relocType = RelocType.None;
         }
     }
 

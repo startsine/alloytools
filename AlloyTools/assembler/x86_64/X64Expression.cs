@@ -196,15 +196,27 @@ namespace AlloyTools.Assembler.AMD64
                     //
                     ret.type |= MemoryAddressType.withModRM;
                     ret.type |= MemoryAddressType.withSIB;
-                    if (info.type.HasFlag(MemoryAddressType.hasDisp)) {
-                        long disp = (long)info.disp32;
-                        if (disp >= (-128) && disp <= 127) {
-                            ret.type |= MemoryAddressType.withDisp8;
-                        } else {
+                    if (info.type.HasFlag(MemoryAddressType.hasDisp) || info.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                        if (info.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                            // 如果有符号重定位。自动有disp32， 即使是disp8也会变成disp32
                             ret.type |= MemoryAddressType.withDisp32;
+                            ret.type |= MemoryAddressType.withSymbol;
+                            ret.symName = info.symName;
+                            ret.relocType = RelocType.ADDR32;
+                            ret.relocOffset = 2;
+                        }
+                        else {
+                            long disp = (long)info.disp32;
+                            if (disp >= (-128) && disp <= 127) {
+                                ret.type |= MemoryAddressType.withDisp8;
+                            }
+                            else {
+                                ret.type |= MemoryAddressType.withDisp32;
+                            }
                         }
                     }
-                    if (!info.type.HasFlag(MemoryAddressType.hasDisp)) {       // 这里判断没有hasDisp时，基地址又是rbp/r13时，必须默默加一个为 0 的 disp8
+                    else {
+                        // 这里判断没有hasDisp时，基地址又是rbp/r13时，必须默默加一个为 0 的 disp8
                         if (info.reg1 == X64RegValue.RBP || info.reg1 == X64RegValue.R13 || info.reg1 == X64RegValue.EBP || info.reg1 == X64RegValue.R13D) {
                             ret.type |= MemoryAddressType.withDisp8;
                             info.disp32 = 0;
@@ -270,16 +282,26 @@ namespace AlloyTools.Assembler.AMD64
                     ret.codeSize = 1;
                     ret.type |= MemoryAddressType.withModRM;
                     ret.code[0] = 0;
-                    if (info.type.HasFlag(MemoryAddressType.hasDisp)) {
-                        long disp = (long)info.disp32;
-                        if (disp >= (-128) && disp <= 127) {
-                            ret.type |= MemoryAddressType.withDisp8;
+                    if (info.type.HasFlag(MemoryAddressType.hasDisp) || info.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                        if (info.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                            // 如果有符号重定位。自动有disp32， 即使是disp8也会变成disp32
+                            ret.type |= MemoryAddressType.withDisp32;
+                            ret.type |= MemoryAddressType.withSymbol;
+                            ret.symName = info.symName;
+                            ret.relocType = RelocType.ADDR32;
                         }
                         else {
-                            ret.type |= MemoryAddressType.withDisp32;
+                            long disp = (long)info.disp32;
+                            if (disp >= (-128) && disp <= 127) {
+                                ret.type |= MemoryAddressType.withDisp8;
+                            }
+                            else {
+                                ret.type |= MemoryAddressType.withDisp32;
+                            }
                         }
                     }
-                    if (!info.type.HasFlag(MemoryAddressType.hasDisp)) {       // 这里判断没有hasDisp时，基地址又是rbp/r13时，必须默默加一个为 0 的 disp8
+                    else {
+                        // 这里判断没有hasDisp时，基地址又是rbp/r13时，必须默默加一个为 0 的 disp8
                         if (info.reg1 == X64RegValue.RBP || info.reg1 == X64RegValue.R13 || info.reg1 == X64RegValue.EBP || info.reg1 == X64RegValue.R13D) {
                             ret.type |= MemoryAddressType.withDisp8;
                             info.disp32 = 0;
@@ -310,6 +332,9 @@ namespace AlloyTools.Assembler.AMD64
                         ret.code[dispStart + 1] = (byte)((info.disp32 >> 8) & 0xff);
                         ret.code[dispStart + 2] = (byte)((info.disp32 >> 16) & 0xff);
                         ret.code[dispStart + 3] = (byte)((info.disp32 >> 24) & 0xff);
+                        if (ret.type.HasFlag(MemoryAddressType.withSymbol)) {
+                            ret.relocOffset = dispStart;
+                        }
                     }
                     // 是否需要扩展 REX
                     if (X64RegUtil.IsRexExtensionReg(info.reg1))
@@ -330,6 +355,7 @@ namespace AlloyTools.Assembler.AMD64
                     if (! info.type.HasFlag(MemoryAddressType.hasDisp)) {
                         info.disp32 = 0;
                     }
+                    ret.type |= MemoryAddressType.withDisp32;
                     // mod == 00，r/m == 100，base == 101时，base基址寄存器字段并不是表示 RBP/EBP/R13，而是要忽略这个基址寄存器，不存在基址寄存器，只存在变址寄存器，并把一个 32 位的偏移量作为基地址。
                     if (info.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
                         switch (info.scale) {
@@ -359,16 +385,22 @@ namespace AlloyTools.Assembler.AMD64
                     ret.code[3] = (byte)((info.disp32 >> 8) & 0xff);
                     ret.code[4] = (byte)((info.disp32 >> 16) & 0xff);
                     ret.code[5] = (byte)((info.disp32 >> 24) & 0xff);
+                    if (info.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                        ret.type |= MemoryAddressType.withSymbol;
+                        ret.symName = info.symName;
+                        ret.relocType = RelocType.ADDR32;
+                        ret.relocOffset = 2;
+                    }
                     // 是否需要扩展 REX
                     if (X64RegUtil.IsRexExtensionReg(info.reg2))
                         ret.type |= MemoryAddressType.withRex_X;
                 }
+                else {          // 没有reg1和reg2的情况
 
-                if (info.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
-                    // 有显示的scale
-                    ret.type |= MemoryAddressType.hasExplicitScale;
                 }
 
+                op.type = X64OperandType.MemoryAddress;
+                op.addressRes = ret;
                 //MemoryAddress
             }
 
