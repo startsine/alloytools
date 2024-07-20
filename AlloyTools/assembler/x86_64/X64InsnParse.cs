@@ -77,7 +77,7 @@ namespace AlloyTools.Assembler.AMD64
             OpcodeInfos? matchedInfo = null;
 
 
-            int expressionsCount = sourceLine.expressions != null ? sourceLine.expressions.Count : 0;
+            int expressionsCount = sourceLine.expressions != null ? sourceLine.expressions.Count : 0;       // 当前指令的表达式的个数 
             currentNode = opcodeInfos.First;
             while (currentNode is not null) {
                 info = currentNode.Value;
@@ -86,11 +86,33 @@ namespace AlloyTools.Assembler.AMD64
                         matchedInfo = noOperand;
                         break;                                              // 不需要操作数的指令直接匹配
                     }
+                    //
+                    if (info.numberOfOperand == 1) {
+                        if (checkOperandMatch(sourceLine?.expressions?[0].operand, info.op1)) {
+                            matchedInfo = info;
+                            break;
+                        }
+                    }
+                    else if (info.numberOfOperand == 2) {
+                        if (checkOperandMatch(sourceLine?.expressions?[0].operand, info.op1) &&
+                            checkOperandMatch(sourceLine?.expressions?[1].operand, info.op2) ) {
+                            matchedInfo = info;
+                            break;
+                        }
+                    }
+                    else if (info.numberOfOperand == 3) {
+                        if (checkOperandMatch(sourceLine?.expressions?[0].operand, info.op1) &&
+                            checkOperandMatch(sourceLine?.expressions?[1].operand, info.op2) &&
+                            checkOperandMatch(sourceLine?.expressions?[2].operand, info.op3) ) {
+                            matchedInfo = info;
+                            break;
+                        }
+                    }
                 }
                 currentNode = currentNode.Next;
             }
 
-            // info非空则表示匹配
+            // matchedInfo非空则表示匹配
             if (matchedInfo is not null) {
 
             }
@@ -99,6 +121,13 @@ namespace AlloyTools.Assembler.AMD64
 
             return 0;
         }
+
+        bool checkOperandMatch(X64Operand? operand, MatchType matchType)
+        {
+
+            return true; 
+        }
+        
     }
 }
 
