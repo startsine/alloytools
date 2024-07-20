@@ -383,6 +383,7 @@ namespace AlloyTools.Assembler.AMD64
         hasDisp = 0x08,                 // 是否有数值上的偏移量
         hasSymbol = 0x10,               // 是否由符号来寻址(由符号来决定偏移量)
         hasAddr64 = 0x20,               // 使用了ADDR64来修饰的符号或disp寻址
+        hasAddr32 = 0x20,               // 使用了ADDR32来修饰的符号或disp寻址
         // 机器层面
         withRex_B = 0x100,
         withRex_X = 0x200,

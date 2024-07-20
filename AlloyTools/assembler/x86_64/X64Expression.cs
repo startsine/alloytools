@@ -396,7 +396,39 @@ namespace AlloyTools.Assembler.AMD64
                         ret.type |= MemoryAddressType.withRex_X;
                 }
                 else {          // 没有reg1和reg2的情况
+                    if (info.type.HasFlag(MemoryAddressType.hasDisp) || info.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                        if (info.type.HasFlag(MemoryAddressType.hasAddr32)) {
+                            // 使用32位绝对地址，
+                            // mod == 00，r/m == 100，base == 101时，base基址寄存器字段并不是表示 RBP/EBP/R13(因为必须带disp)，而是要忽略这个基址寄存器，不存在基址寄存器，只存在变址寄存器，并把后面的一个 32 位的偏移量作为基地址
+                            ret.type |= MemoryAddressType.withModRM;
+                            ret.type |= MemoryAddressType.withSIB;
+                            ret.type |= MemoryAddressType.withDisp32;
+                            ret.code[0] = 0x04;     // mod==00b, rm=100b
+                            ret.code[1] = 0x25;     // scale=00b, index==100b, base=101b
+                            ret.code[2] = (byte)(info.disp32 & 0xff);
+                            ret.code[3] = (byte)((info.disp32 >> 8) & 0xff);
+                            ret.code[4] = (byte)((info.disp32 >> 16) & 0xff);
+                            ret.code[5] = (byte)((info.disp32 >> 24) & 0xff);
+                            ret.codeSize = 6;
+                            if (info.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                                ret.type |= MemoryAddressType.withSymbol;
+                                ret.symName = info.symName;
+                                ret.relocType = RelocType.ADDR32;
+                                ret.relocOffset = 2;
+                            }
+                        }
+                        else if (info.type.HasFlag(MemoryAddressType.hasAddr64)) {
+                            // 使用64位绝对地址
 
+                        }
+                        else {
+
+                        }
+                    }
+                    else {
+                        //// 报错
+                        return;
+                    }
                 }
 
                 op.type = X64OperandType.MemoryAddress;
