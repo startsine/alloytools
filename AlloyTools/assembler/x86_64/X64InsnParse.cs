@@ -65,12 +65,16 @@ namespace AlloyTools.Assembler.AMD64
 
     public abstract class BaseInsn: IInsnProcessor
     {
+        protected static OpcodeInfos noOperand = new OpcodeInfos();
+
         protected int processCpuIns(string insnStr, SourceLine sourceLine, int pass, LinkedList<OpcodeInfos> opcodeInfos)
         {
             Console.WriteLine("process. " + insnStr);
 
+            
             LinkedListNode<OpcodeInfos>? currentNode;
             OpcodeInfos? info = null;
+            OpcodeInfos? matchedInfo = null;
 
 
             int expressionsCount = sourceLine.expressions != null ? sourceLine.expressions.Count : 0;
@@ -79,6 +83,7 @@ namespace AlloyTools.Assembler.AMD64
                 info = currentNode.Value;
                 if (info.numberOfOperand == expressionsCount) {
                     if (info.numberOfOperand == 0) {
+                        matchedInfo = noOperand;
                         break;                                              // 不需要操作数的指令直接匹配
                     }
                 }
@@ -86,7 +91,7 @@ namespace AlloyTools.Assembler.AMD64
             }
 
             // info非空则表示匹配
-            if (info is not null) {
+            if (matchedInfo is not null) {
 
             }
 

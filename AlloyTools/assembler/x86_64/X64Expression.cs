@@ -418,11 +418,40 @@ namespace AlloyTools.Assembler.AMD64
                             }
                         }
                         else if (info.type.HasFlag(MemoryAddressType.hasAddr64)) {
-                            // 使用64位绝对地址
-
+                            // 使用64位绝对地址, 只有AL/AX/EAX/RAX 的 mov 指令有效
+                            ret.type |= MemoryAddressType.with64bitAbsAddr;
+                            ret.code[0] = (byte)(info.disp32 & 0xff);
+                            ret.code[1] = (byte)((info.disp32 >> 8) & 0xff);
+                            ret.code[2] = (byte)((info.disp32 >> 16) & 0xff);
+                            ret.code[3] = (byte)((info.disp32 >> 24) & 0xff);
+                            ret.code[4] = (byte)((info.disp32 >> 32) & 0xff);
+                            ret.code[5] = (byte)((info.disp32 >> 40) & 0xff);
+                            ret.code[6] = (byte)((info.disp32 >> 48) & 0xff);
+                            ret.code[7] = (byte)((info.disp32 >> 56) & 0xff);
+                            ret.codeSize = 8;
+                            if (info.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                                ret.type |= MemoryAddressType.withSymbol;
+                                ret.symName = info.symName;
+                                ret.relocType = RelocType.ADDR64;
+                                ret.relocOffset = 0;
+                            }
                         }
                         else {
-
+                            // PC 相对寻址
+                            // mod==00b, r/m=101b 表示只采用 rip 相对寻址(相对下一条指令) - 注:x86规定rbp/r13必须带8/32的偏移量，如mod==00b则没有偏移量，用以表达rip相对寻址 
+                            ret.type |= MemoryAddressType.withModRM;
+                            ret.code[0] = 0x05;             // mod=00b, reg未知, r/m=101b
+                            ret.code[1] = (byte)(info.disp32 & 0xff);
+                            ret.code[2] = (byte)((info.disp32 >> 8) & 0xff);
+                            ret.code[3] = (byte)((info.disp32 >> 16) & 0xff);
+                            ret.code[4] = (byte)((info.disp32 >> 24) & 0xff);
+                            ret.codeSize = 5;
+                            if (info.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                                ret.type |= MemoryAddressType.withSymbol;
+                                ret.symName = info.symName;
+                                ret.relocType = RelocType.REL32;
+                                ret.relocOffset = 1;
+                            }
                         }
                     }
                     else {
