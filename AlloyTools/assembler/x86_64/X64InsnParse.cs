@@ -2,6 +2,7 @@
 
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 
 namespace AlloyTools.Assembler.AMD64
@@ -41,7 +42,8 @@ namespace AlloyTools.Assembler.AMD64
         bit3Size = 0x08,                //  指令码的 bit3 代表操作数大小, bit3==0是为8bit, bit3==1是为 16/32/64 bit
         opcodeWithReg = 0x10,           //  将寄存器插入到 opcode 的 bit2-bit0 位置
         withImm = 0x20,                 //  指令码最后带立即数作为操作数
-        RMInRight = 0x40,               //  该bit为1时表示匹配的 R/M 域放置于第2个操作数，为0则R/M 域放置于第1个操作数
+        withM64 = 0x40,                 //  指令码最后带64位立即数做寻址
+        RMInRight = 0x80,               //  该bit为1时表示匹配的 R/M 域放置于第2个操作数，为0则R/M 域放置于第1个操作数
     }
 
     public class OpcodeInfos
@@ -71,11 +73,10 @@ namespace AlloyTools.Assembler.AMD64
         {
             Console.WriteLine("process. " + insnStr);
 
-            
+            int insTotalSize = 0;
             LinkedListNode<OpcodeInfos>? currentNode;
             OpcodeInfos? info = null;
             OpcodeInfos? matchedInfo = null;
-
 
             int expressionsCount = sourceLine.expressions != null ? sourceLine.expressions.Count : 0;       // 当前指令的表达式的个数 
             currentNode = opcodeInfos.First;
@@ -87,23 +88,23 @@ namespace AlloyTools.Assembler.AMD64
                         break;                                              // 不需要操作数的指令直接匹配
                     }
                     //
-                    if (info.numberOfOperand == 1) {
-                        if (checkOperandMatch(sourceLine?.expressions?[0].operand, info.op1)) {
+                    if (expressionsCount == 1) {
+                        if (checkOperandMatch(sourceLine?.expressions?[0].operand, info.op0)) {
                             matchedInfo = info;
                             break;
                         }
                     }
-                    else if (info.numberOfOperand == 2) {
-                        if (checkOperandMatch(sourceLine?.expressions?[0].operand, info.op1) &&
-                            checkOperandMatch(sourceLine?.expressions?[1].operand, info.op2) ) {
+                    else if (expressionsCount == 2) {
+                        if (checkOperandMatch(sourceLine?.expressions?[0].operand, info.op0) &&
+                            checkOperandMatch(sourceLine?.expressions?[1].operand, info.op1) ) {
                             matchedInfo = info;
                             break;
                         }
                     }
-                    else if (info.numberOfOperand == 3) {
-                        if (checkOperandMatch(sourceLine?.expressions?[0].operand, info.op1) &&
-                            checkOperandMatch(sourceLine?.expressions?[1].operand, info.op2) &&
-                            checkOperandMatch(sourceLine?.expressions?[2].operand, info.op3) ) {
+                    else if (expressionsCount == 3) {
+                        if (checkOperandMatch(sourceLine?.expressions?[0].operand, info.op0) &&
+                            checkOperandMatch(sourceLine?.expressions?[1].operand, info.op1) &&
+                            checkOperandMatch(sourceLine?.expressions?[2].operand, info.op2) ) {
                             matchedInfo = info;
                             break;
                         }
@@ -114,9 +115,53 @@ namespace AlloyTools.Assembler.AMD64
 
             // matchedInfo非空则表示匹配
             if (matchedInfo is not null) {
+                insTotalSize = matchedInfo.opcodes!.Length;
+                switch (expressionsCount) {
+                    case 0: {
 
+                        }
+                        break;
+                    case 1: {
+
+                        }
+                        break;
+                    case 2: {
+                            if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_R) || matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_Digit)) {
+                                // 存在 ModRM 字段
+
+                            }
+                        }
+                        break;
+                    case 3: {
+
+                        }
+                        break;
+                    default: {
+                            //// 报错，没有超过3个操作数的指令
+                        }
+                        break;
+                }
+                
+            }
+            else {
+                //// 报错，找不到指令匹配
+                return 0;
             }
 
+            /*
+             public enum OpcodeFlag: uint
+    {
+        None = 0,
+        ModRM_R = 0x01,                 //  /r :     带 ModRM 并且 其中代表两个值，reg 和 r/m
+        ModRM_Digit = 0x02,             //  /digit:  带 ModRM 并且 r/m 域代表r/m, reg 域代表 3bit 的额外 opcode
+        bit0Size = 0x04,                //  指令码的 bit0 代表操作数大小, bit0==0是为8bit, bit0==1是为 16/32/64 bit, 
+        bit3Size = 0x08,                //  指令码的 bit3 代表操作数大小, bit3==0是为8bit, bit3==1是为 16/32/64 bit
+        opcodeWithReg = 0x10,           //  将寄存器插入到 opcode 的 bit2-bit0 位置
+        withImm = 0x20,                 //  指令码最后带立即数作为操作数
+            withM64 = 0x40,
+        RMInRight = 0x80,               //  该bit为1时表示匹配的 R/M 域放置于第2个操作数，为0则R/M 域放置于第1个操作数
+    }
+             */
 
 
             return 0;
@@ -126,10 +171,41 @@ namespace AlloyTools.Assembler.AMD64
         {
             if (operand is null) { return false; }
             switch (matchType) {
-                case MatchType.imm: {
-                        if (operand.type) {
-
+                case MatchType.reg: {   // 操作数是一个通用寄存器
+                        if (operand.type == X64OperandType.Register) {
+                            if (X64RegUtil.IsCommonReg(operand.regValue)) {
+                                return true;
+                            }
                         }
+                    }
+                    break;
+                case MatchType.acc: {
+                        if (operand.type == X64OperandType.Register) {
+                            if (operand.regValue == X64RegValue.AL || operand.regValue == X64RegValue.AX 
+                                || operand.regValue == X64RegValue.EAX || operand.regValue == X64RegValue.RAX) {
+                                return true;
+                            }
+                        }
+                    }
+                    break;
+                case MatchType.rm: {
+                        if (operand.type == X64OperandType.Register) {
+                            if (X64RegUtil.IsCommonReg(operand.regValue)) {
+                                return true;
+                            }
+                        }
+                        if (operand.type == X64OperandType.MemoryAddress) {
+                            return true;
+                        }
+                        if (operand.type == X64OperandType.Symbol) {
+                            // 不加 offset 修饰的符号当作内存寻址
+                        }
+                    }
+                    break;
+                case MatchType.imm: {
+                        //if (operand.type) {
+
+                        //}
                     }
                     break;
 
@@ -138,9 +214,7 @@ namespace AlloyTools.Assembler.AMD64
 
                 /*
                  
-                 imm,                            // 操作数是立即数
-        acc,                            // 操作数是AL,AX,EAX,RAX
-        reg,                            // 操作数是一个通用寄存器
+        imm,                            // 操作数是立即数
         rm,                             // 操作数是寄存器或者内存寻址
         //moffset32,                      // 操作数是内存寻址，用[imm]寻址的
         moffset64,                      // 操作数是内存寻址，用[imm64]寻址的
@@ -149,7 +223,7 @@ namespace AlloyTools.Assembler.AMD64
         ctrlReg,                        // 操作数是CR0-CR15
                  */
             }
-            return true; 
+            return false; 
         }
         
     }

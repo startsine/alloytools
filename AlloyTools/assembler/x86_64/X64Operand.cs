@@ -322,6 +322,10 @@ namespace AlloyTools.Assembler.AMD64
 
     public class X64RegUtil
     {
+        public static bool IsCommonReg(X64RegValue reg)
+        {
+            return reg.HasFlag(X64RegValue.Common);
+        }
         public static bool Is32BitReg(X64RegValue reg)
         {
             return reg.HasFlag(X64RegValue.REG_32bit) && reg.HasFlag(X64RegValue.Common);

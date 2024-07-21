@@ -15,7 +15,7 @@ namespace AlloyTools.Assembler.AMD64.Instruction
             info.numberOfOperand = 2;
             info.op0 = MatchType.acc;
             info.op1 = MatchType.moffset64;
-            info.opcodeFlag = OpcodeFlag.bit0Size;
+            info.opcodeFlag = OpcodeFlag.bit0Size | OpcodeFlag.withM64;
             opcodeInfos.AddLast(info);
             // MOV moffset64, acc  == A2 /s0
             info = new OpcodeInfos();
@@ -23,7 +23,7 @@ namespace AlloyTools.Assembler.AMD64.Instruction
             info.numberOfOperand = 2;
             info.op0 = MatchType.moffset64;
             info.op1 = MatchType.acc;
-            info.opcodeFlag = OpcodeFlag.bit0Size;
+            info.opcodeFlag = OpcodeFlag.bit0Size | OpcodeFlag.withM64;
             opcodeInfos.AddLast(info);
             // MOV reg/mem, reg  == 88 /r /s0
             info = new OpcodeInfos();
