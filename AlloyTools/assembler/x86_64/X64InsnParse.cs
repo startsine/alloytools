@@ -124,7 +124,31 @@ namespace AlloyTools.Assembler.AMD64
 
         bool checkOperandMatch(X64Operand? operand, MatchType matchType)
         {
+            if (operand is null) { return false; }
+            switch (matchType) {
+                case MatchType.imm: {
+                        if (operand.type) {
 
+                        }
+                    }
+                    break;
+
+
+
+
+                /*
+                 
+                 imm,                            // 操作数是立即数
+        acc,                            // 操作数是AL,AX,EAX,RAX
+        reg,                            // 操作数是一个通用寄存器
+        rm,                             // 操作数是寄存器或者内存寻址
+        //moffset32,                      // 操作数是内存寻址，用[imm]寻址的
+        moffset64,                      // 操作数是内存寻址，用[imm64]寻址的
+        segReg,                         // 操作数是段寄存器
+        debugReg,                       // 操作数是DR0-DR15
+        ctrlReg,                        // 操作数是CR0-CR15
+                 */
+            }
             return true; 
         }
         
