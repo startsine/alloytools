@@ -68,6 +68,11 @@ namespace AlloyTools.Assembler.AMD64
     public abstract class BaseInsn: IInsnProcessor
     {
         protected static OpcodeInfos noOperand = new OpcodeInfos();
+        protected static byte[] finalCode = new byte[32];           // 全体code
+        protected static byte[] prefixCode = new byte[32];          // 前缀部分的code
+        protected static byte[] insCode = new byte[32];             // 指令部分的code
+        protected static byte[] addrCode = new byte[32];            // 内存寻址部分的code
+        protected static byte[] immCode = new byte[32];             // 立即数部分的code
 
         protected int processCpuIns(string insnStr, SourceLine sourceLine, int pass, LinkedList<OpcodeInfos> opcodeInfos)
         {
@@ -116,6 +121,19 @@ namespace AlloyTools.Assembler.AMD64
             // matchedInfo非空则表示匹配
             if (matchedInfo is not null) {
                 insTotalSize = matchedInfo.opcodes!.Length;
+                MemoryAddressResult? mem = null;
+                X64RegValue regFieldInModRM = X64RegValue.None;
+                X64RegValue rmFieldInModRM = X64RegValue.None;
+                int prefixCodeSize = 0;
+                int insCodeSize = 0;
+                int addrCodeSize = 0;
+                int immCodeSize = 0;
+                bool flagRexE = false;
+                bool flagRexW = false;
+                bool flagRexR = false;
+                bool flagRexX = false;
+                bool flagRexB = false;
+
                 switch (expressionsCount) {
                     case 0: {
 
@@ -128,7 +146,73 @@ namespace AlloyTools.Assembler.AMD64
                     case 2: {
                             if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_R) || matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_Digit)) {
                                 // 存在 ModRM 字段
-
+                                if (matchedInfo.op0 == MatchType.rm) {                          // 如果 op0 匹配了 R/M 域
+                                    var operand0 = sourceLine?.expressions?[0].operand;
+                                    var operand1 = sourceLine?.expressions?[1].operand;
+                                    if (operand0!.type == X64OperandType.MemoryAddress) {
+                                        mem = operand0.addressRes;
+                                    } else if (operand0!.type == X64OperandType.Register) {
+                                        rmFieldInModRM = operand0.regValue;
+                                    } else if (operand0!.type == X64OperandType.Symbol) {
+                                        // to-do
+                                    }
+                                    //
+                                    if (operand1!.type == X64OperandType.Register) {
+                                        regFieldInModRM = operand1.regValue;
+                                    }
+                                }
+                                else if (matchedInfo.op1 == MatchType.rm) {                     // 如果 op1 匹配了 R/M 域
+                                    var operand0 = sourceLine?.expressions?[0].operand;
+                                    var operand1 = sourceLine?.expressions?[1].operand;
+                                    if (operand1!.type == X64OperandType.MemoryAddress) {
+                                        mem = operand1.addressRes;
+                                    } else if (operand1!.type == X64OperandType.Register) {
+                                        rmFieldInModRM = operand1.regValue;
+                                    } else if (operand1!.type == X64OperandType.Symbol) {
+                                        // to-do
+                                    }
+                                    //
+                                    if (operand0!.type == X64OperandType.Register) {
+                                        regFieldInModRM = operand0.regValue;
+                                    }
+                                }
+                                else {
+                                    //// 报错
+                                    return 0;
+                                }
+                                //
+                                Array.Copy(matchedInfo.opcodes, insCode, matchedInfo.opcodes.Length);
+                                insCodeSize = matchedInfo.opcodes.Length;
+                                Array.Copy(mem!.code, addrCode, mem.codeSize);
+                                addrCodeSize = mem.codeSize;
+                                //
+                                if (mem.type.HasFlag(MemoryAddressType.withRex_X))
+                                    flagRexX = true;
+                                if (mem.type.HasFlag(MemoryAddressType.withRex_B))
+                                    flagRexB = true;
+                                //
+                                if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_Digit)) {
+                                    // 把操作码插入到 ModRM 中的 reg 域
+                                    addrCode[0] &= 0xC7;
+                                    addrCode[0] |= (byte)((matchedInfo.digit & 0x07) << 3);
+                                }
+                                else { //HasFlag(OpcodeFlag.ModRM_R)
+                                    // 将寄存器插入到 ModRM 中的 reg 域
+                                    if (regFieldInModRM != X64RegValue.None) {
+                                        uint regValue = (uint)regFieldInModRM;
+                                        addrCode[0] &= 0xC7;
+                                        addrCode[0] |= (byte)((regValue & 0x07) << 3);
+                                    }
+                                    if (X64RegUtil.IsRexExtensionReg(regFieldInModRM)) 
+                                        flagRexR = true;
+                                    if (X64RegUtil.IsRexPrefixReg(regFieldInModRM))
+                                        flagRexE = true;
+                                }
+                                //
+                                if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.bit0Size)) {
+                                }
+                                if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.bit3Size)) {
+                                }
                             }
                         }
                         break;
@@ -158,7 +242,7 @@ namespace AlloyTools.Assembler.AMD64
         bit3Size = 0x08,                //  指令码的 bit3 代表操作数大小, bit3==0是为8bit, bit3==1是为 16/32/64 bit
         opcodeWithReg = 0x10,           //  将寄存器插入到 opcode 的 bit2-bit0 位置
         withImm = 0x20,                 //  指令码最后带立即数作为操作数
-            withM64 = 0x40,
+        withM64 = 0x40,
         RMInRight = 0x80,               //  该bit为1时表示匹配的 R/M 域放置于第2个操作数，为0则R/M 域放置于第1个操作数
     }
              */

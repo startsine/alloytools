@@ -349,6 +349,14 @@ namespace AlloyTools.Assembler.AMD64
             return false;
         }
 
+        // 是否是需要REX扩展的寄存器 (8-15) 以及 SPL、BPL、SIL、DIL
+        public static bool IsRexPrefixReg(X64RegValue reg)
+        {
+            if (reg.HasFlag(X64RegValue.REXPreflx_40))
+                return true;
+            return false;
+        }
+
     }
 
     public enum SymbolModifier
