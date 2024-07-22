@@ -88,20 +88,20 @@ namespace AlloyTools.Assembler.AMD64
     public class X64FragmentList
     {
         public long currFragmentIndex;
-        public static LargeList<X64Fragment> fragments;
+        public LargeList<X64Fragment> fragments;
 
-        static X64FragmentList()
+        public X64FragmentList()
         {
             fragments = new LargeList<X64Fragment>();
         }
 
-        public static ulong AddFragment(string sectionName)
+        public ulong AddFragment(string sectionName)
         {
             fragments.Add(new X64Fragment(sectionName));
             return fragments.Count - 1;
         }
 
-        public static ulong getCurrFragmentIndex()
+        public ulong getCurrFragmentIndex()
         {
             if (fragments.Count == 0) {
                 return AddFragment(".text");
@@ -109,7 +109,7 @@ namespace AlloyTools.Assembler.AMD64
             return fragments.Count  - 1;
         }
 
-        public static X64Fragment GetCurrFragment()
+        public X64Fragment GetCurrFragment()
         {
             ulong idx = getCurrFragmentIndex();
             return fragments[idx];
@@ -118,28 +118,28 @@ namespace AlloyTools.Assembler.AMD64
 
     public class X64RecordList
     {
-        public static LargeList<X64Record> records;
-        public static long currRecordIndex;                             // 当前的 record 索引，如果当前的值为-1，则需要新建一个
+        public LargeList<X64Record> records;
+        public long currRecordIndex;                             // 当前的 record 索引，如果当前的值为-1，则需要新建一个
 
-        static X64RecordList()
+        public X64RecordList()
         {
             records = new LargeList<X64Record>();
             currRecordIndex = -1;
         }
 
-        public static ulong getCurrRecordtIndex()
+        public ulong getCurrRecordtIndex()
         {
-            if (currRecordIndex < 0) {
-                X64Record newRecord = new X64Record();
-                records.Add(newRecord);
-                X64Fragment currFragment = X64FragmentList.GetCurrFragment();
-                currFragment.AddNewRecord(records.Count - 1);
-                currRecordIndex = (long)(records.Count - 1);
-            }
+            //if (currRecordIndex < 0) {
+            //    X64Record newRecord = new X64Record();
+            //    records.Add(newRecord);
+            //    X64Fragment currFragment = X64FragmentList.GetCurrFragment();
+            //    currFragment.AddNewRecord(records.Count - 1);
+            //    currRecordIndex = (long)(records.Count - 1);
+            //}
             return (ulong)currRecordIndex;
         }
 
-        public static void endCurrRecord()
+        public void endCurrRecord()
         {
             currRecordIndex = -1;
         }
@@ -147,16 +147,16 @@ namespace AlloyTools.Assembler.AMD64
 
     public class X64SymbolList
     {
-        public static LargeList<X64Symbol> symbols;
-        public static Hashtable htSymbol;
+        public LargeList<X64Symbol> symbols;
+        public Hashtable htSymbol;
 
-        static X64SymbolList()
+        public X64SymbolList()
         {
             symbols = new LargeList<X64Symbol>();
             htSymbol = new Hashtable();
         }
 
-        public static long AddSymbol(X64Symbol symbol)
+        public long AddSymbol(X64Symbol symbol)
         {
             ulong idx = 0;
             if (htSymbol.ContainsKey(symbol.symbolName)) {
@@ -168,7 +168,7 @@ namespace AlloyTools.Assembler.AMD64
             return (long)idx;
         }
 
-        public static X64Symbol? GetSymbol(string name)
+        public X64Symbol? GetSymbol(string name)
         {
             if (htSymbol.ContainsKey(name)) {
                 return null;

@@ -3,20 +3,20 @@
 
 using AlloyTools.utils;
 using System.Collections;
-using System.Diagnostics.Metrics;
-using System.Text;
 
 namespace AlloyTools.Assembler.AMD64
 {
     public class X64Assembler
     {
-        private static LargeList<SourceLinePre> sourceLinesP;
-        private static LargeList<SourceLine>    sourceLines;
+        private LargeList<SourceLinePre> sourceLinesP;
+        private LargeList<SourceLine>    sourceLines;
+        public X64SymbolList symbolList;
 
-        static X64Assembler()
+        public X64Assembler()
         {
             sourceLinesP = new LargeList<SourceLinePre>();
             sourceLines = new LargeList<SourceLine>();
+            symbolList  = new X64SymbolList();
         }
 
         public static void Start(string[] args)
