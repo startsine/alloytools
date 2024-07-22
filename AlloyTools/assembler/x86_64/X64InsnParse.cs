@@ -133,6 +133,8 @@ namespace AlloyTools.Assembler.AMD64
                 bool flagRexR = false;
                 bool flagRexX = false;
                 bool flagRexB = false;
+                bool addr32bitPrefix = false;
+                int bitSize = 0;
 
                 switch (expressionsCount) {
                     case 0: {
@@ -144,6 +146,11 @@ namespace AlloyTools.Assembler.AMD64
                         }
                         break;
                     case 2: {
+                            bitSize = getBaseInsnOpSize2(sourceLine!, pass, opcodeInfos);
+                            if (bitSize == 0) {
+                                //// 报错, 无法决定操作数类型
+                                return 0;
+                            }
                             if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_R) || matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_Digit)) {
                                 // 存在 ModRM 字段
                                 if (matchedInfo.op0 == MatchType.rm) {                          // 如果 op0 匹配了 R/M 域
@@ -190,6 +197,8 @@ namespace AlloyTools.Assembler.AMD64
                                     flagRexX = true;
                                 if (mem.type.HasFlag(MemoryAddressType.withRex_B))
                                     flagRexB = true;
+                                if (mem.type.HasFlag(MemoryAddressType.with32bitRegAddr))
+                                    addr32bitPrefix = true;
                                 //
                                 if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_Digit)) {
                                     // 把操作码插入到 ModRM 中的 reg 域
@@ -210,9 +219,22 @@ namespace AlloyTools.Assembler.AMD64
                                 }
                                 //
                                 if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.bit0Size)) {
+                                    if (bitSize != 8) {
+                                        insCode[insCodeSize - 1] |= 0x01;
+                                    }
                                 }
                                 if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.bit3Size)) {
+                                    if (bitSize != 8) {
+                                        insCode[insCodeSize - 1] |= 0x08;
+                                    }
                                 }
+                                if (matchedInfo) {
+
+                                }
+                                if (bitSize == 64) 
+                                    flagRexW = true;
+                                getPrefixCode(ref prefixCodeSize, sourceLine!, matchedInfo, addr32bitPrefix, bitSize, flagRexE, flagRexW, flagRexR, flagRexX, flagRexB);
+                                return 0;
                             }
                         }
                         break;
@@ -251,7 +273,7 @@ namespace AlloyTools.Assembler.AMD64
             return 0;
         }
 
-        bool checkOperandMatch(X64Operand? operand, MatchType matchType)
+        protected bool checkOperandMatch(X64Operand? operand, MatchType matchType)
         {
             if (operand is null) { return false; }
             switch (matchType) {
@@ -309,7 +331,88 @@ namespace AlloyTools.Assembler.AMD64
             }
             return false; 
         }
-        
+
+        // 返回操作数的大小（bit数）,无法获得则返回0
+        protected int getOpSize(X64Operand? op)
+        {
+            if (op is null) { return 0; }
+            if (op.type == X64OperandType.Register) {
+                if (X64RegUtil.Is8BitReg(op.regValue)) {
+                    return 8;
+                }
+                if (X64RegUtil.Is16BitReg(op.regValue)) {
+                    return 16;
+                }
+                if (X64RegUtil.Is32BitReg(op.regValue)) {
+                    return 32;
+                }
+                if (X64RegUtil.Is64BitReg(op.regValue)) {
+                    return 64;
+                }
+                if (X64RegUtil.IsSegReg(op.regValue)) {
+                    return 16;
+                }
+                if (X64RegUtil.IsDebugReg(op.regValue)) {
+                    return 64;
+                }
+                if (X64RegUtil.IsCtrlReg(op.regValue)) {
+                    return 64;
+                }
+            }
+            return 0;
+        }
+
+        // 获取基本指令的整体操作数大小，返回位数
+        virtual protected int getBaseInsnOpSize2(SourceLine sourceLine, int pass, LinkedList<OpcodeInfos> opcodeInfos)
+        {
+            int opSize0, opSize1;
+            int ret = 0;
+            opSize0 = getOpSize(sourceLine?.expressions?[0].operand);
+            opSize1 = getOpSize(sourceLine?.expressions?[1].operand);
+            if (opSize0 == 0 && opSize1 == 0) {
+                //// 报错
+                return 0;
+            }
+            if ((opSize0 != 0 && opSize1 != 0) && opSize0 != opSize1) {
+                //// 报错
+                return 0;
+            }
+            if (opSize0 != 0)
+                ret = opSize0;
+            else if (opSize1 != 0)
+                ret = opSize1;
+            
+            return ret;
+        }
+
+        int getPrefixCode(ref int prefixCodeSize, SourceLine sourceLine, OpcodeInfos matchedInfo, 
+            bool addr32bit, int bitSize, bool flagRexE, bool flagRexW, bool flagRexR, bool flagRexX, bool flagRexB)
+        {
+            byte rex = 0;
+            int cnt = 0;
+            // 前缀排列 F0, F2/F3, 67, 66, 64/65, 40  (LOCK，REP, 寻址, 16位操作, 段前缀, 寄存器扩展)
+            if (flagRexE || flagRexW || flagRexR || flagRexX || flagRexB)
+                rex = 0x40;
+            if (flagRexW)
+                rex |= 0x08;
+            if (flagRexR)
+                rex |= 0x04;
+            if (flagRexX)
+                rex |= 0x02;
+            if (flagRexB)
+                rex |= 0x01;
+            //// TO-DO 加上 LOCK,rep前缀
+            if (addr32bit)
+                prefixCode[cnt++] = 0x67;
+            if (bitSize == 16)
+                prefixCode[cnt++] = 0x66;
+            //// TO-DO 加上段前缀
+            if (rex != 0)
+                prefixCode[cnt++] = rex;
+
+            prefixCodeSize = cnt;
+            return cnt;
+        }
     }
 }
 

@@ -326,6 +326,17 @@ namespace AlloyTools.Assembler.AMD64
         {
             return reg.HasFlag(X64RegValue.Common);
         }
+
+        public static bool Is8BitReg(X64RegValue reg)
+        {
+            return reg.HasFlag(X64RegValue.REG_8bit) && reg.HasFlag(X64RegValue.Common);
+        }
+
+        public static bool Is16BitReg(X64RegValue reg)
+        {
+            return reg.HasFlag(X64RegValue.REG_16bit) && reg.HasFlag(X64RegValue.Common);
+        }
+
         public static bool Is32BitReg(X64RegValue reg)
         {
             return reg.HasFlag(X64RegValue.REG_32bit) && reg.HasFlag(X64RegValue.Common);
@@ -357,6 +368,20 @@ namespace AlloyTools.Assembler.AMD64
             return false;
         }
 
+        public static bool IsSegReg(X64RegValue reg)
+        {
+            return reg.HasFlag(X64RegValue.SegmentReg);
+        }
+
+        public static bool IsCtrlReg(X64RegValue reg)
+        {
+            return reg.HasFlag(X64RegValue.CtrlReg);
+        }
+
+        public static bool IsDebugReg(X64RegValue reg)
+        {
+            return reg.HasFlag(X64RegValue.DebugReg);
+        }
     }
 
     public enum SymbolModifier
