@@ -53,6 +53,7 @@ namespace AlloyTools.Assembler.AMD64
     {
         public X64RecordType recordType;                                        // 记录类型
         public ulong fixedSize;                                                 // 固定大小 (仅仅 recordType == Fixed 时有效)
+        public ulong maxSize;                                                   // 可变记录最大的可能大小 (仅仅 recordType == Variable 时有效)
         public ulong fragmentIndex;                                             // 属于哪个 Fragment/Proc
     }
 

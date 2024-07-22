@@ -228,8 +228,8 @@ namespace AlloyTools.Assembler.AMD64
                                         insCode[insCodeSize - 1] |= 0x08;
                                     }
                                 }
-                                if (matchedInfo) {
-
+                                if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.withImm)) {
+                                    int bytesize = bitSize / 8;
                                 }
                                 if (bitSize == 64) 
                                     flagRexW = true;
