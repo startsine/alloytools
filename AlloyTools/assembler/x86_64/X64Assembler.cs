@@ -78,6 +78,11 @@ namespace AlloyTools.Assembler.AMD64
                                 parsedLine.hasLabel = true;
                                 parsedLine.labelStr = token0.str;
                             }
+                            else {
+                                insnStartIdx = 0;
+                                parsedLine.hasLabel = false;
+                                parsedLine.labelStr = "";
+                            }
                         }
                     }
                     // 找出所有前缀
@@ -117,10 +122,10 @@ namespace AlloyTools.Assembler.AMD64
                                 X64Expression.ParseByPreProcessTokens(parsedLine.expressions, curLine.tokens, operandStartIdx);
                                 needCalcExpression = true;
                             }
-                            insnProcessor = X64PseudoInsnList.Instance.GetPseudoInsnProcessor(insnStr);
                         }
                         else if (X64Token.isPseudoInstruction(insnStr)) {
                             operandStartIdx = insnStartIdx + 1;
+                            insnProcessor = X64PseudoInsnList.Instance.GetPseudoInsnProcessor(insnStr);
                         }
                         else {
                             // 不认识的指令，报错

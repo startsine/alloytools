@@ -29,7 +29,6 @@ namespace AlloyTools.Assembler.AMD64
         public CpuInsnPrefixID prefixs = CpuInsnPrefixID.None;  // 指令前缀列表
         public CpuInsnID cpuInsnID = CpuInsnID.None;            // CPU指令ID (当 hasInsn==true 及 isCpuInsn == true 有效)
         public PseudoInsnID pseudoInsnID = PseudoInsnID.None;   // 伪指令ID (当 hasInsn==true 及 isCpuInsn == false 有效)
-        public List<X64Operand>? x64Operands = null;        // 操作数列表
         public uint bytesize = 0;                           // 该行产生的机器代码的字节大小（如果是虚拟指令或者Jcc指令，这里先存放它的可能最长的大小,后面再扫描修正）
     }
 

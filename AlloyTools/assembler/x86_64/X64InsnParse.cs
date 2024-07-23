@@ -59,10 +59,16 @@ namespace AlloyTools.Assembler.AMD64
         public MatchForbid forbidInfo = MatchForbid.None;
     }
 
+    [Flags]
+    public enum InsnFlag
+    {
+        None = 0,
+    }
 
     public abstract class IInsnProcessor
     {
         public abstract int process(string insnStr, SourceLine sourceLine, int pass);
+        public abstract InsnFlag GetInsnFlag();
     }
 
     public abstract class BaseInsn: IInsnProcessor
@@ -73,6 +79,11 @@ namespace AlloyTools.Assembler.AMD64
         protected static byte[] insCode = new byte[32];             // 指令部分的code
         protected static byte[] addrCode = new byte[32];            // 内存寻址部分的code
         protected static byte[] immCode = new byte[32];             // 立即数部分的code
+
+        override public InsnFlag GetInsnFlag()
+        {
+            return InsnFlag.None;
+        }
 
         protected int processCpuIns(string insnStr, SourceLine sourceLine, int pass, LinkedList<OpcodeInfos> opcodeInfos)
         {

@@ -114,7 +114,7 @@ namespace AlloyTools.Assembler.AMD64.Instruction
             opcodeInfos.AddLast(info);
         }
 
-        public override int process(string insnStr, SourceLine sourceLine, int pass)
+        override public int process(string insnStr, SourceLine sourceLine, int pass)
         {
             processCpuIns(insnStr, sourceLine, pass, opcodeInfos);
             
