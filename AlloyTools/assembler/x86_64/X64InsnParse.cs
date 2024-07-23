@@ -60,9 +60,10 @@ namespace AlloyTools.Assembler.AMD64
     }
 
     [Flags]
-    public enum InsnFlag
+    public enum InsnFlag: uint
     {
         None = 0,
+        ProcessTokens = 0x01,                           // 伪指令自己处理 token
     }
 
     public abstract class IInsnProcessor

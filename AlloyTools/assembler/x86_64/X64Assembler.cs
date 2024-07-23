@@ -114,6 +114,8 @@ namespace AlloyTools.Assembler.AMD64
                                 needCalcExpression = true;
                             }
                             insnProcessor = X64CpuInsnList.Instance.GetInsnProcessor(insnStr);
+                            parsedLine.hasInsn = true;
+                            parsedLine.insnStr = insnStr;
                         }
                         else if (X64Token.isVirtualInstruction(insnStr)) {
                             operandStartIdx = insnStartIdx + 1;
@@ -122,13 +124,17 @@ namespace AlloyTools.Assembler.AMD64
                                 X64Expression.ParseByPreProcessTokens(parsedLine.expressions, curLine.tokens, operandStartIdx);
                                 needCalcExpression = true;
                             }
+                            parsedLine.hasInsn = true;
+                            parsedLine.insnStr = insnStr;
                         }
                         else if (X64Token.isPseudoInstruction(insnStr)) {
                             operandStartIdx = insnStartIdx + 1;
                             insnProcessor = X64PseudoInsnList.Instance.GetPseudoInsnProcessor(insnStr);
+                            parsedLine.hasInsn = true;
+                            parsedLine.insnStr = insnStr;
                         }
                         else {
-                            // 不认识的指令，报错
+                            //// 不认识的指令，报错
                             continue;
                         }
                         // 初步计算表达式的值
@@ -140,6 +146,10 @@ namespace AlloyTools.Assembler.AMD64
                             }
 
                         }
+                    }
+
+                    if (parsedLine.hasLabel && !parsedLine.hasInsn) {
+                        /// TO-DO 这里处理有标签但是没有指令的清空
                     }
 
                     if (insnProcessor is not null) {

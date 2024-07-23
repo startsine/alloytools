@@ -12,18 +12,6 @@ namespace AlloyTools.Assembler.AMD64
         None = 0,
     }
 
-    // 伪指令ID列表
-    public enum PseudoInsnID : uint
-    {
-        None = 0,
-    }
-
-    //CPU指令ID列表
-    public enum CpuInsnID : uint
-    {
-        None = 0,
-    }
-
     public class X64CpuInsnList
     {
         private static X64CpuInsnList? instance = null;
