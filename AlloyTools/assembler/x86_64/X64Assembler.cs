@@ -11,12 +11,14 @@ namespace AlloyTools.Assembler.AMD64
         private LargeList<SourceLinePre> sourceLinesP;
         private LargeList<SourceLine>    sourceLines;
         public X64SymbolList symbolList;
+        public X64FragmentList fragmentList;
 
         public X64Assembler()
         {
             sourceLinesP = new LargeList<SourceLinePre>();
             sourceLines = new LargeList<SourceLine>();
             symbolList  = new X64SymbolList();
+            fragmentList = new X64FragmentList();
         }
 
         public static void Start(string[] args)
@@ -166,7 +168,7 @@ namespace AlloyTools.Assembler.AMD64
                     }
 
                     if (insnProcessor is not null) {
-                        insnProcessor.process(insnStr, parsedLine, 1);
+                        insnProcessor.process(this, insnStr, parsedLine, 1);
                     }
 
 

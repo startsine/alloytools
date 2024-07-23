@@ -64,6 +64,7 @@ namespace AlloyTools.Assembler.AMD64
         public ulong startRecordIdx = 0;                                        // 首个 record 在 records 列表中的第几个
         public ulong endRecordIdx = 0;                                          // 最后一个 record 在 records 列表中的第几个
         public bool hasRecord = false;                                          // 此 Fragment 是否有 record
+        public bool isDefault = false;                                          // 是否默认Fragment (代码一开始会产生一个默认的Fragment)
 
         public X64Fragment(string secName, uint align = 1)
         {
@@ -93,6 +94,9 @@ namespace AlloyTools.Assembler.AMD64
         public X64FragmentList()
         {
             fragments = new LargeList<X64Fragment>();
+            X64Fragment defaultFragment = new X64Fragment("");
+            defaultFragment.isDefault = true;
+            fragments.Add(defaultFragment);
         }
 
         public ulong AddFragment(string sectionName)

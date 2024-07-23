@@ -68,7 +68,7 @@ namespace AlloyTools.Assembler.AMD64
 
     public abstract class IInsnProcessor
     {
-        public abstract int process(string insnStr, SourceLine sourceLine, int pass);
+        public abstract int process(X64Assembler asm, string insnStr, SourceLine sourceLine, int pass);
         public abstract InsnProcessFlag GetInsnFlag();
     }
 
