@@ -28,7 +28,7 @@ namespace AlloyTools.Assembler.AMD64
         public bool hasInsnPrefix = false;                  // 是否拥有指令前缀
         public CpuInsnPrefixID prefixs = CpuInsnPrefixID.None;  // 指令前缀列表
         public bool keepFollowingToken = false;             // 是否保留指令后面的token
-        public List<X64Token>? followingTokens = null;      // 指令后面的token
+        public List<PreProToken>? followingTokens = null;   // 紧跟指令后面的原始token
 
         //public bool isCpuInsn = false;                      // 如果该行拥有指令，该指令是否CPU真实指令，如果为false则表示是伪指令
 

@@ -130,6 +130,19 @@ namespace AlloyTools.Assembler.AMD64
                         else if (X64Token.isPseudoInstruction(insnStr)) {
                             operandStartIdx = insnStartIdx + 1;
                             insnProcessor = X64PseudoInsnList.Instance.GetPseudoInsnProcessor(insnStr);
+                            if (insnProcessor is not null) {
+                                InsnProcessFlag howto = insnProcessor.GetInsnFlag();
+                                if (howto == InsnProcessFlag.ProcessTokens) {
+                                    operandStartIdx = insnStartIdx + 1;
+                                    if (operandStartIdx < curLine.tokens.Count) {
+                                        parsedLine.keepFollowingToken = true;
+                                        parsedLine.followingTokens = new List<PreProToken>();
+                                        for (int i = operandStartIdx; i < curLine.tokens.Count; i++) {
+                                            parsedLine.followingTokens.Add(curLine.tokens[i]);
+                                        }
+                                    }
+                                }
+                            }
                             parsedLine.hasInsn = true;
                             parsedLine.insnStr = insnStr;
                         }
