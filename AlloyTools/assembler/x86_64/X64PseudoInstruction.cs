@@ -1,4 +1,5 @@
 
+using AlloyTools.Assembler.AMD64.Instruction;
 using System.Collections;
 
 namespace AlloyTools.Assembler.AMD64
@@ -10,6 +11,7 @@ namespace AlloyTools.Assembler.AMD64
 
         private X64PseudoInsnList()
         {
+            htPseudoInsns.Add("proc", new MOV());
         }
 
         public static X64PseudoInsnList Instance {
@@ -21,7 +23,7 @@ namespace AlloyTools.Assembler.AMD64
             }
         }
 
-        public bool isPseudoInstruction(string str)
+        public bool IsPseudoInstruction(string str)
         {
             string str2 = str.ToLower();
             return htPseudoInsns.ContainsKey(str2);

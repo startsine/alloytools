@@ -22,11 +22,12 @@ namespace AlloyTools.Assembler.AMD64
         public static void Start(string[] args)
         {
             if (args.Length > 0) {
-                Assembler(args[0]);
+                X64Assembler asm = new X64Assembler();
+                asm.Assembler(args[0]);
             }
         }
 
-        private static void Assembler(string filepath)
+        private void Assembler(string filepath)
         {
             var loader = new SourceLoader();
             loader.LoadFile(filepath);
@@ -44,7 +45,7 @@ namespace AlloyTools.Assembler.AMD64
             //Console.WriteLine(s);
         }
 
-        private static void AssemblerPass1()
+        private void AssemblerPass1()
         {
             if (sourceLines == null)
                 return;

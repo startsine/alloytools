@@ -26,31 +26,31 @@ namespace AlloyTools.Assembler.AMD64
 
     public class X64Errors
     {
-        public static int errorsTotal = 0;
-        public static int warningTotal = 0;
-        public static int maxErrors = 10;                   // 错误个数操作这个就退出进程
-        private static Hashtable htCodeMapText;
+        public int errorsTotal = 0;
+        public int warningTotal = 0;
+        public int maxErrors = 10;                   // 错误个数操作这个就退出进程
+        private Hashtable htCodeMapText;
 
-        static X64Errors()
+        public X64Errors()
         {
             htCodeMapText = new Hashtable();
             htCodeMapText.Add(1, "error 1: ");
         }
 
-        public static void AddError(int errorId, params string[] infoStrs)
+        public void AddError(int errorId, params string[] infoStrs)
         {
             string text = string.Format("format", infoStrs);
             errorsTotal++;
             throw new LineErrorException(errorId);
         }
 
-        public static void AddWarning(int warningId, params string[] infoStrs)
+        public void AddWarning(int warningId, params string[] infoStrs)
         {
             string text = string.Format("format", infoStrs);
             warningTotal++;
         }
 
-        public static void AddFatalError(int errorId, params string[] infoStrs)
+        public void AddFatalError(int errorId, params string[] infoStrs)
         {
             string text = string.Format("format", infoStrs);
             errorsTotal++;

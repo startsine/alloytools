@@ -260,7 +260,7 @@ namespace AlloyTools.Assembler.AMD64
         // 是否伪指令
         public static bool isPseudoInstruction(string str)
         {
-            return X64PseudoInsnList.Instance.isPseudoInstruction(str);
+            return X64PseudoInsnList.Instance.IsPseudoInstruction(str);
         }
 
         // 是否虚拟指令
