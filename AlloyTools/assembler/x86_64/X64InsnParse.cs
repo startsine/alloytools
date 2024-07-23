@@ -414,5 +414,13 @@ namespace AlloyTools.Assembler.AMD64
             return cnt;
         }
     }
+
+    // 基本数据定义伪指令 (DB,DW,DD,DQ)
+    public abstract class DataDefineBaseInsn : IInsnProcessor
+    {
+
+    }
+
+
 }
 

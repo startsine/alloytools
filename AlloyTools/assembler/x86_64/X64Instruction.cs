@@ -51,8 +51,9 @@ namespace AlloyTools.Assembler.AMD64
 
         public IInsnProcessor? GetInsnProcessor(string insn)
         {
-            if (htCpuInsns.ContainsKey(insn)) {
-                object? processor = htCpuInsns[insn];
+            string str2 = insn.ToLower();
+            if (htCpuInsns.ContainsKey(str2)) {
+                object? processor = htCpuInsns[str2];
                 if (processor is not null) {
                     return processor as IInsnProcessor;
                 }

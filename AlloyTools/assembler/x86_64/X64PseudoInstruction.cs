@@ -11,7 +11,7 @@ namespace AlloyTools.Assembler.AMD64
 
         private X64PseudoInsnList()
         {
-            htPseudoInsns.Add("proc", new MOV());
+            htPseudoInsns.Add("proc", new PROC());
         }
 
         public static X64PseudoInsnList Instance {
@@ -27,6 +27,18 @@ namespace AlloyTools.Assembler.AMD64
         {
             string str2 = str.ToLower();
             return htPseudoInsns.ContainsKey(str2);
+        }
+
+        public IInsnProcessor? GetPseudoInsnProcessor(string insn)
+        {
+            string str2 = insn.ToLower();
+            if (htPseudoInsns.ContainsKey(str2)) {
+                object? processor = htPseudoInsns[str2];
+                if (processor is not null) {
+                    return processor as IInsnProcessor;
+                }
+            }
+            return null;
         }
     }
 }

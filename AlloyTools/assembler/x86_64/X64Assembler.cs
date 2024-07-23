@@ -117,6 +117,7 @@ namespace AlloyTools.Assembler.AMD64
                                 X64Expression.ParseByPreProcessTokens(parsedLine.expressions, curLine.tokens, operandStartIdx);
                                 needCalcExpression = true;
                             }
+                            insnProcessor = X64PseudoInsnList.Instance.GetPseudoInsnProcessor(insnStr);
                         }
                         else if (X64Token.isPseudoInstruction(insnStr)) {
                             operandStartIdx = insnStartIdx + 1;
