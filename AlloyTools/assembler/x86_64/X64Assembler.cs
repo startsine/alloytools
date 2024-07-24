@@ -40,6 +40,10 @@ namespace AlloyTools.Assembler.AMD64
             
             AssemblerPass1();
 
+            do {
+                AssemblerPass2();
+            } while (false);
+
             Hashtable ht = new Hashtable();
             var ss = ht.Count;
             //Console.WriteLine("open ok");
@@ -185,6 +189,18 @@ namespace AlloyTools.Assembler.AMD64
                 }
 
                 
+            }
+        }
+
+        private void AssemblerPass2()
+        {
+            if (sourceLines == null)
+                return;
+            ulong lineTotal = sourceLinesP!.Count;
+            ulong lineCnt;
+            for (lineCnt = 0; lineCnt < lineTotal; lineCnt++) {
+                SourceLine curLine = sourceLines[lineCnt];
+                ;
             }
         }
     }
