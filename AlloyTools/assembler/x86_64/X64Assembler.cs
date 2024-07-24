@@ -10,14 +10,14 @@ namespace AlloyTools.Assembler.AMD64
     {
         private LargeList<SourceLinePre> sourceLinesP;
         private LargeList<SourceLine>    sourceLines;
-        public X64SymbolList symbolList;
+        public X64SymbolList globalSymbolList;
         public X64FragmentList fragmentList;
 
         public X64Assembler()
         {
             sourceLinesP = new LargeList<SourceLinePre>();
             sourceLines = new LargeList<SourceLine>();
-            symbolList  = new X64SymbolList();
+            globalSymbolList = new X64SymbolList();
             fragmentList = new X64FragmentList(this);
         }
 

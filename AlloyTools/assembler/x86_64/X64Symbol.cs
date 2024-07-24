@@ -36,7 +36,8 @@ namespace AlloyTools.Assembler.AMD64
         public SymboSizeType sizeType = SymboSizeType.None;                     // 符号的大小类型
         public SymboVisibilityType visibType = SymboVisibilityType.None;        // 可见性
         public SymbolVarType varType = SymbolVarType.None;                      // 标识是变量还是常量
-        public long recordIndex = -1;                                           // 位于哪个record （section -> fragment/proc -> record）
+        public long fragmentIndex = -1;                                         // 位于哪个 fragment
+        public int recordIndex = -1;                                            // 位于哪个 record （section -> fragment/proc -> record）
                                                                                 // fragment/proc 是由多个连续的 record 组成
         public ulong offsetValue;                                               // 在 record 中的偏移量 (为const时，这里存放值)
         public string symbolName = "";                                          // 符号名
@@ -104,7 +105,7 @@ namespace AlloyTools.Assembler.AMD64
 
     public class X64FragmentList
     {
-        public long currFragmentIndex;
+        public long currFragmentIndex = -1;
         public LargeList<X64Fragment> fragments;
         WeakReference weakAssembler;
 
@@ -112,20 +113,23 @@ namespace AlloyTools.Assembler.AMD64
         {
             weakAssembler = new WeakReference(asm);
             fragments = new LargeList<X64Fragment>();
-            X64Fragment defaultFragment = new X64Fragment("");
-            defaultFragment.isDefault = true;
-            fragments.Add(defaultFragment);
-            currFragmentIndex = 0;
+            currFragmentIndex = -1;
         }
 
-        public ulong AddFragment(string sectionName)
+        public long AddNewFragment(string sectionName)
         {
             fragments.Add(new X64Fragment(sectionName));
-            return fragments.Count - 1;
+            currFragmentIndex = (long)(fragments.Count - 1);
+            return currFragmentIndex;
         }
 
         public long GetCurrFragmentIndex()
         {
+            if (currFragmentIndex < 0) {
+                X64Fragment x64Fragment = new X64Fragment(".text");
+                fragments.Add(x64Fragment);
+                currFragmentIndex = (long)(fragments.Count - 1);
+            }
             return currFragmentIndex;
         }
 
