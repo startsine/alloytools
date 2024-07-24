@@ -21,7 +21,8 @@ namespace AlloyTools.Assembler.AMD64
     {
         public byte[]? rawContent;                          // 源码行的原始内容
         public List<X64Expression>? expressions = null;     // 当前行的表达式列表(指令后面的表达式)
-        public long recordIndex = -1;                       // 当前行产生的指令或者数据属于哪一个record (-1表示当前行没有产生指令或者数据)
+        public long fragmentIndex = -1;                     // 当前行产生的指令或者数据属于哪一个fragment
+        public int recordIndex = -1;                        // 当前行产生的指令或者数据属于哪一个record (-1表示当前行没有产生指令或者数据)
         public bool hasLabel = false;                       // 该行是否拥有标签符号
         public string labelStr = "";                        // 标签符号字符串
         public string insnStr = "";                         // 指令字符串

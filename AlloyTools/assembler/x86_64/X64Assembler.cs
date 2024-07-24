@@ -118,6 +118,8 @@ namespace AlloyTools.Assembler.AMD64
                             insnProcessor = X64CpuInsnList.Instance.GetInsnProcessor(insnStr);
                             parsedLine.hasInsn = true;
                             parsedLine.insnStr = insnStr;
+                            parsedLine.fragmentIndex = fragmentList.GetCurrFragmentIndex();
+                            parsedLine.recordIndex = fragmentList.GetCurrFragment()!.GetCurrRecordtIndex();
                         }
                         else if (X64Token.isVirtualInstruction(insnStr)) {
                             operandStartIdx = insnStartIdx + 1;
@@ -134,7 +136,7 @@ namespace AlloyTools.Assembler.AMD64
                             insnProcessor = X64PseudoInsnList.Instance.GetPseudoInsnProcessor(insnStr);
                             if (insnProcessor is not null) {
                                 InsnProcessFlag howto = insnProcessor.GetInsnFlag();
-                                if (howto == InsnProcessFlag.ProcessTokens) {
+                                if (howto == InsnProcessFlag.ProcessTokens) {                           // 每个指令自己处理自己后面的token
                                     operandStartIdx = insnStartIdx + 1;
                                     if (operandStartIdx < curLine.tokens.Count) {
                                         parsedLine.keepFollowingToken = true;
@@ -143,6 +145,7 @@ namespace AlloyTools.Assembler.AMD64
                                             parsedLine.followingTokens.Add(curLine.tokens[i]);
                                         }
                                     }
+                                    
                                 }
                             }
                             parsedLine.hasInsn = true;
