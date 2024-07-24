@@ -54,35 +54,51 @@ namespace AlloyTools.Assembler.AMD64
         public X64RecordType recordType = X64RecordType.None;                   // 记录类型
         public ulong fixedSize = 0;                                             // 固定大小 (仅仅 recordType == Fixed 时有效)
         public ulong maxSize = 0;                                               // 可变记录最大的可能大小 (仅仅 recordType == Variable 时有效)
-        public long fragmentIndex = -1;                                         // 属于哪个 Fragment/Proc
     }
 
     public class X64Fragment
     {
         public string sectionName = "";                                         // 属于哪个 section，默认情况下,代码段是 ".text"，数据段是 ".data"
         public uint align = 1;                                                  // 对齐
-        public ulong startRecordIdx = 0;                                        // 首个 record 在 records 列表中的第几个
-        public ulong endRecordIdx = 0;                                          // 最后一个 record 在 records 列表中的第几个
         public bool hasRecord = false;                                          // 此 Fragment 是否有 record
         public bool isDefault = false;                                          // 是否默认Fragment (代码一开始会产生一个默认的Fragment)
+        public List<X64Record> records;                                         // record列表
+        public int currRecordIndex = -1;                                        // 当前的 record 索引，如果当前的值为-1，则需要新建一个
 
         public X64Fragment(string secName, uint align = 1)
         {
             sectionName = secName;
             this.align = align;
+            records = new List<X64Record>();
+            currRecordIndex = -1;
         }
 
-        public ulong AddNewRecord(ulong indexOfRecordList)
+        public int GetCurrRecordtIndex()
         {
-            if (hasRecord) {
-                endRecordIdx = indexOfRecordList;
+            if (currRecordIndex < 0) {
+                X64Record newRecord = new X64Record();
+                records.Add(newRecord);
+                currRecordIndex = records.Count - 1;
             }
-            else {
-                hasRecord = true;
-                startRecordIdx = indexOfRecordList;
-                endRecordIdx = indexOfRecordList;
-            }
-            return indexOfRecordList;
+            return currRecordIndex;
+        }
+
+        public X64Record AddNewRecord()
+        {
+            X64Record x64Record = new X64Record();
+            records.Add(x64Record);
+            currRecordIndex = records.Count - 1;
+            return x64Record;
+        }
+
+        public X64Record GetCurrRecordt()
+        {
+            return records[GetCurrRecordtIndex()];
+        }
+
+        public void EndCurrRecord()
+        {
+            currRecordIndex = -1;
         }
     }
 
@@ -90,13 +106,16 @@ namespace AlloyTools.Assembler.AMD64
     {
         public long currFragmentIndex;
         public LargeList<X64Fragment> fragments;
+        WeakReference weakAssembler;
 
-        public X64FragmentList()
+        public X64FragmentList(X64Assembler asm)
         {
+            weakAssembler = new WeakReference(asm);
             fragments = new LargeList<X64Fragment>();
             X64Fragment defaultFragment = new X64Fragment("");
             defaultFragment.isDefault = true;
             fragments.Add(defaultFragment);
+            currFragmentIndex = 0;
         }
 
         public ulong AddFragment(string sectionName)
@@ -105,52 +124,18 @@ namespace AlloyTools.Assembler.AMD64
             return fragments.Count - 1;
         }
 
-        public ulong getCurrFragmentIndex()
+        public long GetCurrFragmentIndex()
         {
-            if (fragments.Count == 0) {
-                return AddFragment(".text");
+            return currFragmentIndex;
+        }
+
+        public X64Fragment? GetCurrFragment()
+        {
+            long idx = GetCurrFragmentIndex();
+            if (idx >= 0 && (ulong)idx < fragments.Count) {
+                return fragments[(ulong)idx];
             }
-            return fragments.Count  - 1;
-        }
-
-        public X64Fragment GetCurrFragment()
-        {
-            ulong idx = getCurrFragmentIndex();
-            return fragments[idx];
-        }
-    }
-
-    public class X64RecordList
-    {
-        public LargeList<X64Record> records;
-        public long currRecordIndex;                             // 当前的 record 索引，如果当前的值为-1，则需要新建一个
-        WeakReference weakAssembler;
-
-        public X64RecordList(X64Assembler asm)
-        {
-            records = new LargeList<X64Record>();
-            currRecordIndex = -1;
-            weakAssembler = new WeakReference(asm);
-        }
-
-        public long getCurrRecordtIndex()
-        {
-            if (currRecordIndex < 0) {
-                X64Record newRecord = new X64Record();
-                records.Add(newRecord);
-                var asm = weakAssembler.Target as X64Assembler;
-                if (asm is not null) {
-                    X64Fragment currFragment = asm.fragmentList.GetCurrFragment();
-                    currFragment.AddNewRecord(records.Count - 1);
-                }
-                currRecordIndex = (long)(records.Count - 1);
-            }
-            return currRecordIndex;
-        }
-
-        public void endCurrRecord()
-        {
-            currRecordIndex = -1;
+            return null;
         }
     }
 
