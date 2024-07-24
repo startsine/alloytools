@@ -12,6 +12,7 @@ namespace AlloyTools.Assembler.AMD64
         private LargeList<SourceLine>    sourceLines;
         public X64SymbolList symbolList;
         public X64FragmentList fragmentList;
+        public X64RecordList recordList;
 
         public X64Assembler()
         {
@@ -19,6 +20,7 @@ namespace AlloyTools.Assembler.AMD64
             sourceLines = new LargeList<SourceLine>();
             symbolList  = new X64SymbolList();
             fragmentList = new X64FragmentList();
+            recordList = new X64RecordList();
         }
 
         public static void Start(string[] args)

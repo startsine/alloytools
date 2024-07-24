@@ -92,9 +92,9 @@ namespace AlloyTools.Assembler.AMD64
             htAllowNamePseudoInstruction.Add("dd", 1);
             htAllowNamePseudoInstruction.Add("dq", 1);
             htAllowNamePseudoInstruction.Add("proc", 1);
-            htAllowNamePseudoInstruction.Add("endp", 1);
-            htAllowNamePseudoInstruction.Add("segment_data", 1);
-            htAllowNamePseudoInstruction.Add("ends", 1);
+            htAllowNamePseudoInstruction.Add("endp", 1);            // ºöÂÔ
+            htAllowNamePseudoInstruction.Add("segment", 1);
+            htAllowNamePseudoInstruction.Add("ends", 1);            // ºöÂÔ
         }
 
         private static void initInstructionPrefix()

@@ -21,6 +21,7 @@ namespace AlloyTools.Assembler.AMD64
     {
         public byte[]? rawContent;                          // 源码行的原始内容
         public List<X64Expression>? expressions = null;     // 当前行的表达式列表(指令后面的表达式)
+        public long recordIndex = -1;                       // 当前行产生的指令或者数据属于哪一个record (-1表示当前行没有产生指令或者数据)
         public bool hasLabel = false;                       // 该行是否拥有标签符号
         public string labelStr = "";                        // 标签符号字符串
         public string insnStr = "";                         // 指令字符串
@@ -29,6 +30,7 @@ namespace AlloyTools.Assembler.AMD64
         public CpuInsnPrefixID prefixs = CpuInsnPrefixID.None;  // 指令前缀列表
         public bool keepFollowingToken = false;             // 是否保留指令后面的token
         public List<PreProToken>? followingTokens = null;   // 紧跟指令后面的原始token
+        
 
         //public bool isCpuInsn = false;                      // 如果该行拥有指令，该指令是否CPU真实指令，如果为false则表示是伪指令
 

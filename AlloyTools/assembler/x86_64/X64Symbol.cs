@@ -36,7 +36,7 @@ namespace AlloyTools.Assembler.AMD64
         public SymboSizeType sizeType = SymboSizeType.None;                     // 符号的大小类型
         public SymboVisibilityType visibType = SymboVisibilityType.None;        // 可见性
         public SymbolVarType varType = SymbolVarType.None;                      // 标识是变量还是常量
-        public ulong recordIndex;                                               // 位于哪个record （section -> fragment/proc -> record）
+        public long recordIndex = -1;                                           // 位于哪个record （section -> fragment/proc -> record）
                                                                                 // fragment/proc 是由多个连续的 record 组成
         public ulong offsetValue;                                               // 在 record 中的偏移量 (为const时，这里存放值)
         public string symbolName = "";                                          // 符号名
@@ -51,10 +51,10 @@ namespace AlloyTools.Assembler.AMD64
 
     public class X64Record
     {
-        public X64RecordType recordType;                                        // 记录类型
-        public ulong fixedSize;                                                 // 固定大小 (仅仅 recordType == Fixed 时有效)
-        public ulong maxSize;                                                   // 可变记录最大的可能大小 (仅仅 recordType == Variable 时有效)
-        public ulong fragmentIndex;                                             // 属于哪个 Fragment/Proc
+        public X64RecordType recordType = X64RecordType.None;                   // 记录类型
+        public ulong fixedSize = 0;                                             // 固定大小 (仅仅 recordType == Fixed 时有效)
+        public ulong maxSize = 0;                                               // 可变记录最大的可能大小 (仅仅 recordType == Variable 时有效)
+        public long fragmentIndex = -1;                                         // 属于哪个 Fragment/Proc
     }
 
     public class X64Fragment
@@ -124,23 +124,28 @@ namespace AlloyTools.Assembler.AMD64
     {
         public LargeList<X64Record> records;
         public long currRecordIndex;                             // 当前的 record 索引，如果当前的值为-1，则需要新建一个
+        WeakReference weakAssembler;
 
-        public X64RecordList()
+        public X64RecordList(X64Assembler asm)
         {
             records = new LargeList<X64Record>();
             currRecordIndex = -1;
+            weakAssembler = new WeakReference(asm);
         }
 
-        public ulong getCurrRecordtIndex()
+        public long getCurrRecordtIndex()
         {
-            //if (currRecordIndex < 0) {
-            //    X64Record newRecord = new X64Record();
-            //    records.Add(newRecord);
-            //    X64Fragment currFragment = X64FragmentList.GetCurrFragment();
-            //    currFragment.AddNewRecord(records.Count - 1);
-            //    currRecordIndex = (long)(records.Count - 1);
-            //}
-            return (ulong)currRecordIndex;
+            if (currRecordIndex < 0) {
+                X64Record newRecord = new X64Record();
+                records.Add(newRecord);
+                var asm = weakAssembler.Target as X64Assembler;
+                if (asm is not null) {
+                    X64Fragment currFragment = asm.fragmentList.GetCurrFragment();
+                    currFragment.AddNewRecord(records.Count - 1);
+                }
+                currRecordIndex = (long)(records.Count - 1);
+            }
+            return currRecordIndex;
         }
 
         public void endCurrRecord()
