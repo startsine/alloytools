@@ -12,6 +12,7 @@ namespace AlloyTools.Assembler.AMD64
         private X64PseudoInsnList()
         {
             htPseudoInsns.Add("proc", new PROC());
+            htPseudoInsns.Add("segment", new PROC());
         }
 
         public static X64PseudoInsnList Instance {

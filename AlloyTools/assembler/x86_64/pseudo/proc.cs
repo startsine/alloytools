@@ -13,7 +13,7 @@ namespace AlloyTools.Assembler.AMD64.Instruction
         override public int process(X64Assembler asm, string insnStr, SourceLine sourceLine, int pass)
         {
             X64FragmentList fragmentList = asm.fragmentList;
-            bool publicFlag = false;
+            SymboVisibilityType visibilityType = SymboVisibilityType.Static;
             string sectionName = ".text";
 
             if (pass <= 1) {
@@ -23,7 +23,13 @@ namespace AlloyTools.Assembler.AMD64.Instruction
                         if (!string.IsNullOrEmpty(token.str)) {
                             string cmpStr = token.str.ToLower();
                             if (cmpStr == "public") {
-                                publicFlag = true;
+                                visibilityType = SymboVisibilityType.Public;
+                            }
+                            else if (cmpStr == "weak") {
+                                visibilityType = SymboVisibilityType.Weak;
+                            }
+                            else if (cmpStr == "comdat") {
+                                visibilityType = SymboVisibilityType.Comdat;
                             }
                             else if (cmpStr == "\"" || cmpStr == "\'") {
                                 if (i + 2 >= sourceLine.followingTokens.Count) {
@@ -57,6 +63,9 @@ namespace AlloyTools.Assembler.AMD64.Instruction
                     symbol.fragmentIndex = fragmentIndex;
                     symbol.recordIndex = 0;
                     symbol.offsetValue = 0;
+                    symbol.sizeType = SymboSizeType.Proc;
+                    symbol.varType = SymbolVarType.NotConst;
+                    symbol.visibType = visibilityType;
                     asm.globalSymbolList.AddSymbol(symbol);
                 }
                 //
@@ -70,8 +79,5 @@ namespace AlloyTools.Assembler.AMD64.Instruction
     }
 }
 
-/*
-public SymboSizeType sizeType = SymboSizeType.None;                     // 符号的大小类型
-        public SymboVisibilityType visibType = SymboVisibilityType.None;        // 可见性
-        public SymbolVarType varType = SymbolVarType.None;                      // 标识是变量还是常量
- */
+
+

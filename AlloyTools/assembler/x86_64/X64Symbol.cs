@@ -17,11 +17,14 @@ namespace AlloyTools.Assembler.AMD64
     public enum SymboVisibilityType
     {
         None = 0,
-        Local,                              // 默认，本文件可见
+        Static,                             // 默认，本文件可见
         Public,                             // public 公共
+        Weak,                               // public 公共, 但是是弱符号
+        Comdat,                             // public 公共, 但是是 Comdat 类型
         Extern,                             // 用 extern 声明
         Common,                             // 用 COMM 定义的符号
         LocalCommon,                        // 用 LCOMM 定义的符号
+        Local,                              // local，非全局符号  (只在同一个 fragment 内有效)
     }
 
     public enum SymbolVarType
