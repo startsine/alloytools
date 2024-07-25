@@ -71,7 +71,7 @@ namespace AlloyTools.Assembler.AMD64
 
     public class X64Record
     {
-        public X64RecordType recordType = X64RecordType.None;                   // 记录类型
+        public X64RecordType recordType = X64RecordType.Fixed;                  // 记录类型
         public ulong size = 0;                                                  // 记录的大小 （如果type==Variable, 这里表示可变记录最大的可能大小）
     }
 
@@ -110,7 +110,12 @@ namespace AlloyTools.Assembler.AMD64
             return x64Record;
         }
 
-        public X64Record GetCurrRecordt()
+        public X64Record GetCurrRecord()
+        {
+            return records[GetCurrRecordtIndex()];
+        }
+
+        public X64Record GetCurrRecord()
         {
             return records[GetCurrRecordtIndex()];
         }

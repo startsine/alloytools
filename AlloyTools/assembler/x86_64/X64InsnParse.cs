@@ -95,7 +95,7 @@ namespace AlloyTools.Assembler.AMD64
             OpcodeInfos? info = null;
             OpcodeInfos? matchedInfo = null;
 
-            int expressionsCount = sourceLine?.expressions != null ? sourceLine.expressions.Count : 0;       // 当前指令的表达式的个数 
+            int expressionsCount = sourceLine.expressions != null ? sourceLine.expressions.Count : 0;       // 当前指令的表达式的个数 
             currentNode = opcodeInfos.First;
             while (currentNode is not null) {
                 info = currentNode.Value;
@@ -106,22 +106,22 @@ namespace AlloyTools.Assembler.AMD64
                     }
                     //
                     if (expressionsCount == 1) {
-                        if (checkOperandMatch(sourceLine?.expressions?[0].operand, info.op0)) {
+                        if (checkOperandMatch(sourceLine.expressions?[0].operand, info.op0)) {
                             matchedInfo = info;
                             break;
                         }
                     }
                     else if (expressionsCount == 2) {
-                        if (checkOperandMatch(sourceLine?.expressions?[0].operand, info.op0) &&
-                            checkOperandMatch(sourceLine?.expressions?[1].operand, info.op1) ) {
+                        if (checkOperandMatch(sourceLine.expressions?[0].operand, info.op0) &&
+                            checkOperandMatch(sourceLine.expressions?[1].operand, info.op1) ) {
                             matchedInfo = info;
                             break;
                         }
                     }
                     else if (expressionsCount == 3) {
-                        if (checkOperandMatch(sourceLine?.expressions?[0].operand, info.op0) &&
-                            checkOperandMatch(sourceLine?.expressions?[1].operand, info.op1) &&
-                            checkOperandMatch(sourceLine?.expressions?[2].operand, info.op2) ) {
+                        if (checkOperandMatch(sourceLine.expressions?[0].operand, info.op0) &&
+                            checkOperandMatch(sourceLine.expressions?[1].operand, info.op1) &&
+                            checkOperandMatch(sourceLine.expressions?[2].operand, info.op2) ) {
                             matchedInfo = info;
                             break;
                         }
@@ -161,7 +161,7 @@ namespace AlloyTools.Assembler.AMD64
                         }
                         break;
                     case 2: {
-                            bitSize = getBaseInsnOpSize2(sourceLine!, pass, opcodeInfos);       // 得到指令的操作数的位数大小，返回8/16/32/64
+                            bitSize = getBaseInsnOpSize2(sourceLine, pass, opcodeInfos);       // 得到指令的操作数的位数大小，返回8/16/32/64
                             if (bitSize == 0) {
                                 //// 报错, 无法决定操作数类型
                                 return 0;
@@ -169,8 +169,8 @@ namespace AlloyTools.Assembler.AMD64
                             if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_R) || matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_Digit)) {
                                 // 存在 ModRM 字段
                                 if (matchedInfo.op0 == MatchType.rm) {                          // 如果 op0 匹配了 R/M 域
-                                    var operand0 = sourceLine?.expressions?[0].operand;
-                                    var operand1 = sourceLine?.expressions?[1].operand;
+                                    var operand0 = sourceLine.expressions?[0].operand;
+                                    var operand1 = sourceLine.expressions?[1].operand;
                                     if (operand0!.type == X64OperandType.MemoryAddress) {
                                         mem = operand0.addressRes;
                                     } else if (operand0!.type == X64OperandType.Register) {
@@ -184,8 +184,8 @@ namespace AlloyTools.Assembler.AMD64
                                     }
                                 }
                                 else if (matchedInfo.op1 == MatchType.rm) {                     // 如果 op1 匹配了 R/M 域
-                                    var operand0 = sourceLine?.expressions?[0].operand;
-                                    var operand1 = sourceLine?.expressions?[1].operand;
+                                    var operand0 = sourceLine.expressions?[0].operand;
+                                    var operand1 = sourceLine.expressions?[1].operand;
                                     if (operand1!.type == X64OperandType.MemoryAddress) {
                                         mem = operand1.addressRes;
                                     } else if (operand1!.type == X64OperandType.Register) {
@@ -255,7 +255,7 @@ namespace AlloyTools.Assembler.AMD64
                                 if (bitSize == 64) 
                                     flagRexW = true;
                                 // 下面获得前缀操作码
-                                getPrefixCode(ref prefixCodeSize, sourceLine!, matchedInfo, addr32bitPrefix, bitSize, flagRexE, flagRexW, flagRexR, flagRexX, flagRexB);
+                                getPrefixCode(ref prefixCodeSize, sourceLine, matchedInfo, addr32bitPrefix, bitSize, flagRexE, flagRexW, flagRexR, flagRexX, flagRexB);
                                 // 处理imm
                                 if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.withImm)) {
 
@@ -264,18 +264,18 @@ namespace AlloyTools.Assembler.AMD64
                                 byte[]? newCode = CombineCode(prefixCodeSize, insCodeSize, addrCodeSize, immCodeSize);
                                 if (newCode is not null) {
                                     if (pass > 1) {
-                                        int oldCodeSize = (sourceLine?.code != null) ? sourceLine.code.Length : 0;
+                                        int oldCodeSize = (sourceLine.code != null) ? sourceLine.code.Length : 0;
                                         if (oldCodeSize != newCode.Length) {
                                             asm.SetNeedRescan(true);                // 代码大小发生变化了，需要重新扫描
                                         }
                                     }
-                                    sourceLine!.code = newCode;
+                                    sourceLine.code = newCode;
                                     RelocInfo[]? relocs = CombineRelocs(addrRelocInfo, immRelocInfo, prefixCodeSize, insCodeSize, addrCodeSize);
                                     sourceLine.relocInfos = relocs;
                                     totalCodeSize = newCode.Length;
                                 }
                                 if (totalCodeSize > 0) 
-                                    asm.AddCodeSize((uint)totalCodeSize);
+                                    asm.AddCodeSize((uint)totalCodeSize, sourceLine, pass);
                                 return totalCodeSize;
                             }
                         }
@@ -409,8 +409,8 @@ namespace AlloyTools.Assembler.AMD64
         {
             int opSize0, opSize1;
             int ret = 0;
-            opSize0 = getOpSize(sourceLine?.expressions?[0].operand);
-            opSize1 = getOpSize(sourceLine?.expressions?[1].operand);
+            opSize0 = getOpSize(sourceLine.expressions?[0].operand);
+            opSize1 = getOpSize(sourceLine.expressions?[1].operand);
             if (opSize0 == 0 && opSize1 == 0) {
                 //// 报错
                 return 0;

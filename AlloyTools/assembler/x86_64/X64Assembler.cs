@@ -210,8 +210,13 @@ namespace AlloyTools.Assembler.AMD64
             boNeedReScan = value1;
         }
 
-        public void AddCodeSize(uint codesize)
+        public void AddCodeSize(uint codesize, SourceLine sourceLine, int pass)
         {
+            int recordIndex = sourceLine.recordIndex;
+            long fragmentIndex = sourceLine.fragmentIndex;
+            X64Fragment fragment = fragmentList.fragments[(ulong)fragmentIndex];
+            X64Record record = fragment.records[recordIndex];
+            record.size += codesize;
             return ;
         }
     }
