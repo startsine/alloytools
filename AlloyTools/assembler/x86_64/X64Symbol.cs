@@ -115,10 +115,6 @@ namespace AlloyTools.Assembler.AMD64
             return records[GetCurrRecordtIndex()];
         }
 
-        public X64Record GetCurrRecord()
-        {
-            return records[GetCurrRecordtIndex()];
-        }
 
         public void EndCurrRecord()
         {

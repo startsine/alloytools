@@ -172,7 +172,7 @@ namespace AlloyTools.Assembler.AMD64
                     }
 
                     if (parsedLine.hasLabel && !parsedLine.hasInsn) {
-                        /// TO-DO 这里处理有标签但是没有指令的清空
+                        /// TO-DO 这里处理有标签但是没有指令的情况
                     }
 
                     if (insnProcessor is not null) {
@@ -201,7 +201,20 @@ namespace AlloyTools.Assembler.AMD64
             ulong lineCnt;
             for (lineCnt = 0; lineCnt < lineTotal; lineCnt++) {
                 SourceLine curLine = sourceLines[lineCnt];
-                ;
+                //
+                if (!curLine.hasInsn && !curLine.hasLabel)
+                    continue;
+
+                if (curLine.hasLabel) {
+                    // 重新获得label的值，并与旧值比较
+                }
+                string insnStr = curLine.hasInsn ? curLine.insnStr : "";
+                if (X64Token.isCpuInstruction(insnStr)) {
+                }
+                else if (X64Token.isVirtualInstruction(insnStr)) {
+                }
+                else if (X64Token.isPseudoInstruction(insnStr)) {
+                }
             }
         }
 
