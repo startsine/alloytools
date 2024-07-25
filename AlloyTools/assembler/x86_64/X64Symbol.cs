@@ -4,6 +4,22 @@ using System.Collections;
 
 namespace AlloyTools.Assembler.AMD64
 {
+    // 重定位类型
+    public enum RelocType
+    {
+        None = 0,
+        ADDR64,                                 // 64位绝对地址
+        ADDR32,                                 // 32位绝对地址
+        REL32,                                  // 相对下一条指令的相对PC寻址
+    }
+
+    public class RelocInfo
+    {
+        public string name = "";
+        public RelocType type = RelocType.None;
+        public uint offset = 0;
+    }
+
     public enum SymboSizeType
     {
         None = 0,
@@ -56,8 +72,7 @@ namespace AlloyTools.Assembler.AMD64
     public class X64Record
     {
         public X64RecordType recordType = X64RecordType.None;                   // 记录类型
-        public ulong fixedSize = 0;                                             // 固定大小 (仅仅 recordType == Fixed 时有效)
-        public ulong maxSize = 0;                                               // 可变记录最大的可能大小 (仅仅 recordType == Variable 时有效)
+        public ulong size = 0;                                                  // 记录的大小 （如果type==Variable, 这里表示可变记录最大的可能大小）
     }
 
     public class X64Fragment

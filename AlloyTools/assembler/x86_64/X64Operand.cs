@@ -451,15 +451,6 @@ namespace AlloyTools.Assembler.AMD64
         public ulong symIndex;
     }
 
-    // 重定位类型
-    public enum RelocType
-    {
-        None = 0,
-        ADDR64,                                 // 64位绝对地址
-        ADDR32,                                 // 32位绝对地址
-        REL32,                                  // 相对下一条指令的相对PC寻址
-    }
-
     // 机器层面的寻址信息
     public class MemoryAddressResult
     {
@@ -474,7 +465,7 @@ namespace AlloyTools.Assembler.AMD64
         public X64RegValue indexReg;            // 变址寄存器信息(rm==100时，才有SIB字节)
         public byte sacle;                      // 比例因子(rm==100时，才有SIB字节)
         public string symName;                  // 符号寻址(规定rbp/r13必须带偏移量,如果mod==00,rm=101时表示直接用一个32位数值来寻址,这里一般是指符号地址)
-        public ulong symIndex;                  // 符号在符号列表的索引(为0表示找不到)
+        public long symIndex;                   // 符号在符号列表的索引(为-1表示找不到)
                                                 // 另一种情况，mod==00，并且base==rbp/r13, index==rsp时，表示使用一个无符号的32位绝对数值(可以是变量符号)做基地址进行ADDR32寻址
         public X64RegValue segReg;              // 段前缀用的段寄存器
         public RelocType relocType;             // 重定位类型, 存在 symbol 时才有效
@@ -492,7 +483,7 @@ namespace AlloyTools.Assembler.AMD64
             indexReg = X64RegValue.None;
             sacle = 0;
             symName = "";
-            symIndex = 0;
+            symIndex = -1;
             segReg = X64RegValue.None;
             relocType = RelocType.None;
         }

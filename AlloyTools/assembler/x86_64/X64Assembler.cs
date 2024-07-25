@@ -8,6 +8,7 @@ namespace AlloyTools.Assembler.AMD64
 {
     public class X64Assembler
     {
+        private bool boNeedReScan = false;
         private LargeList<SourceLinePre> sourceLinesP;
         private LargeList<SourceLine>    sourceLines;
         public X64SymbolList globalSymbolList;
@@ -202,6 +203,16 @@ namespace AlloyTools.Assembler.AMD64
                 SourceLine curLine = sourceLines[lineCnt];
                 ;
             }
+        }
+
+        public void SetNeedRescan(bool value1)
+        {
+            boNeedReScan = value1;
+        }
+
+        public void AddCodeSize(uint codesize)
+        {
+            return ;
         }
     }
 }

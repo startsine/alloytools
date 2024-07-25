@@ -86,7 +86,7 @@ namespace AlloyTools.Assembler.AMD64
             return InsnProcessFlag.None;
         }
 
-        protected int processCpuIns(string insnStr, SourceLine sourceLine, int pass, LinkedList<OpcodeInfos> opcodeInfos)
+        protected int processCpuIns(X64Assembler asm, string insnStr, SourceLine sourceLine, int pass, LinkedList<OpcodeInfos> opcodeInfos)
         {
             Console.WriteLine("process. " + insnStr);
 
@@ -95,7 +95,7 @@ namespace AlloyTools.Assembler.AMD64
             OpcodeInfos? info = null;
             OpcodeInfos? matchedInfo = null;
 
-            int expressionsCount = sourceLine.expressions != null ? sourceLine.expressions.Count : 0;       // 当前指令的表达式的个数 
+            int expressionsCount = sourceLine?.expressions != null ? sourceLine.expressions.Count : 0;       // 当前指令的表达式的个数 
             currentNode = opcodeInfos.First;
             while (currentNode is not null) {
                 info = currentNode.Value;
@@ -140,6 +140,7 @@ namespace AlloyTools.Assembler.AMD64
                 int insCodeSize = 0;
                 int addrCodeSize = 0;
                 int immCodeSize = 0;
+                int totalCodeSize = 0;
                 bool flagRexE = false;
                 bool flagRexW = false;
                 bool flagRexR = false;
@@ -147,6 +148,8 @@ namespace AlloyTools.Assembler.AMD64
                 bool flagRexB = false;
                 bool addr32bitPrefix = false;
                 int bitSize = 0;
+                RelocInfo? addrRelocInfo = null;         // 寻址代码中的重定位信息
+                RelocInfo? immRelocInfo = null;          // 立即数代码中的重定位信息
 
                 switch (expressionsCount) {
                     case 0: {
@@ -158,7 +161,7 @@ namespace AlloyTools.Assembler.AMD64
                         }
                         break;
                     case 2: {
-                            bitSize = getBaseInsnOpSize2(sourceLine!, pass, opcodeInfos);
+                            bitSize = getBaseInsnOpSize2(sourceLine!, pass, opcodeInfos);       // 得到指令的操作数的位数大小，返回8/16/32/64
                             if (bitSize == 0) {
                                 //// 报错, 无法决定操作数类型
                                 return 0;
@@ -211,6 +214,12 @@ namespace AlloyTools.Assembler.AMD64
                                     flagRexB = true;
                                 if (mem.type.HasFlag(MemoryAddressType.with32bitRegAddr))
                                     addr32bitPrefix = true;
+                                if (mem.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                                    addrRelocInfo = new RelocInfo();
+                                    addrRelocInfo.offset = (uint)mem.relocOffset;
+                                    addrRelocInfo.type = mem.relocType;
+                                    addrRelocInfo.name = mem.symName;
+                                }
                                 //
                                 if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_Digit)) {
                                     // 把操作码插入到 ModRM 中的 reg 域
@@ -245,8 +254,29 @@ namespace AlloyTools.Assembler.AMD64
                                 }
                                 if (bitSize == 64) 
                                     flagRexW = true;
+                                // 下面获得前缀操作码
                                 getPrefixCode(ref prefixCodeSize, sourceLine!, matchedInfo, addr32bitPrefix, bitSize, flagRexE, flagRexW, flagRexR, flagRexX, flagRexB);
-                                return 0;
+                                // 处理imm
+                                if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.withImm)) {
+
+                                }
+                                // 复制指令码
+                                byte[]? newCode = CombineCode(prefixCodeSize, insCodeSize, addrCodeSize, immCodeSize);
+                                if (newCode is not null) {
+                                    if (pass > 1) {
+                                        int oldCodeSize = (sourceLine?.code != null) ? sourceLine.code.Length : 0;
+                                        if (oldCodeSize != newCode.Length) {
+                                            asm.SetNeedRescan(true);                // 代码大小发生变化了，需要重新扫描
+                                        }
+                                    }
+                                    sourceLine!.code = newCode;
+                                    RelocInfo[]? relocs = CombineRelocs(addrRelocInfo, immRelocInfo, prefixCodeSize, insCodeSize, addrCodeSize);
+                                    sourceLine.relocInfos = relocs;
+                                    totalCodeSize = newCode.Length;
+                                }
+                                if (totalCodeSize > 0) 
+                                    asm.AddCodeSize((uint)totalCodeSize);
+                                return totalCodeSize;
                             }
                         }
                         break;
@@ -424,6 +454,62 @@ namespace AlloyTools.Assembler.AMD64
 
             prefixCodeSize = cnt;
             return cnt;
+        }
+
+        private byte[]? CombineCode(int prefixCodeSize, int insCodeSize, int addrCodeSize, int immCodeSize)
+        {
+            int codeCnt = 0;
+            int totalSize = prefixCodeSize + insCodeSize + addrCodeSize + immCodeSize;
+            if (totalSize <= 0) {
+                return null;
+            }
+            byte[] newCode = new byte[prefixCodeSize + insCodeSize + addrCodeSize + immCodeSize];
+            if (prefixCodeSize > 0) {
+                Array.Copy(prefixCode, 0, newCode, codeCnt, prefixCodeSize);
+                codeCnt += prefixCodeSize;
+            }
+            if (insCodeSize > 0) {
+                Array.Copy(insCode, 0, newCode, codeCnt, insCodeSize);
+                codeCnt += insCodeSize;
+            }
+            if (addrCodeSize > 0) {
+                Array.Copy(addrCode, 0, newCode, codeCnt, addrCodeSize);
+                codeCnt += addrCodeSize;
+            }
+            if (immCodeSize > 0) {
+                Array.Copy(immCode, 0, newCode, codeCnt, immCodeSize);
+                codeCnt += immCodeSize;
+            }
+            return newCode;
+        }
+
+        private RelocInfo[]? CombineRelocs(RelocInfo? addrRelocInfo, RelocInfo? immRelocInfo, int prefixCodeSize, int insCodeSize, int addrCodeSize)
+        {
+            int relocCount = 0;
+            if (addrRelocInfo is not null)
+                relocCount++;
+            if (immRelocInfo is not null)
+                relocCount++;
+            if (relocCount == 0) {
+                return null;
+            }
+            RelocInfo[] relocs = new RelocInfo[relocCount];
+            relocCount = 0;
+            if (addrRelocInfo is not null) {
+                relocs[relocCount] = new RelocInfo();
+                relocs[relocCount].name = addrRelocInfo.name;
+                relocs[relocCount].offset = addrRelocInfo.offset + (uint)prefixCodeSize + (uint)insCodeSize;
+                relocs[relocCount].type = addrRelocInfo.type;
+                relocCount++;
+            }
+            if (immRelocInfo is not null) {
+                relocs[relocCount] = new RelocInfo();
+                relocs[relocCount].name = immRelocInfo.name;
+                relocs[relocCount].offset = immRelocInfo.offset + (uint)prefixCodeSize + (uint)insCodeSize + (uint)addrCodeSize;
+                relocs[relocCount].type = immRelocInfo.type;
+                relocCount++;
+            }
+            return relocs;
         }
     }
 

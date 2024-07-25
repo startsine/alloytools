@@ -116,9 +116,7 @@ namespace AlloyTools.Assembler.AMD64.Instruction
 
         override public int process(X64Assembler asm, string insnStr, SourceLine sourceLine, int pass)
         {
-            processCpuIns(insnStr, sourceLine, pass, opcodeInfos);
-            
-            return 0; 
+            return processCpuIns(asm, insnStr, sourceLine, pass, opcodeInfos);
         }
     }
 }
