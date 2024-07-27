@@ -839,6 +839,17 @@ re_calculate:
                                     op1.disp32 = op2.disp32;
                                 }
                             }
+                            if (op1.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                                if (op2.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                                    //// 报错，不允许两个符号来重定位
+                                }
+                            }
+                            else {
+                                if (op2.type.HasFlag(MemoryAddressType.hasSymbol)) {
+                                    op1.type |= MemoryAddressType.hasSymbol;
+                                    op1.symName = op2.symName;
+                                }
+                            }
                             X64Operand x64Operand = new X64Operand(op1);
                             return x64Operand;
                         }
@@ -985,6 +996,10 @@ re_calculate:
                         if (token.tempOperand.addressInfo != null)
                             info = token.tempOperand.addressInfo;
                     }
+                    break;
+                case X64TokenType.Symbol:
+                    info.type |= MemoryAddressType.hasSymbol;
+                    info.symName = token.str;
                     break;
             }
             return info;

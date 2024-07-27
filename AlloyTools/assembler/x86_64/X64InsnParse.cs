@@ -95,6 +95,29 @@ namespace AlloyTools.Assembler.AMD64
             OpcodeInfos? info = null;
             OpcodeInfos? matchedInfo = null;
 
+            if (sourceLine.hasLabel) {
+                if (pass == 1) {
+                    X64Symbol? sym = asm.globalSymbolList.GetSymbol(sourceLine.labelStr);
+                    if (sym is null) {
+                        X64Symbol symbol = new X64Symbol();
+                        symbol.symbolName = sourceLine.labelStr;
+                        symbol.sizeType = SymboSizeType.Proc;
+                        symbol.varType = SymbolVarType.NotConst;
+                        symbol.fragmentIndex = sourceLine.fragmentIndex;
+                        symbol.recordIndex = sourceLine.recordIndex;
+                        symbol.offsetValue = asm.GetCurrOffset(sourceLine.fragmentIndex, sourceLine.recordIndex);
+                        asm.globalSymbolList.AddSymbol(symbol);
+                    }
+                    else {
+                        //// 报错，重复定义符号
+                        return 0;
+                    }
+                }
+                else {
+
+                }
+            }
+
             int expressionsCount = sourceLine.expressions != null ? sourceLine.expressions.Count : 0;       // 当前指令的表达式的个数 
             currentNode = opcodeInfos.First;
             while (currentNode is not null) {

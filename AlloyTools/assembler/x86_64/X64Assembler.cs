@@ -232,6 +232,16 @@ namespace AlloyTools.Assembler.AMD64
             record.size += codesize;
             return ;
         }
+
+        public ulong GetCurrOffset(long fragmentIndex, int recordIndex)
+        {
+            X64Fragment fragment = fragmentList.fragments[(ulong)fragmentIndex];
+            X64Record record = fragment.records[recordIndex];
+            return record.size;
+        }
+
+
+
     }
 }
 
