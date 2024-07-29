@@ -43,7 +43,11 @@ namespace AlloyTools.Assembler.AMD64
 
             do {
                 AssemblerPass2();
-            } while (false);
+                if (!boNeedReScan) {
+                    break;
+                }
+                Console.WriteLine("=====哈哈=====");
+            } while (true);
 
             Hashtable ht = new Hashtable();
             var ss = ht.Count;
@@ -197,7 +201,8 @@ namespace AlloyTools.Assembler.AMD64
         {
             if (sourceLines == null)
                 return;
-            ulong lineTotal = sourceLinesP!.Count;
+            IInsnProcessor? insnProcessor = null;
+            ulong lineTotal = sourceLines!.Count;
             ulong lineCnt;
             for (lineCnt = 0; lineCnt < lineTotal; lineCnt++) {
                 SourceLine curLine = sourceLines[lineCnt];
@@ -205,7 +210,7 @@ namespace AlloyTools.Assembler.AMD64
                 if (!curLine.hasInsn && !curLine.hasLabel)
                     continue;
 
-                if (curLine.hasLabel) {
+                if (curLine.hasLabel && !curLine.hasInsn) {
                     // 重新获得label的值，并与旧值比较
                 }
                 string insnStr = curLine.hasInsn ? curLine.insnStr : "";
@@ -214,6 +219,24 @@ namespace AlloyTools.Assembler.AMD64
                 else if (X64Token.isVirtualInstruction(insnStr)) {
                 }
                 else if (X64Token.isPseudoInstruction(insnStr)) {
+                }
+
+                if (X64Token.isCpuInstruction(insnStr)) {
+                    insnProcessor = X64CpuInsnList.Instance.GetInsnProcessor(insnStr);
+                }
+                else if (X64Token.isVirtualInstruction(insnStr)) {
+                    //
+                }
+                else if (X64Token.isPseudoInstruction(insnStr)) {
+                    insnProcessor = X64PseudoInsnList.Instance.GetPseudoInsnProcessor(insnStr);
+                }
+                else {
+                    //// 不认识的指令，报错
+                    continue;
+                }
+
+                if (insnProcessor is not null) {
+                    insnProcessor.process(this, insnStr, curLine, 2);
                 }
             }
         }
