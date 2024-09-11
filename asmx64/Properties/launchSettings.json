@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "asmx64": {
-      "commandName": "Project",
-      "commandLineArgs": "t1.asm"
-    }
-  }
-}
