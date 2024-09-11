@@ -259,11 +259,11 @@
                 Value="Executable"/>
         </List>
     </Config>
-    <Files>
+    <CustomFolders>
         <Folder
             Name="Source Files"
             Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.scala;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d;*.m;*.mm;*.go;*.groovy;*.gsh"
-            GUID="{775AC28B-57E4-456C-929E-EBEF253359BD}"/>
+            GUID="{775AC28B-57E4-456C-929E-EBEF253359BD}"></Folder>
         <Folder
             Name="Header Files"
             Filters="*.h;*.H;*.hh;*.hpp;*.hxx;*.h++;*.inc;*.sh;*.cpy;*.if"
@@ -280,7 +280,14 @@
             Name="Other Files"
             Filters=""
             GUID="{C5DF9E2B-E81F-4B8D-8CC8-6DCCF2316E3C}"></Folder>
-    </Files>
+    </CustomFolders>
     <List Name="RTE">
     </List>
+    <Files AutoFolders="DirectoryView">
+        <Folder Name="source">
+            <Folder Name="asmx64">
+                <F N="source/asmx64/main.cpp"/>
+            </Folder>
+        </Folder>
+    </Files>
 </Project>
