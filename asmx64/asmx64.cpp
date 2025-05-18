@@ -10,7 +10,7 @@ static int asm_main(int argc, char ** argv)
 
 int main(int argc, char ** argv)
 {
-    int ret = 0;
+    int ret;
 #ifdef _WIN32
     int i;
     SetConsoleCP(CP_UTF8);
