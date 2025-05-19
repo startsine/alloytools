@@ -8,6 +8,10 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="prepro.h"/>
+    <File Name="prepro.cpp"/>
+    <File Name="line.h"/>
+    <File Name="line.cpp"/>
     <File Name="asmx64.cpp"/>
   </VirtualDirectory>
   <Settings Type="Executable">
