@@ -7,7 +7,8 @@
 class SourceLinePrePro
 {
 public:
-    std::string         rawLine;            // 源码行的原始内容
+    std::string                 rawLine;            // 源码行的原始内容
+    std::vector<std::string>    tokens;             // token列表
 };
 
 
