@@ -2,9 +2,40 @@
 #ifdef _WIN32
 #include <Windows.h>
 #endif
+#include <string>
+
+void Assembler(const std::string & filepath)
+{
+    auto loader = new SourceLoader();
+    loader.LoadFile(filepath);
+
+    var parser = new SourceParser(sourceLinesP, loader);
+    parser.Parse();
+    //
+    
+    AssemblerPass1();
+
+    do {
+        AssemblerPass2();
+        if (!boNeedReScan) {
+            break;
+        }
+        Console.WriteLine("=====哈哈=====");
+    } while (true);
+
+    Hashtable ht = new Hashtable();
+    var ss = ht.Count;
+    //Console.WriteLine("open ok");
+    //string s = Encoding.UTF8.GetString(src);
+    //Console.WriteLine(s);
+}
 
 static int asm_main(int argc, char ** argv) 
 {
+    if (argc > 0) {
+        //X64Assembler asm = new X64Assembler();
+        //asm.Assembler(argv[0]);
+    }
     return 0;
 }
 

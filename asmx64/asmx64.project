@@ -8,6 +8,8 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="assembler.h"/>
+    <File Name="assembler.cpp"/>
     <File Name="prepro.h"/>
     <File Name="prepro.cpp"/>
     <File Name="line.h"/>
