@@ -2,39 +2,17 @@
 #ifdef _WIN32
 #include <Windows.h>
 #endif
+#include <memory>
 #include <string>
+#include "asmx64.h"
 
-void Assembler(const std::string & filepath)
-{
-    auto loader = new SourceLoader();
-    loader.LoadFile(filepath);
-
-    var parser = new SourceParser(sourceLinesP, loader);
-    parser.Parse();
-    //
-    
-    AssemblerPass1();
-
-    do {
-        AssemblerPass2();
-        if (!boNeedReScan) {
-            break;
-        }
-        Console.WriteLine("=====哈哈=====");
-    } while (true);
-
-    Hashtable ht = new Hashtable();
-    var ss = ht.Count;
-    //Console.WriteLine("open ok");
-    //string s = Encoding.UTF8.GetString(src);
-    //Console.WriteLine(s);
-}
+using namespace std;
 
 static int asm_main(int argc, char ** argv) 
 {
     if (argc > 0) {
-        //X64Assembler asm = new X64Assembler();
-        //asm.Assembler(argv[0]);
+        unique_ptr<X64Assembler> asm1 = make_unique<X64Assembler>();
+        asm1->assemble(argv[0]);
     }
     return 0;
 }

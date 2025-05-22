@@ -7,11 +7,11 @@
 class X64Assembler
 {
 private:
-    void Assembler(const std::string & filepath);
-    void AssemblerPass1();
-    void AssemblerPass2();
+    void assemblePass1();
+    void assemblePass2();
 public:
-    public X64Assembler();
+    X64Assembler();
+    void assemble(const std::string & filepath);
 };
 
 #endif // 
