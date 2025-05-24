@@ -69,6 +69,7 @@ SourceParser::SourceParser(std::list<SourceLinePrePro> * lines, SourceLoader * l
 
 bool SourceParser::parse()
 {
+    #if 0
     const int LINE_MAX_SIZE = 256 * 1024;
     const int TOKEN_MAX_SIZE = 64 * 1024;
     byte ch, ch_next, ch_next2;
@@ -343,6 +344,7 @@ StringDoubleQuote,              // 双引号开始的字符串
     }
     fs.Close();
     // DEBUG OUTPUT END
+    #endif
     return true; 
 }
 
