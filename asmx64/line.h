@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <list>
 
 class SourceLoader
 {
@@ -42,7 +43,7 @@ public:
     bool hasInsnPrefix = false;                  // 是否拥有指令前缀
     std::string labelStr = "";                        // 标签符号字符串
     std::string insnStr = "";                         // 指令字符串
-    long long sectionIndex = -1;            // 当前行产生的指令或者数据属于哪一个 section
+    int64_t sectionIndex = -1;            // 当前行产生的指令或者数据属于哪一个 section
     CpuInsnPrefixID prefixs = CpuInsnPrefixID::None;  // 指令前缀列表
     bool keepFollowingToken = false;             // 标志：是否保留了指令后面的token
     std::vector<std::string>     followingTokens;   // 紧跟指令后面的原始token, keepFollowingToken为true时有效
@@ -53,7 +54,12 @@ public:
     //public uint bytesize = 0;                           // 该行产生的机器代码的字节大小（如果是虚拟指令或者Jcc指令，这里先存放它的可能最长的大小,后面再扫描修正）
 };
 
-
+class SourceParser
+{
+public:
+    SourceParser(const std::list<SourceLinePrePro> * lines, const SourceLoader * loader);
+    bool parse();
+};
 
 
 #endif // ASMX64_LINE_PROCESS_H

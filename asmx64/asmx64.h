@@ -3,6 +3,7 @@
 #define ASMX64_X64ASM_H 1
 
 #include <string>
+#include <memory>
 
 #include "instruction.h"
 #include "expression.h"

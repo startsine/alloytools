@@ -11,7 +11,7 @@ class X64Assembler
 {
 private:
     bool boNeedReScan = false;
-    std::list<SourceLinePrePro> sourceLinesP;           // 将源代码预处理的行
+    std::list<SourceLinePrePro> sourceLinesP;           // 将源代码进行预处理的行
     std::list<SourceLine>    sourceLines;
     /*
      private 

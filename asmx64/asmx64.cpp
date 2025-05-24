@@ -11,8 +11,13 @@ using namespace std;
 static int asm_main(int argc, char ** argv) 
 {
     if (argc > 0) {
-        unique_ptr<X64Assembler> asm1 = make_unique<X64Assembler>();
-        asm1->assemble(argv[0]);
+        try {
+            unique_ptr<X64Assembler> asm1 = make_unique<X64Assembler>();
+            asm1->assemble(argv[0]);
+        }
+        catch (...) {
+            //
+        }
     }
     return 0;
 }
