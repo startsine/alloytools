@@ -8,6 +8,8 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="symbol.h"/>
+    <File Name="symbol.cpp"/>
     <File Name="instruction.h"/>
     <File Name="instruction.cpp"/>
     <File Name="expression.h"/>
