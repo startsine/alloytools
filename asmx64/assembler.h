@@ -3,9 +3,23 @@
 #define ASMX64_ASM_H 1
 
 #include <string>
+#include <vector>
+#include <list>
+#include <memory>
 
 class X64Assembler
 {
+private:
+    bool boNeedReScan = false;
+    std::list<SourceLinePrePro> sourceLinesP;           // 将源代码预处理的行
+    std::list<SourceLine>    sourceLines;
+    /*
+     private 
+
+private LargeList<SourceLine>    sourceLines;
+public X64SymbolList globalSymbolList;
+public X64FragmentList fragmentList;
+ */
 private:
     void assemblePass1();
     void assemblePass2();
