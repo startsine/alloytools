@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <stddef.h>
 #ifdef _WIN32
 #include "Windows.h"
 #endif
@@ -70,6 +73,7 @@ SourceParser::SourceParser(std::list<SourceLinePrePro> * lines, SourceLoader * l
 bool SourceParser::parse()
 {
     #if 0
+    /*
     const int LINE_MAX_SIZE = 256 * 1024;
     const int TOKEN_MAX_SIZE = 64 * 1024;
     byte ch, ch_next, ch_next2;
@@ -302,15 +306,15 @@ bool SourceParser::parse()
                 break;
 
         }
-        /*
-            Linux中\n表示回车+换行；
-            Windows中\r\n表示回车+换行。
-            Mac中\r表示回车+换行。
-
-        Numeric,                        // 数字
-StringSingleQuote,              // 单引号开始的字符串
-StringDoubleQuote,              // 双引号开始的字符串
-         */
+        //
+//            Linux中\n表示回车+换行；
+//            Windows中\r\n表示回车+换行。
+//            Mac中\r表示回车+换行。
+//
+//        Numeric,                        // 数字
+//StringSingleQuote,              // 单引号开始的字符串
+//StringDoubleQuote,              // 双引号开始的字符串
+         //
     }
     if (linePtr > 0) {
         curLine.rawLine = new byte[linePtr];
@@ -344,6 +348,7 @@ StringDoubleQuote,              // 双引号开始的字符串
     }
     fs.Close();
     // DEBUG OUTPUT END
+     * */
     #endif
     return true; 
 }
