@@ -16,6 +16,7 @@ void X64Assembler::assemble(const std::string & filepath)
     SourceParser parser(&sourceLinesP, &loader);
     parser.parse();
     
+    
     assemblePass1();
 
     do {

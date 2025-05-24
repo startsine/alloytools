@@ -10,11 +10,11 @@
 class SourceLoader
 {
 private:
-    const int BUFF_SIZE = 65536;
+    const int BUFF_SIZE = 4096;
     std::vector<std::string> serachPathList;
     FILE * fileStream;
-    char * buffer;
-    bool endOfFile;
+    char buffer[BUFF_SIZE + 2];
+    bool endOfFile = false;
     int endCursor;                              // 有效数据结尾指针
     int curCursor;                              // 当前读取指针
 public:
