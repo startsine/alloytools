@@ -10,5 +10,25 @@ enum class CurrTokenStartType   // 当前词法分析的Token起始类型
     Comment,                        // 注释
 };
 
+SourceLoader::SourceLoader()
+{
+    
+}
+
+void SourceLoader::loadFile(const std::string & filepath)
+{
+    
+}
+
+SourceParser::SourceParser(const std::list<SourceLinePrePro> * lines, const SourceLoader * loader)
+{
+    //
+}
+
+bool SourceParser::parse()
+{
+    return true;
+}
+
 
 
