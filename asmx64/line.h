@@ -10,16 +10,17 @@
 class SourceLoader
 {
 private:
-    const int BUFF_SIZE = 4096;
+    static constexpr int BUFF_SIZE = 4096;
     std::vector<std::string> serachPathList;
     FILE * fileStream;
     char buffer[BUFF_SIZE + 2];
-    bool endOfFile = false;
+    bool endOfFile;
     int endCursor;                              // 有效数据结尾指针
     int curCursor;                              // 当前读取指针
 public:
     SourceLoader();
     SourceLoader(const std::vector<std::string> & paths);
+    ~SourceLoader();
     void addSearchPath(const std::string & path);
     void loadFile(const std::string & filepath);
     unsigned char getByte(bool * pEOF);
@@ -56,8 +57,11 @@ public:
 
 class SourceParser
 {
+private:
+    std::list<SourceLinePrePro> * lines;
+    SourceLoader * loader;
 public:
-    SourceParser(const std::list<SourceLinePrePro> * lines, const SourceLoader * loader);
+    SourceParser(std::list<SourceLinePrePro> * lines, SourceLoader * loader);
     bool parse();
 };
 

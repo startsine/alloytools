@@ -2,6 +2,8 @@
 #ifndef ASMX64_X64ASM_H
 #define ASMX64_X64ASM_H 1
 
+#include <string.h>
+#include <stdio.h>
 #include <string>
 #include <memory>
 

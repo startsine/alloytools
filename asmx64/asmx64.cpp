@@ -10,10 +10,10 @@ using namespace std;
 
 static int asm_main(int argc, char ** argv) 
 {
-    if (argc > 0) {
+    if (argc > 1) {
         try {
             unique_ptr<X64Assembler> asm1 = make_unique<X64Assembler>();
-            asm1->assemble(argv[0]);
+            asm1->assemble(argv[1]);
         }
         catch (...) {
             //
