@@ -31,7 +31,7 @@ public:
     std::vector<std::string>    tokens;             // token列表
 };
 
-public class SourceLine
+class SourceLine
 {
 public:
     std::string rawContent;                          // 源码行的原始内容
@@ -41,16 +41,11 @@ public:
     bool hasInsnPrefix = false;                  // 是否拥有指令前缀
     std::string labelStr = "";                        // 标签符号字符串
     std::string insnStr = "";                         // 指令字符串
-    
-    
-    long long fragmentIndex = -1;                     // 当前行产生的指令或者数据属于哪一个fragment
-    
-    int recordIndex = -1;                        // 当前行产生的指令或者数据属于哪一个record (-1表示当前行没有产生指令或者数据)
-    
-    
+    long long sectionIndex = -1;            // 当前行产生的指令或者数据属于哪一个 section
     CpuInsnPrefixID prefixs = CpuInsnPrefixID.None;  // 指令前缀列表
-    bool keepFollowingToken = false;             // 是否保留指令后面的token
-    List<PreProToken>? followingTokens = null;   // 紧跟指令后面的原始token
+    bool keepFollowingToken = false;             // 标志：是否保留了指令后面的token
+    std::vector<std::string>     followingTokens;   // 紧跟指令后面的原始token, keepFollowingToken为true时有效
+    
     byte[]? code = null;                         // 本行产生的代码
     RelocInfo[]? relocInfos = null;              // 本行中的重定位信息
 

@@ -4,8 +4,9 @@
 
 #include <string>
 
-#include "line.h"
+#include "instruction.h"
 #include "expression.h"
+#include "line.h"
 #include "assembler.h"
 
 
