@@ -10,7 +10,7 @@
 #include "instruction.h"
 #include "expression.h"
 #include "symbol.h"
-#include "line.h"
+#include "srcline.h"
 #include "assembler.h"
 
 

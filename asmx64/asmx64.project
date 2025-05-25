@@ -8,6 +8,8 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="srcline.h"/>
+    <File Name="srcline.cpp"/>
     <File Name="symbol.h"/>
     <File Name="symbol.cpp"/>
     <File Name="instruction.h"/>
@@ -19,8 +21,6 @@
     <File Name="assembler.cpp"/>
     <File Name="prepro.h"/>
     <File Name="prepro.cpp"/>
-    <File Name="line.h"/>
-    <File Name="line.cpp"/>
     <File Name="asmx64.cpp"/>
   </VirtualDirectory>
   <Settings Type="Executable">
