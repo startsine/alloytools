@@ -8,15 +8,6 @@
 
 using namespace std;
 
-enum class CurrTokenStartType   // 当前词法分析的Token起始类型
-{
-    None,
-    Identifier,                     // 标识符开始 (非数字开头，允许字母、数字、$、?、@、_)
-    Numeric,                        // 数字
-    StringSingleQuote,              // 单引号开始的字符串
-    StringDoubleQuote,              // 双引号开始的字符串
-    Comment,                        // 注释
-};
 
 SourceLoader::SourceLoader(): fileStream(nullptr), endOfFile(false), endCursor(0), curCursor(0)
 {
@@ -72,7 +63,9 @@ SourceParser::SourceParser(std::list<SourceLinePrePro> * lines, SourceLoader * l
 
 bool SourceParser::parse()
 {
-    #if 0
+    
+
+
     /*
     const int LINE_MAX_SIZE = 256 * 1024;
     const int TOKEN_MAX_SIZE = 64 * 1024;
@@ -349,7 +342,7 @@ bool SourceParser::parse()
     fs.Close();
     // DEBUG OUTPUT END
      * */
-    #endif
+
     return true; 
 }
 
