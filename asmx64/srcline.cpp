@@ -28,7 +28,7 @@ void SourceLoader::loadFile(const std::string & filepath)
     shared_ptr<wchar_t> pw(new wchar_t[slen + 2], [](wchar_t * p) { delete[] p; } );
     int number = MultiByteToWideChar(CP_UTF8, 0, filepath.c_str(), -1, pw.get(), slen + 2);
     if (number == 0) {
-        //// 错误处理   打印错误信息
+        //// 错误处理   打印错误信息  
         return;
     }
     fileStream = _wfopen(pw.get(), L"rb");
@@ -36,7 +36,7 @@ void SourceLoader::loadFile(const std::string & filepath)
     fileStream = fopen(filepath.c_str(), "rb");
 #endif
     if (fileStream == nullptr) {
-        //// 错误处理   打印错误信息
+        //// 错误处理   打印错误信息  
         return;
     }
     // 预读 2 字节
@@ -64,11 +64,11 @@ uint8_t SourceLoader::getByte(bool * pEOF)
     ret = buffer[curCursor];
     curCursor++;
     //
-    if (curCursor + 2 >= endCursor) {       // 如果只剩下2个或者2个以下字节大小，把剩余字节搬到数组前面，然后再从文件中读取一些数据添加到后面补充
+    if (curCursor + 2 >= endCursor) {       // 如果只剩下2个或者2个以下字节大小，把剩余字节搬到数组前面，然后再从文件中读取一些数据添加到后面补充  
         if (!endOfFile) {
             int movSize = endCursor - curCursor;
             if (movSize > 0) {
-                for (int i = 0; i < movSize; i++) {         // 把剩余的字节移到数组头部
+                for (int i = 0; i < movSize; i++) {         // 把剩余的字节移到数组头部  
                     buffer[i] = buffer[curCursor + i];
                 }
                 curCursor = 0;
@@ -132,7 +132,7 @@ bool SourceParser::parse()
     SourceLinePrePro curLine;
     
     ////auto add_curr_token = []() {
-     ////   
+    ////   
     ////};
     
     while (true) {
@@ -140,12 +140,12 @@ bool SourceParser::parse()
         if (ch == 0 && eof) {
             break;
         }
-        // 判断行是否超长，或者token是否超长
+        // 判断行是否超长，或者token是否超长   
         if (linePtr >= LINE_MAX_SIZE) {
         }
         if (tokenPtr >= TOKEN_MAX_SIZE) {
         }
-        // 只要不是换行和回车,把字符添加到行缓冲区(\n==0x0A，\r==0x0D, 0x0C==换页)
+        // 只要不是换行和回车,把字符添加到行缓冲区(/n==0x0A，/r==0x0D, 0x0C==换页)    
         if (ch != 0x0A && ch != 0x0D && ch != 0x0C && ch != 0)
             lineBuff[linePtr++] = ch;
         //
