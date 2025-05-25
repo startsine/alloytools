@@ -53,6 +53,61 @@ void SourceLoader::loadFile(const std::string & filepath)
     printf("%s\n", buffer);
 }
 
+uint8_t SourceLoader::getByte(bool * pEOF)
+{
+    uint8_t ret;
+    *pEOF = false;
+    if (curCursor >= endCursor) {
+        *pEOF = true;
+        return 0;
+    }
+    ret = buffer[curCursor];
+    curCursor++;
+    //
+    if (curCursor + 2 >= endCursor) {       // 如果只剩下2个或者2个以下字节大小，把剩余字节搬到数组前面，然后再从文件中读取一些数据添加到后面补充
+        if (!endOfFile) {
+            int movSize = endCursor - curCursor;
+            if (movSize > 0) {
+                for (int i = 0; i < movSize; i++) {         // 把剩余的字节移到数组头部
+                    buffer[i] = buffer[curCursor + i];
+                }
+                curCursor = 0;
+                endCursor = movSize;
+                if (fileStream != nullptr) {
+                    int n = fread(&buffer[movSize], 1, BUFF_SIZE, fileStream);
+                    if (n > 0) {
+                        endOfFile = false;
+                        endCursor += n;
+                    }
+                    else {
+                        endOfFile = true;
+                        fclose(fileStream);
+                        fileStream = nullptr;
+                    }
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+// 预读取下一个字节
+uint8_t SourceLoader::preGet()
+{
+    if (curCursor >= endCursor) {
+        return 0;
+    }
+    return buffer[curCursor];
+}
+
+// 预读取下一个的下一个字节，不移动文件指针，到了文件尽头返回0
+uint8_t SourceLoader::preGetNext()
+{
+    if (curCursor + 1 >= endCursor) {
+        return 0;
+    }
+    return buffer[curCursor + 1];
+}
 
 
 SourceParser::SourceParser(std::list<SourceLinePrePro> * lines, SourceLoader * loader)
@@ -63,43 +118,25 @@ SourceParser::SourceParser(std::list<SourceLinePrePro> * lines, SourceLoader * l
 
 bool SourceParser::parse()
 {
-    
-
-
-    /*
     const int LINE_MAX_SIZE = 256 * 1024;
     const int TOKEN_MAX_SIZE = 64 * 1024;
-    byte ch, ch_next, ch_next2;
+    uint8_t ch, ch_next, ch_next2;
     bool eof = false;
-    byte[] lineBuff = new byte[LINE_MAX_SIZE];
-    byte[] tokenBuff = new byte[TOKEN_MAX_SIZE];
+    shared_ptr<uint8_t> lineBuffPtr(new uint8_t[LINE_MAX_SIZE], [](uint8_t * p) { delete[] p; } );
+    uint8_t * lineBuff = lineBuffPtr.get();
+    shared_ptr<uint8_t> tokenBuffPtr(new uint8_t[TOKEN_MAX_SIZE], [](uint8_t * p) { delete[] p; } );
+    uint8_t * tokenBuff = tokenBuffPtr.get();
     int linePtr = 0;
     int tokenPtr = 0;
-    CuurTokenStartType tokenType = CuurTokenStartType.None;
-    SourceLinePre curLine = new SourceLinePre();
-
-    var add_curr_token = () => {
-        if (tokenPtr <= 0)
-            return;
-        PreProToken preProToken = new PreProToken();
-        if (tokenType != CuurTokenStartType.StringSingleQuote && tokenType != CuurTokenStartType.StringDoubleQuote) {
-            preProToken.str = Encoding.UTF8.GetString(tokenBuff, 0, tokenPtr);
-        } else {
-            preProToken.isRawData = true;
-            preProToken.rawBytes = new byte[tokenPtr];
-            Array.Copy(tokenBuff, preProToken.rawBytes, tokenPtr);
-        }
-        if (curLine.tokens == null) {
-            curLine.tokens = new List<PreProToken>();
-        }
-        curLine.tokens.Add(preProToken);
-        //
-        tokenPtr = 0;
-        tokenType = CuurTokenStartType.None;
-    };
-
+    CurrTokenStartType tokenType = CurrTokenStartType::None;
+    SourceLinePrePro curLine;
+    
+    ////auto add_curr_token = []() {
+     ////   
+    ////};
+    
     while (true) {
-        ch = loader.GetByte(ref eof);
+        ch = loader->getByte(&eof);
         if (ch == 0 && eof) {
             break;
         }
@@ -112,237 +149,9 @@ bool SourceParser::parse()
         if (ch != 0x0A && ch != 0x0D && ch != 0x0C && ch != 0)
             lineBuff[linePtr++] = ch;
         //
-        ch_next = loader.PreGet();
-        ch_next2 = loader.PreGetNext();
-        //
-        switch (tokenType) {
-            case CuurTokenStartType.None: {
-                    // 标识符起始字符
-                    if (ch == 0x20 || ch == '\t') {
-                        // 空格不做任何处理
-                    } else if (isIdentifierStart(ch)) {
-                        tokenType = CuurTokenStartType.Identifier;
-                        tokenBuff[tokenPtr++] = ch;
-                        // 如果下一个字符不是标识符后继字符
-                        if (!isIdentifierNext(ch_next)) {
-                            add_curr_token();
-                        }
-                    } else if (isNumericStart(ch)) {
-                        tokenType |= CuurTokenStartType.Numeric;
-                        tokenBuff[tokenPtr++] = ch;
-                        // 如果下一个字符不是标识符后继字符
-                        if (!isNumericNext(ch_next)) {
-                            add_curr_token();
-                        }
-                    } else if (ch == '\n' || ch == '\r' || ch == 0x0C || ch == 0) {  // 换行、回车、换页
-                        if (ch == '\r' && ch_next == '\n') {    // windows下是\r\n
-                            ch = loader.GetByte(ref eof);
-                        }
-                        //
-                        if (linePtr > 0) {
-                            curLine.rawLine = new byte[linePtr];
-                            Array.Copy(lineBuff, curLine.rawLine, linePtr);
-                        }
-                        lines.Add(curLine);
-                        linePtr = 0;
-                        curLine = new SourceLinePre();                              // 设置当前行为新行 
-                    } else if (ch == ';') {     // 分号开始是注释，直到换一行 
-                        tokenType = CuurTokenStartType.Comment;
-                    } else if (ch == '\'' || ch == '\"') {
-                        tokenPtr = 0;
-                        tokenBuff[tokenPtr++] = ch;
-                        add_curr_token();
-                        tokenPtr = 0;
-                        if (ch == '\'')
-                            tokenType = CuurTokenStartType.StringSingleQuote;
-                        else
-                            tokenType = CuurTokenStartType.StringDoubleQuote;
-                    } else if (ch == '&') {
-                        tokenPtr = 0;
-                        tokenBuff[tokenPtr++] = ch;
-                        if (ch_next == '&') {
-                            ch = loader.GetByte(ref eof);
-                            tokenBuff[tokenPtr++] = ch;
-                            lineBuff[linePtr++] = ch;
-                        }
-                        add_curr_token();
-                    } else if (ch == '|') {
-                        tokenPtr = 0;
-                        tokenBuff[tokenPtr++] = ch;
-                        if (ch_next == '|') {
-                            ch = loader.GetByte(ref eof);
-                            tokenBuff[tokenPtr++] = ch;
-                            lineBuff[linePtr++] = ch;
-                        }
-                        add_curr_token();
-                    }
-                    else if (ch == '=') {
-                        tokenPtr = 0;
-                        tokenBuff[tokenPtr++] = ch;
-                        if (ch_next == '=') {
-                            ch = loader.GetByte(ref eof);
-                            tokenBuff[tokenPtr++] = ch;
-                            lineBuff[linePtr++] = ch;
-                        }
-                        add_curr_token();
-                    }
-                    else if (ch == ',' || ch == '(' || ch == ')' || ch == '[' || ch == ']' || ch == '+' || ch == '-' || ch == '*' || ch == '/' ||
-                        ch == ':' || ch == '!' || ch == '#' || ch == '%' || ch == '<' || ch == '>' || ch == '\\' || ch == '^' || ch == '`' ||
-                        ch == '{' || ch == '}' || ch == '~') {          // 单字符符号
-                        tokenPtr = 0;
-                        tokenBuff[tokenPtr++] = ch;
-                        add_curr_token();
-                    }
-                    else {
-                        // 当空格处理，忽略
-                    }
-                }
-                break;
-            case CuurTokenStartType.Identifier: {
-                    // 标识符后继字符
-                    if (isIdentifierNext(ch)) {
-                        tokenBuff[tokenPtr++] = ch;
-                    }
-                    // 如果下一个字符不是标识符后继字符
-                    if (! isIdentifierNext(ch_next)) {
-                        add_curr_token();
-                    }
-                }
-                break;
-            case CuurTokenStartType.Numeric: {
-                    if (ch == (byte)('e') || ch == (byte)('E')) {                               // 匹配例如 3.14E+48, 5.9687e-102 这样的浮点数
-                        if (ch_next == (byte)('+') || ch_next == (byte)('-')) {
-                            if (ch_next2 >= '0' && ch_next2 <= '9') {
-                                if (testTokenBuffIsAllDecimal(tokenBuff, tokenPtr)) {
-                                    tokenBuff[tokenPtr++] = ch;
-                                    ch = loader.GetByte(ref eof);
-                                    tokenBuff[tokenPtr++] = ch;
-                                    lineBuff[linePtr++] = ch;
-                                    continue;
-                                }
-                            }
-                        }
-                    }
-                    // 标识符后继字符
-                    if (isNumericNext(ch)) {
-                        tokenBuff[tokenPtr++] = ch;
-                    }
-                    // 如果下一个字符不是标识符后继字符
-                    if (!isNumericNext(ch_next)) {
-                        add_curr_token();
-                    }
-                }
-                break;
-            case CuurTokenStartType.Comment: {
-                    if (ch == '\n' || ch == '\r' || ch == 0x0C || ch == 0) {  // 注释以 换行、回车、换页结束 (这里处理的是分号紧跟回车的情况)
-                        if (ch == '\r' && ch_next == '\n') {
-                            ch = loader.GetByte(ref eof);
-                        }
-                        //
-                        if (linePtr > 0) {
-                            curLine.rawLine = new byte[linePtr];
-                            Array.Copy(lineBuff, curLine.rawLine, linePtr);
-                        }
-                        lines.Add(curLine);
-                        linePtr = 0;
-                        curLine = new SourceLinePre();                              // 设置当前行为新行 
-                        tokenType = CuurTokenStartType.None;
-                        continue;
-                    }
-                    //
-                    if (ch_next == '\n' || ch_next == '\r' || ch_next == 0x0C || ch_next == 0) {
-                        tokenType = CuurTokenStartType.None;
-                    }
-                }
-                break;
-            case CuurTokenStartType.StringSingleQuote:
-            case CuurTokenStartType.StringDoubleQuote: {
-                    if ((ch == '\'' && tokenType == CuurTokenStartType.StringSingleQuote) ||
-                        (ch == '\"' && tokenType == CuurTokenStartType.StringDoubleQuote)) { // 这里处理的是引号跟紧引号的情况
-                        tokenPtr = 0;
-                        tokenBuff[tokenPtr++] = ch;
-                        add_curr_token();
-                        tokenPtr = 0;
-                        tokenType = CuurTokenStartType.None;
-                        continue;
-                    }
-                    else if (ch == '\n' || ch == '\r' || ch == 0x0C || ch == 0) {           // 这里判断引号之后紧跟回车的情况
-                        if (ch == '\r' && ch_next == '\n') {
-                            ch = loader.GetByte(ref eof);
-                        }
-                        if (linePtr > 0) {
-                            curLine.rawLine = new byte[linePtr];
-                            Array.Copy(lineBuff, curLine.rawLine, linePtr);
-                        }
-                        lines.Add(curLine);
-                        linePtr = 0;
-                        curLine = new SourceLinePre();                              // 设置当前行为新行 
-                        tokenType = CuurTokenStartType.None;
-                        continue;
-                    }
-                    else {
-                        tokenBuff[tokenPtr++] = ch;
-                    }
-                    // 
-                    if ((ch_next == '\'' && tokenType == CuurTokenStartType.StringSingleQuote) ||
-                        (ch_next == '\"' && tokenType == CuurTokenStartType.StringDoubleQuote)) {   // 下一个字符是引号，表示结束字符串 
-                        add_curr_token();
-                        ch = loader.GetByte(ref eof);
-                        tokenBuff[tokenPtr++] = ch;
-                        lineBuff[linePtr++] = ch;
-                        add_curr_token();
-                    }
-                    else if (ch_next == '\n' || ch_next == '\r' || ch_next == 0x0C || ch_next == 0) {
-                        add_curr_token();
-                    }
-                }
-                break;
-
-        }
-        //
-//            Linux中\n表示回车+换行；
-//            Windows中\r\n表示回车+换行。
-//            Mac中\r表示回车+换行。
-//
-//        Numeric,                        // 数字
-//StringSingleQuote,              // 单引号开始的字符串
-//StringDoubleQuote,              // 双引号开始的字符串
-         //
+        ch_next = loader->preGet();
+        ch_next2 = loader->preGetNext();
     }
-    if (linePtr > 0) {
-        curLine.rawLine = new byte[linePtr];
-        Array.Copy(lineBuff, curLine.rawLine, linePtr);
-    }
-    lines.Add(curLine);
-    //
-    // DEBUG OUTPUT
-    var fs = new FileStream("test.output.token.txt", FileMode.Create);
-    fs.Position = 0;
-    using (StreamWriter writer = new StreamWriter(fs)) {
-        for (ulong i = 0; i < lines.Count; i++) {
-            SourceLinePre line = lines[i];
-            writer.WriteLine("---------------------------------------------------------------------------");
-            if (line.rawLine != null) {
-                writer.WriteLine(Encoding.UTF8.GetString(line.rawLine));
-            }
-            if (line.tokens != null) {
-                int k = 0;
-                foreach (PreProToken token in line.tokens) {
-                    if (!token.isRawData) {
-                        writer.WriteLine($"  {k}: {token.str}");
-                    }
-                    else if (token.rawBytes != null) {
-                        writer.WriteLine($"  {k}: {Encoding.UTF8.GetString(token.rawBytes)}");
-                    }
-                    k++;
-                }
-            }
-        }
-    }
-    fs.Close();
-    // DEBUG OUTPUT END
-     * */
-
     return true; 
 }
 

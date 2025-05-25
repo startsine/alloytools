@@ -33,7 +33,9 @@ public:
     ~SourceLoader();
     void addSearchPath(const std::string & path);
     void loadFile(const std::string & filepath);
-    unsigned char getByte(bool * pEOF);
+    uint8_t getByte(bool * pEOF);
+    uint8_t preGet();
+    uint8_t preGetNext();
 };
 
 
