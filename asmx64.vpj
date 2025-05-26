@@ -11,7 +11,8 @@
         DebugCallbackName="gdb"
         Version="1"
         OutputFile="%bdasmx64.exe"
-        CompilerConfigName="Latest Version">
+        CompilerConfigName="Latest Version"
+        Defines="">
         <Menu>
             <Target
                 Name="Compile"
@@ -22,7 +23,7 @@
                 OutputExts="*.o"
                 SaveOption="SaveCurrent"
                 RunFromDir="%rw">
-                <Exec CmdLine='g++ -c %xup  %defd -g -o "%bd%n%oe" %i "%f"'/>
+                <Exec CmdLine='g++ -c %xup %defd -g -o "%bd%n%oe" %i %f'/>
             </Target>
             <Target
                 Name="Link"
@@ -33,7 +34,9 @@
                 Deletable="0"
                 SaveOption="SaveCurrent"
                 RunFromDir="%rw">
-                <Exec CmdLine='g++ %xup -g -o "%o" %f %libs'/>
+                <Exec
+                    CmdLine='g++ %xup -g -static %~other -o "%o" %objs'
+                    OtherOptions="-static-libgcc -static-libstdc++"/>
             </Target>
             <Target
                 Name="Build"
@@ -131,6 +134,8 @@
                 Name="LinkerOutputType"
                 Value="Executable"/>
         </List>
+        <Includes/>
+        <Libs PreObjects="0"/>
     </Config>
     <Config
         Name="Release"
@@ -138,7 +143,8 @@
         DebugCallbackName="gdb"
         Version="1"
         OutputFile="%bdasmx64.exe"
-        CompilerConfigName="Latest Version">
+        CompilerConfigName="Latest Version"
+        Defines="">
         <Menu>
             <Target
                 Name="Compile"
@@ -149,7 +155,7 @@
                 OutputExts="*.o"
                 SaveOption="SaveCurrent"
                 RunFromDir="%rw">
-                <Exec CmdLine='g++ -c %xup %defd -o "%bd%n%oe" %i "%f"'/>
+                <Exec CmdLine='g++ -c %xup %defd -o "%bd%n%oe" %i %f'/>
             </Target>
             <Target
                 Name="Link"
@@ -160,7 +166,9 @@
                 Deletable="0"
                 SaveOption="SaveCurrent"
                 RunFromDir="%rw">
-                <Exec CmdLine='g++ %xup -o "%o" %f %libs'/>
+                <Exec
+                    CmdLine='g++ %xup -static %~other -o "%o" %objs'
+                    OtherOptions="-static-libgcc -static-libstdc++ -s"/>
             </Target>
             <Target
                 Name="Build"
@@ -258,6 +266,8 @@
                 Name="LinkerOutputType"
                 Value="Executable"/>
         </List>
+        <Includes/>
+        <Libs PreObjects="0"/>
     </Config>
     <Files>
         <Folder
