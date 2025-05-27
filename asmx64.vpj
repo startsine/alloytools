@@ -23,7 +23,9 @@
                 OutputExts="*.o"
                 SaveOption="SaveCurrent"
                 RunFromDir="%rw">
-                <Exec CmdLine='g++ -c %xup %defd -g -o "%bd%n%oe" %i %f'/>
+                <Exec
+                    CmdLine='g++ -c %xup %defd -g %~other -o "%bd%n%oe" %i %f'
+                    OtherOptions="-fno-strict-aliasing -fwrapv -mcmodel=small -std=c++20"/>
             </Target>
             <Target
                 Name="Link"
@@ -155,7 +157,9 @@
                 OutputExts="*.o"
                 SaveOption="SaveCurrent"
                 RunFromDir="%rw">
-                <Exec CmdLine='g++ -c %xup %defd -o "%bd%n%oe" %i %f'/>
+                <Exec
+                    CmdLine='g++ -c %xup %defd %~other -o "%bd%n%oe" %i %f'
+                    OtherOptions="-fno-strict-aliasing -fwrapv -mcmodel=small -std=c++20"/>
             </Target>
             <Target
                 Name="Link"

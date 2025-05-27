@@ -7,15 +7,6 @@
 #include <vector>
 #include <list>
 
-enum class CurrTokenStartType   // 当前词法分析的Token起始类型
-{
-    None,
-    Identifier,                     // 标识符开始 (非数字开头，允许字母、数字、$、?、@、_)
-    Numeric,                        // 数字
-    StringSingleQuote,              // 单引号开始的字符串
-    StringDoubleQuote,              // 双引号开始的字符串
-    Comment,                        // 注释
-};
 
 class SourceLoader
 {
@@ -44,6 +35,7 @@ class SourceLinePrePro
 public:
     std::string                 rawLine;            // 源码行的原始内容
     std::vector<std::string>    tokens;             // token列表
+    void clear();
 };
 
 class SourceLine
@@ -72,6 +64,11 @@ class SourceParser
 private:
     std::list<SourceLinePrePro> * lines;
     SourceLoader * loader;
+    bool isIdentifierStart(uint8_t ch);
+    bool isIdentifierNext(uint8_t ch);
+    bool isNumericStart(uint8_t ch);
+    bool isNumericNext(uint8_t ch);
+    bool testTokenBuffIsAllDecimal(uint8_t * buffer, int size);
 public:
     SourceParser(std::list<SourceLinePrePro> * lines, SourceLoader * loader);
     bool parse();
