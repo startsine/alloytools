@@ -194,7 +194,13 @@ bool SourceParser::parse()
     SourceLinePrePro curLine;
     
     auto add_curr_token = [&]() {
-       
+        if (tokenPtr <= 0)
+            return;
+        std::string preProToken((char*)tokenBuff, tokenPtr);
+        curLine.tokens.push_back(preProToken);
+        //
+        tokenPtr = 0;
+        tokenType = CurrTokenStartType::None;
     };
     
     while (true) {
@@ -395,17 +401,24 @@ bool SourceParser::parse()
                 break;
 
         }
-        //
-//            Linux中\n表示回车+换行；
-//            Windows中\r\n表示回车+换行。
-//            Mac中\r表示回车+换行。
-//
-//        Numeric,                        // 数字
-//StringSingleQuote,              // 单引号开始的字符串
-//StringDoubleQuote,              // 双引号开始的字符串
-         //
-    
     }
+    if (linePtr > 0) {
+        curLine.rawLine = std::string((char*)lineBuff, linePtr);
+    }
+    lines->push_back(curLine);
+    //
+    //    // DEBUG OUTPUT
+    FILE * fs = fopen("test.output.token.txt", "wt");
+    for (auto it = lines->begin(); it != lines->end(); it++) {
+        fprintf(fs, "---------------------------------------------------------------------------\n");
+        fprintf(fs, "%s\n", it->rawLine.c_str());
+        for (auto it2 = it->tokens.begin(); it2 != it->tokens.end(); it2++) {
+            fprintf(fs, "%s\n", it2->c_str());
+        }
+    }
+    fclose(fs);
+    // DEBUG OUTPUT END
+
     return true; 
 }
 
