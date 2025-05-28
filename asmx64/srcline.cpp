@@ -48,8 +48,8 @@ void SourceLoader::loadFile(const std::string & filepath)
         //// 错误处理   打印错误信息  
         return;
     }
-    // 预读 2 字节
-    size_t readSize = fread(buffer, 1, 2, fileStream);
+    // 预读一次, 放到缓冲区的 offset==2 处
+    size_t readSize = fread(&buffer[2], 1, BUFF_SIZE, fileStream);
     if (readSize != 0) {
         endOfFile = false;
         curCursor = 2;
@@ -57,8 +57,6 @@ void SourceLoader::loadFile(const std::string & filepath)
     } else {
         endOfFile = true;
     }
-    
-    buffer[2] = 0;
     printf("%s\n", buffer);
 }
 
