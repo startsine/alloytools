@@ -285,6 +285,7 @@
             <F N="asmx64/prepro.cpp"/>
             <F N="asmx64/srcline.cpp"/>
             <F N="asmx64/symbol.cpp"/>
+            <F N="asmx64/tokens.cpp"/>
         </Folder>
         <Folder
             Name="Header Files"
@@ -297,6 +298,7 @@
             <F N="asmx64/prepro.h"/>
             <F N="asmx64/srcline.h"/>
             <F N="asmx64/symbol.h"/>
+            <F N="asmx64/tokens.h"/>
         </Folder>
         <Folder
             Name="Resource Files"
