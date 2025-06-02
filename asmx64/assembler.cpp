@@ -37,6 +37,7 @@ void X64Assembler::assemblePass1()
     size_t lineCnt = 0;
     uint32_t insnStartIdx = 0;                                       // 当前行中，指令的token的起始索引
     uint32_t operandStartIdx = 0;                                    // 当前行中，操作数的token的起始索引
+	IInsnProcessor * insnProcessor = nullptr;						 // 指令处理器
 
     for (auto it = sourceLinesP.begin(); it != sourceLinesP.end(); it++) {
         lineCnt++;
@@ -93,14 +94,13 @@ void X64Assembler::assemblePass1()
 				bool needCalcExpression = false;
 				//
 				insnStr = curLine.tokens[insnStartIdx];
-				if (X64Token.isCpuInstruction(insnStr)) {
+				if (X64Token::isCpuInstruction(insnStr)) {
 					operandStartIdx = insnStartIdx + 1;
-					if (operandStartIdx < curLine.tokens.Count) {
-						parsedLine.expressions = new List<X64Expression>();
-						X64Expression.ParseByPreProcessTokens(parsedLine.expressions, curLine.tokens, operandStartIdx);
+					if (operandStartIdx < curLine.tokens.size()) {
+						X64Expression::parseByPreProcessTokens(parsedLine.expressions, curLine.tokens, operandStartIdx);
 						needCalcExpression = true;
 					}
-					insnProcessor = X64CpuInsnList.Instance.GetInsnProcessor(insnStr);
+					insnProcessor = X64CpuInsnList::getInstance().getInsnProcessor(insnStr);
 					parsedLine.hasInsn = true;
 					parsedLine.insnStr = insnStr;
 					parsedLine.fragmentIndex = fragmentList.GetCurrFragmentIndex();

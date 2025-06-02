@@ -54,6 +54,22 @@ CpuInsnPrefixID X64Token::getInstructionPrefixValue(string str)
 	return obj->second;
 }
 
+// 是否CPU指令
+bool X64Token::isCpuInstruction(std::string str)
+{
 
+}
+
+// 是否伪指令
+bool X64Token::isPseudoInstruction(std::string str)
+{
+
+}
+
+// 是否虚拟指令
+bool isVirtualInstruction(std::string str)
+{
+
+}
 
 

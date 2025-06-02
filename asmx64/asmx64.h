@@ -9,6 +9,7 @@
 
 #include "tokens.h"
 #include "instruction.h"
+#include "insnparse.h"
 #include "expression.h"
 #include "symbol.h"
 #include "srcline.h"
