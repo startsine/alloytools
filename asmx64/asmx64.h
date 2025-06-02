@@ -7,6 +7,7 @@
 #include <string>
 #include <memory>
 
+#include "tokens.h"
 #include "instruction.h"
 #include "expression.h"
 #include "symbol.h"

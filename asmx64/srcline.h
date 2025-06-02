@@ -49,7 +49,7 @@ public:
     std::string labelStr = "";                        // 标签符号字符串
     std::string insnStr = "";                         // 指令字符串
     int64_t sectionIndex = -1;            // 当前行产生的指令或者数据属于哪一个 section
-    CpuInsnPrefixID prefixs = CpuInsnPrefixID::None;  // 指令前缀列表
+    uint32_t prefixs = (uint32_t) CpuInsnPrefixID::None;  // 指令前缀列表
     bool keepFollowingToken = false;             // 标志：是否保留了指令后面的token
     std::vector<std::string>     followingTokens;   // 紧跟指令后面的原始token, keepFollowingToken为true时有效
     std::vector<uint8_t> code;                // 本行产生的代码
