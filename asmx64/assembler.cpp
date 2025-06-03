@@ -103,8 +103,7 @@ void X64Assembler::assemblePass1()
 					insnProcessor = X64CpuInsnList::getInstance().getInsnProcessor(insnStr);
 					parsedLine.hasInsn = true;
 					parsedLine.insnStr = insnStr;
-					parsedLine.fragmentIndex = fragmentList.GetCurrFragmentIndex();
-					parsedLine.recordIndex = fragmentList.GetCurrFragment()!.GetCurrRecordtIndex();
+					parsedLine.sectionIndex = sectionList.getCurrSectionIndex();
 				}
 				else if (X64Token.isVirtualInstruction(insnStr)) {
 					operandStartIdx = insnStartIdx + 1;

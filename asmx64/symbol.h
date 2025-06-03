@@ -23,5 +23,16 @@ public:
 };
 
 
+class X64Section
+{
+public:
+};
+
+class X64SectionList
+{
+public:
+	size_t getCurrSectionIndex();
+};
+
 #endif // ASMX64_SYMBOL_H
 
