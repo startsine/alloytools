@@ -137,65 +137,28 @@ void X64Assembler::assemblePass1()
 					//// 不认识的指令，报错
 					continue;
 				}
+				// 初步计算表达式的值
+				if (needCalcExpression) {
+					if (parsedLine.expressions.size() != 0) {
+						for (auto it = parsedLine.expressions.begin(); it != parsedLine.expressions.end(); it++) {
+							it->calc();
+						}
+					}
+
+				}
 			}
 
 			if (parsedLine.hasLabel && !parsedLine.hasInsn) {
 				//// TO-DO 这里处理有标签但是没有指令的情况
 			}
 
-			////if (insnProcessor is not null) {
-			////	insnProcessor.process(this, insnStr, parsedLine, 1);
-			////}
+			if (insnProcessor != nullptr) {
+				insnProcessor->process(*this, insnStr, parsedLine, 1);
+			}
         } catch (...) {
         }
 
     }
-/*
-    if (sourceLines == null)
-    return;
-
-IInsnProcessor? insnProcessor = null;
-
-
-
-ulong lineTotal = sourceLinesP!.Count;
-for (lineCnt = 0; lineCnt < lineTotal; lineCnt++) {
-
-    sourceLines.Add(parsedLine);
-
-    try {
-
-        //
-		if (insnStartIdx < curLine.tokens.Count) {
-		
-            
-            
-            // 初步计算表达式的值
-            if (needCalcExpression) {
-                if (parsedLine.expressions is not null) {
-                    foreach (X64Expression expr in parsedLine.expressions) {
-                        expr.calc();
-                    }
-                }
-
-            }
-        }
-
-        
-
-
-
-    }
-    catch (LineErrorException ex1) {
-    }
-    catch (FatalErrorException ex2) {
-    }
-    catch {
-    }
-
-    
-}
-*/
 }
 
 void X64Assembler::assemblePass2()

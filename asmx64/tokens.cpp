@@ -67,7 +67,7 @@ bool X64Token::isPseudoInstruction(std::string str)
 }
 
 // ÊÇ·ñĞéÄâÖ¸Áî
-bool isVirtualInstruction(std::string str)
+bool X64Token::isVirtualInstruction(std::string str)
 {
 
 }

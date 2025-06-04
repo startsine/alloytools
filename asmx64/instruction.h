@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 enum class CpuInsnPrefixID
 {
@@ -14,18 +15,24 @@ class IInsnProcessor;
 
 class X64CpuInsnList
 {
+	friend std::unique_ptr<X64CpuInsnList> std::make_unique<X64CpuInsnList>();
 public:
 	static X64CpuInsnList & getInstance();
-	IInsnProcessor * getInsnProcessor(std::string insn);
+	IInsnProcessor * getInsnProcessor(const std::string & insn);
 private:
+	static std::unique_ptr<X64CpuInsnList> instance;
 	X64CpuInsnList();
 };
 
 class X64PseudoInsnList
 {
+	friend std::unique_ptr<X64PseudoInsnList> std::make_unique<X64PseudoInsnList>();
 public:
     static X64PseudoInsnList & getInstance();
-	IInsnProcessor * getPseudoInsnProcessor(std::string insn);
+	IInsnProcessor * getPseudoInsnProcessor(const std::string & insn);
+private:
+	static std::unique_ptr<X64PseudoInsnList> instance;
+	X64PseudoInsnList();
 };
 
 #endif // ASMX64_INSTRUCTION_H

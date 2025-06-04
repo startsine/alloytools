@@ -1,8 +1,15 @@
 #include <stdio.h>
-int aaaa() 
+#include <stdint.h>
+#include <stddef.h>
+#include "asmx64.h"
+
+using namespace std;
+
+
+
+size_t X64SectionList::getCurrSectionIndex()
 {
-    fopen("" , "rb");
-    return 0;
+	return 0;
 }
 
 

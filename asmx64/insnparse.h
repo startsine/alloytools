@@ -11,10 +11,13 @@ enum class InsnProcessFlag
     ProcessExpressions = 0x02,                      // 伪指令处理ulong值以内大小的表达式(如DB、DW、DD、DQ)
 };
 
+class SourceLine;
+class X64Assembler;
+
 class IInsnProcessor
 {
 public:
-    //int process(X64Assembler asm, string insnStr, SourceLine sourceLine, int pass) = 0;
+    virtual int process(X64Assembler & assembler, std::string insnStr, SourceLine & sourceLine, int pass) = 0;
     virtual InsnProcessFlag getInsnFlag() = 0;
 };
 
