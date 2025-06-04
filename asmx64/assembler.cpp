@@ -116,16 +116,15 @@ void X64Assembler::assemblePass1()
 				}
 				else if (X64Token::isPseudoInstruction(insnStr)) {
 					operandStartIdx = insnStartIdx + 1;
-					insnProcessor = X64PseudoInsnList.Instance.GetPseudoInsnProcessor(insnStr);
-					if (insnProcessor is not null) {
-						InsnProcessFlag howto = insnProcessor.GetInsnFlag();
-						if (howto == InsnProcessFlag.ProcessTokens) {                           // 每个指令自己处理自己后面的token
+					insnProcessor = X64PseudoInsnList::getInstance().getPseudoInsnProcessor(insnStr);
+					if (insnProcessor != nullptr) {
+						InsnProcessFlag howto = insnProcessor->getInsnFlag();
+						if (howto == InsnProcessFlag::ProcessTokens) {                           // 每个指令自己处理自己后面的token
 							operandStartIdx = insnStartIdx + 1;
-							if (operandStartIdx < curLine.tokens.Count) {
+							if (operandStartIdx < curLine.tokens.size()) {
 								parsedLine.keepFollowingToken = true;
-								parsedLine.followingTokens = new List<PreProToken>();
-								for (int i = operandStartIdx; i < curLine.tokens.Count; i++) {
-									parsedLine.followingTokens.Add(curLine.tokens[i]);
+								for (int i = operandStartIdx; i < curLine.tokens.size(); i++) {
+									parsedLine.followingTokens.push_back(curLine.tokens[i]);
 								}
 							}
 							

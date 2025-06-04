@@ -21,6 +21,13 @@ private:
 	X64CpuInsnList();
 };
 
+class X64PseudoInsnList
+{
+public:
+    static X64PseudoInsnList & getInstance();
+	IInsnProcessor * getPseudoInsnProcessor(std::string insn);
+};
+
 #endif // ASMX64_INSTRUCTION_H
 
 
