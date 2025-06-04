@@ -105,17 +105,16 @@ void X64Assembler::assemblePass1()
 					parsedLine.insnStr = insnStr;
 					parsedLine.sectionIndex = sectionList.getCurrSectionIndex();
 				}
-				else if (X64Token.isVirtualInstruction(insnStr)) {
+				else if (X64Token::isVirtualInstruction(insnStr)) {
 					operandStartIdx = insnStartIdx + 1;
-					if (operandStartIdx < curLine.tokens.Count) {
-						parsedLine.expressions = new List<X64Expression>();
-						X64Expression.ParseByPreProcessTokens(parsedLine.expressions, curLine.tokens, operandStartIdx);
+					if (operandStartIdx < curLine.tokens.size()) {
+						X64Expression::parseByPreProcessTokens(parsedLine.expressions, curLine.tokens, operandStartIdx);
 						needCalcExpression = true;
 					}
 					parsedLine.hasInsn = true;
 					parsedLine.insnStr = insnStr;
 				}
-				else if (X64Token.isPseudoInstruction(insnStr)) {
+				else if (X64Token::isPseudoInstruction(insnStr)) {
 					operandStartIdx = insnStartIdx + 1;
 					insnProcessor = X64PseudoInsnList.Instance.GetPseudoInsnProcessor(insnStr);
 					if (insnProcessor is not null) {
