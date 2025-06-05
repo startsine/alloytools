@@ -22,7 +22,20 @@ X64CpuInsnList & X64CpuInsnList::getInstance()
 
 IInsnProcessor * X64CpuInsnList::getInsnProcessor(const std::string & insn)
 {
-	////
+	std::string str2 = insn;
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+	auto obj = htCpuInsns.find(str2);
+	if (obj == htCpuInsns.end()) {
+		return nullptr;
+	}
+	return obj->second.get();
+}
+
+bool X64CpuInsnList::isCpuInstruction(const std::string & str)
+{
+	std::string str2 = str;
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+	return htCpuInsns.find(str2) != htCpuInsns.end();
 }
 
 

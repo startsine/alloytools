@@ -27,7 +27,7 @@ void X64Token::initInstructionPrefix()
 }
 
 // 是否是允许前面带name的伪指令
-bool X64Token::isAllowNamePseudoInstruction(std::string str)
+bool X64Token::isAllowNamePseudoInstruction(const std::string & str)
 {
     std::string str2 = str;
     std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
@@ -35,7 +35,7 @@ bool X64Token::isAllowNamePseudoInstruction(std::string str)
 }
 
 // 是否指令前缀
-bool X64Token::isInstructionPrefix(std::string str) 
+bool X64Token::isInstructionPrefix(const std::string & str) 
 {
 	std::string str2 = str;
     std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
@@ -43,7 +43,7 @@ bool X64Token::isInstructionPrefix(std::string str)
 }
 
 // 获得指令前缀的ID值
-CpuInsnPrefixID X64Token::getInstructionPrefixValue(string str)
+CpuInsnPrefixID X64Token::getInstructionPrefixValue(const std::string & str)
 {
 	std::string str2 = str;
     std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
@@ -55,19 +55,19 @@ CpuInsnPrefixID X64Token::getInstructionPrefixValue(string str)
 }
 
 // 是否CPU指令
-bool X64Token::isCpuInstruction(std::string str)
+bool X64Token::isCpuInstruction(const std::string & str)
 {
-
+	return X64CpuInsnList::getInstance().isCpuInstruction(str);
 }
 
 // 是否伪指令
-bool X64Token::isPseudoInstruction(std::string str)
+bool X64Token::isPseudoInstruction(const std::string & str)
 {
 
 }
 
 // 是否虚拟指令
-bool X64Token::isVirtualInstruction(std::string str)
+bool X64Token::isVirtualInstruction(const std::string & str)
 {
 
 }

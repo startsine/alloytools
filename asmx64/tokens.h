@@ -18,17 +18,17 @@ private:
 	static void initInstructionPrefix();
 public:
     // 是否是允许前面带name的伪指令
-    static bool isAllowNamePseudoInstruction(std::string str);
+    static bool isAllowNamePseudoInstruction(const std::string & str);
 	// 是否指令前缀
-	static bool isInstructionPrefix(std::string str);
+	static bool isInstructionPrefix(const std::string & str);
 	// 获得指令前缀的ID值
-	static CpuInsnPrefixID getInstructionPrefixValue(std::string str);
+	static CpuInsnPrefixID getInstructionPrefixValue(const std::string & str);
 	// 是否CPU指令
-	static bool isCpuInstruction(std::string str);
+	static bool isCpuInstruction(const std::string & str);
 	// 是否伪指令
-	static bool isPseudoInstruction(std::string str);
+	static bool isPseudoInstruction(const std::string & str);
 	// 是否虚拟指令
-	static bool isVirtualInstruction(std::string str);
+	static bool isVirtualInstruction(const std::string & str);
 };
 
 #endif // ASMX64_TOKENS_H

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 enum class CpuInsnPrefixID
 {
@@ -19,9 +20,11 @@ class X64CpuInsnList
 public:
 	static X64CpuInsnList & getInstance();
 	IInsnProcessor * getInsnProcessor(const std::string & insn);
+	bool isCpuInstruction(const std::string & str);
 private:
 	static std::unique_ptr<X64CpuInsnList> instance;
 	X64CpuInsnList();
+	std::unordered_map<std::string, std::unique_ptr<IInsnProcessor>> htCpuInsns;
 };
 
 class X64PseudoInsnList
