@@ -33,9 +33,11 @@ class X64PseudoInsnList
 public:
     static X64PseudoInsnList & getInstance();
 	IInsnProcessor * getPseudoInsnProcessor(const std::string & insn);
+	bool isPseudoInstruction(const std::string & str);
 private:
 	static std::unique_ptr<X64PseudoInsnList> instance;
 	X64PseudoInsnList();
+	std::unordered_map<std::string, std::unique_ptr<IInsnProcessor>> htPseudoInsns;
 };
 
 #endif // ASMX64_INSTRUCTION_H
