@@ -15,6 +15,7 @@
 #include "srcline.h"
 #include "assembler.h"
 
+#include "mov.h"
 
 #endif // ASMX64_X64ASM_H
 

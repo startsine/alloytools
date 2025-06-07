@@ -21,6 +21,19 @@ public:
     virtual InsnProcessFlag getInsnFlag() = 0;
 };
 
+class BaseInsn: public IInsnProcessor
+{
+public:
+	InsnProcessFlag getInsnFlag() override;
+};
+
+// 基本数据定义伪指令 (DB,DW,DD,DQ)
+class DataDefineBaseInsn : IInsnProcessor
+{
+	////
+};
+
+
 #endif // ASMX64_INSTRUCTION_PARSE_H
 
 
