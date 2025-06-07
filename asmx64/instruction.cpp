@@ -41,7 +41,7 @@ bool X64CpuInsnList::isCpuInstruction(const std::string & str)
 
 X64PseudoInsnList::X64PseudoInsnList()
 {
-	htPseudoInsns["proc"] = make_unique<PROC>();
+	htPseudoInsns["proc"] = make_unique<Proc>();
 	htPseudoInsns["segment"] = make_unique<DATA>();
 }
 
