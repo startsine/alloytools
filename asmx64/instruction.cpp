@@ -7,7 +7,7 @@ using namespace std;
 
 X64CpuInsnList::X64CpuInsnList()
 {
-	////
+	htCpuInsns["mov"] = std::make_unique<InsnMov>();
 }
 
 unique_ptr<X64CpuInsnList> X64CpuInsnList::instance = nullptr;

@@ -5,4 +5,10 @@
 #include "asmx64.h"
 
 
+InsnProcessFlag BaseInsn::getInsnFlag()
+{
+	return InsnProcessFlag::None;
+}
+
+
 
