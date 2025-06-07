@@ -16,6 +16,8 @@
 #include "assembler.h"
 
 #include "mov.h"
+#include "data.h"
+#include "proc.h"
 
 #endif // ASMX64_X64ASM_H
 

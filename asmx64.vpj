@@ -139,6 +139,7 @@
 		<Includes>
 			<Include Dir="F:/mywork/alloytools/asmx64/"/>
 			<Include Dir="F:/mywork/alloytools/asmx64/common/"/>
+			<Include Dir="F:/mywork/alloytools/asmx64/pseudo/"/>
 		</Includes>
 		<Libs PreObjects="0"/>
 	</Config>
@@ -276,6 +277,7 @@
 		<Includes>
 			<Include Dir="F:/mywork/alloytools/asmx64/"/>
 			<Include Dir="F:/mywork/alloytools/asmx64/common/"/>
+			<Include Dir="F:/mywork/alloytools/asmx64/pseudo/"/>
 		</Includes>
 		<Libs PreObjects="0"/>
 	</Config>
@@ -286,11 +288,13 @@
 			GUID="{864AA54E-75B8-4360-98E1-35686182A61B}">
 			<F N="asmx64/asmx64.cpp"/>
 			<F N="asmx64/assembler.cpp"/>
+			<F N="asmx64/pseudo/data.cpp"/>
 			<F N="asmx64/expression.cpp"/>
 			<F N="asmx64/insnparse.cpp"/>
 			<F N="asmx64/instruction.cpp"/>
 			<F N="asmx64/common/mov.cpp"/>
 			<F N="asmx64/prepro.cpp"/>
+			<F N="asmx64/pseudo/proc.cpp"/>
 			<F N="asmx64/srcline.cpp"/>
 			<F N="asmx64/symbol.cpp"/>
 			<F N="asmx64/tokens.cpp"/>
@@ -301,11 +305,13 @@
 			GUID="{CC27E876-A023-403D-837F-F4265816F4E6}">
 			<F N="asmx64/asmx64.h"/>
 			<F N="asmx64/assembler.h"/>
+			<F N="asmx64/pseudo/data.h"/>
 			<F N="asmx64/expression.h"/>
 			<F N="asmx64/insnparse.h"/>
 			<F N="asmx64/instruction.h"/>
 			<F N="asmx64/common/mov.h"/>
 			<F N="asmx64/prepro.h"/>
+			<F N="asmx64/pseudo/proc.h"/>
 			<F N="asmx64/srcline.h"/>
 			<F N="asmx64/symbol.h"/>
 			<F N="asmx64/tokens.h"/>
