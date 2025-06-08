@@ -3,8 +3,11 @@
 #include <stddef.h>
 #include "asmx64.h"
 
-InsnProcessFlag DATA::getInsnFlag() {
+InsnProcessFlag Segment::getInsnFlag() {
 }
 
-int DATA::process(X64Assembler &assembler, std::string insnStr, SourceLine &sourceLine, int pass) {
+int Segment::process(X64Assembler &assembler, std::string insnStr, SourceLine &sourceLine, int pass) {
 }
+
+
+
