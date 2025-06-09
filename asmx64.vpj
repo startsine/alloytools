@@ -292,6 +292,7 @@
 			<F N="asmx64/insnparse.cpp"/>
 			<F N="asmx64/instruction.cpp"/>
 			<F N="asmx64/common/mov.cpp"/>
+			<F N="asmx64/operand.cpp"/>
 			<F N="asmx64/prepro.cpp"/>
 			<F N="asmx64/pseudo/proc.cpp"/>
 			<F N="asmx64/pseudo/segment.cpp"/>
@@ -309,6 +310,7 @@
 			<F N="asmx64/insnparse.h"/>
 			<F N="asmx64/instruction.h"/>
 			<F N="asmx64/common/mov.h"/>
+			<F N="asmx64/operand.h"/>
 			<F N="asmx64/prepro.h"/>
 			<F N="asmx64/pseudo/proc.h"/>
 			<F N="asmx64/pseudo/segment.h"/>

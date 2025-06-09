@@ -7,6 +7,7 @@
 #include <string>
 #include <memory>
 
+#include "operand.h"
 #include "tokens.h"
 #include "instruction.h"
 #include "insnparse.h"
