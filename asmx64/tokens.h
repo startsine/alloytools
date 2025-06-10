@@ -51,6 +51,7 @@ enum class X64AsmOperator
 class X64Token
 {
 private:
+	static bool initFlag;
     static std::unordered_set<std::string> htAllowNamePseudoInstruction;
     static void initWithNamePseudoInstruction();
 	static std::unordered_map<std::string, CpuInsnPrefixID> htInstructionPrefix;
@@ -70,6 +71,7 @@ public:
 	X64Operand tempOperand;              // 临时操作数, tokenType 为 TempOperand 时有效, 用于计算表达式时中间值
 
 	X64Token();
+	static void initTokenInfos();
 
     // 是否是允许前面带name的伪指令
     static bool isAllowNamePseudoInstruction(const std::string & str);

@@ -5,6 +5,19 @@
 
 using namespace std;
 
+bool X64Token::initFlag = false;
+
+void X64Token::initTokenInfos()
+{
+	if (initFlag) 
+		return;
+	initFlag = true;
+	initWithNamePseudoInstruction();
+	initInstructionPrefix();
+	initRegisterList();
+	initOperator();
+}
+
 std::unordered_set<std::string> X64Token::htAllowNamePseudoInstruction = {0};
 
 void X64Token::initWithNamePseudoInstruction()
