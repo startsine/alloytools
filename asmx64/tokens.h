@@ -10,6 +10,7 @@
 #include <unordered_set>
 
 enum class CpuInsnPrefixID;
+enum class X64RegValue: uint32_t;
 
 enum class X64TokenType
 {
@@ -54,15 +55,21 @@ private:
     static void initWithNamePseudoInstruction();
 	static std::unordered_map<std::string, CpuInsnPrefixID> htInstructionPrefix;
 	static void initInstructionPrefix();
+	static std::unordered_map<std::string, X64RegValue> htRegister;
+	static void initRegisterList();
+	static std::unordered_map<std::string, X64AsmOperator> htOperator;
+	static void initOperator();
 public:
 	X64TokenType tokenType;
 	X64TokenFlag flag;
 	std::string str;                   			// token的字符串, string 类型
 	X64RegValue regValue;                        // 寄存器的值, tokenType 为 Register 时有效
-X64AsmOperator asmOperator;                  // 运算符的值, tokenType 为 Operator 时有效
-uint64_t ulongValue;                            // 数字的值, tokenType 为 Numeric 时有效
-uint64_t symbolIndex;                           // 符号在符号表中的索引, tokenType 为 Symbol 时有效
-X64Operand tempOperand;              // 临时操作数, tokenType 为 TempOperand 时有效, 用于计算表达式时中间值
+	X64AsmOperator asmOperator;                  // 运算符的值, tokenType 为 Operator 时有效
+	uint64_t ulongValue;                            // 数字的值, tokenType 为 Numeric 时有效
+	uint64_t symbolIndex;                           // 符号在符号表中的索引, tokenType 为 Symbol 时有效
+	X64Operand tempOperand;              // 临时操作数, tokenType 为 TempOperand 时有效, 用于计算表达式时中间值
+
+	X64Token();
 
     // 是否是允许前面带name的伪指令
     static bool isAllowNamePseudoInstruction(const std::string & str);
