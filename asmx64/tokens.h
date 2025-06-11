@@ -12,6 +12,10 @@
 enum class CpuInsnPrefixID;
 enum class X64RegValue: uint32_t;
 
+void parseHexToU64(const std::string &hexStr, uint64_t & value1, bool & succeed);
+void parseBinaryToU64(const std::string &binStr, uint64_t & value1, bool & succeed);
+void parseDecimalToU64(const std::string &decStr, uint64_t & value1, bool & succeed);
+
 enum class X64TokenType
 {
     None = 0,
@@ -23,7 +27,7 @@ enum class X64TokenType
     TempOperand,                                 // 临时操作数
 };
 
-enum class X64TokenFlag // [flag]
+enum class X64TokenFlag: uint64_t // [flag]
 {
     None = 0,
     NumericToBeUlong = 0x1000,                   // 数字已经转换为ulong, type为Numeric时有效
@@ -85,7 +89,21 @@ public:
 	static bool isPseudoInstruction(const std::string & str);
 	// 是否虚拟指令
 	static bool isVirtualInstruction(const std::string & str);
+	// 判断字符串是否为数字token
+	static bool isNumericStr(const std::string & str);
+	// 尝试初步解释数字字符串为 uint64
+	void tryParseToU64Value();
+	// 是否为寄存器
+	static bool isRegister(const std::string & str);
+	// 获取寄存器值
+	static X64RegValue getRegisterValue(const std::string & str);
+	// 是否为操作符
+	static bool isOperator(const std::string & str);
+	//
+	static X64AsmOperator getOperatorValue(const std::string & str);
 };
+
+
 
 #endif // ASMX64_TOKENS_H
 

@@ -6,6 +6,7 @@
 // Flags
 enum class X64RegValue: uint32_t
 {
+	None = 0,
 	REG_VALUE_0 = 0,
 	REG_VALUE_1 = 1,
 	REG_VALUE_2 = 2,

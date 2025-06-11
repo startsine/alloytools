@@ -168,13 +168,160 @@ bool X64Token::isCpuInstruction(const std::string & str)
 // ÊÇ·ñÎ±Ö¸Áî
 bool X64Token::isPseudoInstruction(const std::string & str)
 {
-
+	return X64PseudoInsnList::getInstance().isPseudoInstruction(str);
 }
 
 // ÊÇ·ñÐéÄâÖ¸Áî
 bool X64Token::isVirtualInstruction(const std::string & str)
 {
-
+	////return
+	///X64VirtualInsnList::getInstance().isVirtualInstruction(str);
 }
+
+// ÅÐ¶Ï×Ö·û´®ÊÇ·ñÎªÊý×Ötoken
+bool X64Token::isNumericStr(const std::string & str)
+{
+	if (str.length() == 0)
+		return false;
+	if (str[0] >= '0' && str[0] <= '9') {
+		return true;
+	}
+	return false;
+}
+
+// 
+void X64Token::tryParseToU64Value()
+{
+	if (this->tokenType == X64TokenType::Numeric) {
+		uint64_t value1 = 0;
+		bool succeed = false;
+		if (str.starts_with("0x") || str.starts_with("0X")) 
+			parseHexToU64(str.substr(2), value1, succeed);
+		else if (str.ends_with("h") || str.ends_with("H")) 
+			parseHexToU64(str.substr(0, str.length() - 1), value1, succeed);
+		else if (str.starts_with("0b") || str.starts_with("0B")) 
+			parseBinaryToU64(str.substr(2), value1, succeed);
+		else 
+			parseDecimalToU64(str, value1, succeed);
+		//
+		if (succeed) {
+			*((uint64_t*) &this->flag) |= (uint64_t) X64TokenFlag::NumericToBeUlong;
+			this->ulongValue = value1;
+		}
+	}
+}
+
+// ÊÇ·ñÎª¼Ä´æÆ÷
+bool X64Token::isRegister(const std::string & str)
+{
+	std::string str2 = str;
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+	return htRegister.find(str2) != htRegister.end();
+}
+
+// »ñÈ¡¼Ä´æÆ÷Öµ
+X64RegValue X64Token::getRegisterValue(const std::string & str)
+{
+	std::string str2 = str;
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+	auto obj = htRegister.find(str2);
+	if (obj == htRegister.end()) {
+		return X64RegValue::None;
+	}
+	return obj->second;
+}
+
+// ÊÇ·ñÎª²Ù×÷·û
+bool X64Token::isOperator(const std::string & str)
+{
+	std::string str2 = str;
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+	return htOperator.find(str2) != htOperator.end();
+}
+
+X64AsmOperator X64Token::getOperatorValue(const std::string & str)
+{
+	std::string str2 = str;
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+	auto obj = htOperator.find(str2);
+	if (obj == htOperator.end()) {
+		return X64AsmOperator::None;
+	}
+	return obj->second;
+}
+
+void parseHexToU64(const std::string & hexStr, uint64_t & value1, bool & succeed)
+{
+	value1 = 0;
+    succeed = false;
+    uint8_t tmpInt;
+    uint64_t tmpLong = 0;
+    for (auto & ch : hexStr) {
+		if (ch >= '0' && ch <= '9')
+			tmpInt = (uint8_t)(ch - '0');
+		else if (ch >= 'A' && ch <= 'F')
+			tmpInt = (uint8_t)(ch - 'A' + 10);
+		else if (ch >= 'a' && ch <= 'f')
+			tmpInt = (uint8_t)(ch - 'a' + 10);
+		else if (ch == '_')
+			continue;
+		else {
+			//  ²»ºÏÊÊ×Ö·û
+			return;
+		}
+		//
+		tmpLong <<= 4;
+		tmpLong += tmpInt;
+	}
+	value1 = tmpLong;
+	succeed = true;
+}
+
+void parseBinaryToU64(const std::string & binStr, uint64_t & value1, bool & succeed)
+{
+	value1 = 0;
+    succeed = false;
+    uint8_t tmpInt;
+    uint64_t tmpLong = 0;
+    for (auto & ch : binStr) {
+		if (ch == '0' || ch == '1')
+			tmpInt = (uint8_t)(ch - '0');
+		else if (ch == '_')
+			continue;
+		else {
+			//  ²»ºÏÊÊ×Ö·û
+			return;
+		}
+		//
+		tmpLong <<= 1;
+		tmpLong += tmpInt;
+	}
+	value1 = tmpLong;
+	succeed = true;
+}
+
+void parseDecimalToU64(const std::string & decStr, uint64_t & value1, bool & succeed)
+{
+	value1 = 0;
+    succeed = false;
+    uint8_t tmpInt;
+    uint64_t tmpLong = 0;
+    for (auto & ch : decStr) {
+		if (ch >= '0' && ch <= '9')
+			tmpInt = (uint8_t)(ch - '0');
+		else if (ch == '_')
+			continue;
+		else {
+			//  ²»ºÏÊÊ×Ö·û
+			return;
+		}
+		//
+		tmpLong *= 10;
+		tmpLong += tmpInt;
+	}
+	value1 = tmpLong;
+	succeed = true;
+}
+
 
 
