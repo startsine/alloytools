@@ -12,6 +12,9 @@ X64Assembler::X64Assembler()
 
 void X64Assembler::assemble(const std::string & filepath)
 {
+    // init 
+    X64Token::initTokenInfos();
+    //
     SourceLoader loader;
     loader.loadFile(filepath);
     SourceParser parser(&sourceLinesP, &loader);
