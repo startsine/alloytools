@@ -18,7 +18,7 @@ void X64Token::initTokenInfos()
 	initOperator();
 }
 
-std::unordered_set<std::string> X64Token::htAllowNamePseudoInstruction = {0};
+std::unordered_set<std::string> X64Token::htAllowNamePseudoInstruction;
 
 void X64Token::initWithNamePseudoInstruction()
 {
