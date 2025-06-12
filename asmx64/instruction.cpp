@@ -74,4 +74,21 @@ bool X64PseudoInsnList::isPseudoInstruction(const std::string & str)
 }
 
 
+X64VirtualInsnList::X64VirtualInsnList()
+{
+}
+
+unique_ptr<X64VirtualInsnList> X64VirtualInsnList::instance = nullptr;
+
+X64VirtualInsnList & X64VirtualInsnList::getInstance()
+{
+	if (instance == nullptr) {
+		instance = make_unique<X64VirtualInsnList>();
+	}
+	return (* instance);
+}
+
+
+
+
 

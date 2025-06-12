@@ -40,6 +40,17 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<IInsnProcessor>> htPseudoInsns;
 };
 
+class X64VirtualInsnList
+{
+    friend std::unique_ptr<X64VirtualInsnList> std::make_unique<X64VirtualInsnList>();
+public:
+    static X64VirtualInsnList & getInstance();
+	bool isVirtualInstruction(const std::string & str);
+private:
+	static std::unique_ptr<X64VirtualInsnList> instance;
+    X64VirtualInsnList();
+};
+
 #endif // ASMX64_INSTRUCTION_H
 
 

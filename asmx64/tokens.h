@@ -52,7 +52,7 @@ enum class X64AsmOperator
 
 };
 
-class X64Token
+class X64Token 
 {
 private:
 	static bool initFlag;

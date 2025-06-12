@@ -174,8 +174,7 @@ bool X64Token::isPseudoInstruction(const std::string & str)
 // ÊÇ·ñĞéÄâÖ¸Áî
 bool X64Token::isVirtualInstruction(const std::string & str)
 {
-	////return
-	///X64VirtualInsnList::getInstance().isVirtualInstruction(str);
+	return X64VirtualInsnList::getInstance().isVirtualInstruction(str);
 }
 
 // ÅĞ¶Ï×Ö·û´®ÊÇ·ñÎªÊı×Ötoken
