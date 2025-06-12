@@ -88,7 +88,10 @@ X64VirtualInsnList & X64VirtualInsnList::getInstance()
 	return (* instance);
 }
 
-
+bool X64VirtualInsnList::isVirtualInstruction(const std::string & str)
+{
+	return false;
+}
 
 
 

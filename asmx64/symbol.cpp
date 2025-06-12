@@ -5,7 +5,15 @@
 
 using namespace std;
 
+Section::Section(const std::string & sectionName) : Section(sectionName, 1u)
+{
+}
 
+Section::Section(const std::string & sectionName, uint32_t align)
+{
+	this->sectionName = sectionName;
+	this->align = align;
+}
 
 size_t X64SectionList::getCurrSectionIndex()
 {
