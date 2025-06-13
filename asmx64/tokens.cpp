@@ -27,9 +27,9 @@ void X64Token::initWithNamePseudoInstruction()
     htAllowNamePseudoInstruction.insert("dd");
     htAllowNamePseudoInstruction.insert("dq");
     htAllowNamePseudoInstruction.insert("proc");
-    htAllowNamePseudoInstruction.insert("endp");        // ºöÂÔ
+    htAllowNamePseudoInstruction.insert("endp");        // å¿½ç•¥
     htAllowNamePseudoInstruction.insert("segment");
-    htAllowNamePseudoInstruction.insert("ends");        // ºöÂÔ
+    htAllowNamePseudoInstruction.insert("ends");        // å¿½ç•¥
 }
 
 std::unordered_map<std::string, CpuInsnPrefixID> X64Token::htInstructionPrefix;
@@ -111,7 +111,7 @@ void X64Token::initRegisterList()
     htRegister.emplace("r13", X64RegValue::R13);
     htRegister.emplace("r14", X64RegValue::R14);
     htRegister.emplace("r15", X64RegValue::R15);
-    // Ê¡È¥ cs¡¢ds¡¢es¡¢ss
+    // çœå» csã€dsã€esã€ss
     htRegister.emplace("fs", X64RegValue::FS);
     htRegister.emplace("gs", X64RegValue::GS);
     //
@@ -131,7 +131,7 @@ void X64Token::initOperator()
     htOperator.emplace(")", X64AsmOperator::ParenthesesR);
 }
 
-// ÊÇ·ñÊÇÔÊĞíÇ°Ãæ´ønameµÄÎ±Ö¸Áî
+// æ˜¯å¦æ˜¯å…è®¸å‰é¢å¸¦nameçš„ä¼ªæŒ‡ä»¤
 bool X64Token::isAllowNamePseudoInstruction(const std::string & str)
 {
     std::string str2 = str;
@@ -139,7 +139,7 @@ bool X64Token::isAllowNamePseudoInstruction(const std::string & str)
     return htAllowNamePseudoInstruction.find(str2) != htAllowNamePseudoInstruction.end();
 }
 
-// ÊÇ·ñÖ¸ÁîÇ°×º
+// æ˜¯å¦æŒ‡ä»¤å‰ç¼€
 bool X64Token::isInstructionPrefix(const std::string & str) 
 {
 	std::string str2 = str;
@@ -147,7 +147,7 @@ bool X64Token::isInstructionPrefix(const std::string & str)
 	return htInstructionPrefix.find(str2) != htInstructionPrefix.end();
 }
 
-// »ñµÃÖ¸ÁîÇ°×ºµÄIDÖµ
+// è·å¾—æŒ‡ä»¤å‰ç¼€çš„IDå€¼
 CpuInsnPrefixID X64Token::getInstructionPrefixValue(const std::string & str)
 {
 	std::string str2 = str;
@@ -159,25 +159,25 @@ CpuInsnPrefixID X64Token::getInstructionPrefixValue(const std::string & str)
 	return obj->second;
 }
 
-// ÊÇ·ñCPUÖ¸Áî
+// æ˜¯å¦CPUæŒ‡ä»¤
 bool X64Token::isCpuInstruction(const std::string & str)
 {
 	return X64CpuInsnList::getInstance().isCpuInstruction(str);
 }
 
-// ÊÇ·ñÎ±Ö¸Áî
+// æ˜¯å¦ä¼ªæŒ‡ä»¤
 bool X64Token::isPseudoInstruction(const std::string & str)
 {
 	return X64PseudoInsnList::getInstance().isPseudoInstruction(str);
 }
 
-// ÊÇ·ñĞéÄâÖ¸Áî
+// æ˜¯å¦è™šæ‹ŸæŒ‡ä»¤
 bool X64Token::isVirtualInstruction(const std::string & str)
 {
 	return X64VirtualInsnList::getInstance().isVirtualInstruction(str);
 }
 
-// ÅĞ¶Ï×Ö·û´®ÊÇ·ñÎªÊı×Ötoken
+// åˆ¤æ–­å­—ç¬¦ä¸²æ˜¯å¦ä¸ºæ•°å­—token
 bool X64Token::isNumericStr(const std::string & str)
 {
 	if (str.length() == 0)
@@ -210,7 +210,7 @@ void X64Token::tryParseToU64Value()
 	}
 }
 
-// ÊÇ·ñÎª¼Ä´æÆ÷
+// æ˜¯å¦ä¸ºå¯„å­˜å™¨
 bool X64Token::isRegister(const std::string & str)
 {
 	std::string str2 = str;
@@ -218,7 +218,7 @@ bool X64Token::isRegister(const std::string & str)
 	return htRegister.find(str2) != htRegister.end();
 }
 
-// »ñÈ¡¼Ä´æÆ÷Öµ
+// è·å–å¯„å­˜å™¨å€¼
 X64RegValue X64Token::getRegisterValue(const std::string & str)
 {
 	std::string str2 = str;
@@ -230,7 +230,7 @@ X64RegValue X64Token::getRegisterValue(const std::string & str)
 	return obj->second;
 }
 
-// ÊÇ·ñÎª²Ù×÷·û
+// æ˜¯å¦ä¸ºæ“ä½œç¬¦
 bool X64Token::isOperator(const std::string & str)
 {
 	std::string str2 = str;
@@ -265,7 +265,7 @@ void parseHexToU64(const std::string & hexStr, uint64_t & value1, bool & succeed
 		else if (ch == '_')
 			continue;
 		else {
-			//  ²»ºÏÊÊ×Ö·û
+			//  ä¸åˆé€‚å­—ç¬¦
 			return;
 		}
 		//
@@ -288,7 +288,7 @@ void parseBinaryToU64(const std::string & binStr, uint64_t & value1, bool & succ
 		else if (ch == '_')
 			continue;
 		else {
-			//  ²»ºÏÊÊ×Ö·û
+			//  ä¸åˆé€‚å­—ç¬¦
 			return;
 		}
 		//
@@ -311,7 +311,7 @@ void parseDecimalToU64(const std::string & decStr, uint64_t & value1, bool & suc
 		else if (ch == '_')
 			continue;
 		else {
-			//  ²»ºÏÊÊ×Ö·û
+			//  ä¸åˆé€‚å­—ç¬¦
 			return;
 		}
 		//

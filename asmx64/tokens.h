@@ -19,18 +19,18 @@ void parseDecimalToU64(const std::string &decStr, uint64_t & value1, bool & succ
 enum class X64TokenType
 {
     None = 0,
-    String,                                      // ×Ö·û´®
-    Numeric,                                     // Êı×Ö
-    Register,                                    // ¼Ä´æÆ÷
-    Operator,                                    // ÔËËã·û
-    Symbol,                                      // ·ûºÅ
-    TempOperand,                                 // ÁÙÊ±²Ù×÷Êı
+    String,                                      // å­—ç¬¦ä¸²
+    Numeric,                                     // æ•°å­—
+    Register,                                    // å¯„å­˜å™¨
+    Operator,                                    // è¿ç®—ç¬¦
+    Symbol,                                      // ç¬¦å·
+    TempOperand,                                 // ä¸´æ—¶æ“ä½œæ•°
 };
 
 enum class X64TokenFlag: uint64_t // [flag]
 {
     None = 0,
-    NumericToBeUlong = 0x1000,                   // Êı×ÖÒÑ¾­×ª»»Îªulong, typeÎªNumericÊ±ÓĞĞ§
+    NumericToBeUlong = 0x1000,                   // æ•°å­—å·²ç»è½¬æ¢ä¸ºulong, typeä¸ºNumericæ—¶æœ‰æ•ˆ
 };
 
 enum class X64AsmOperator
@@ -44,11 +44,11 @@ enum class X64AsmOperator
     AddressEnd,         // ]
     ParenthesesL,       // (
     ParenthesesR,       // )
-    PositiveSign,       // + µ¥Ä¿ÕıºÅ
-    NegativeSign,       // - µ¥Ä¿¸ººÅ
-    RegPlus,            // ¼Ä´æÆ÷¼Ó
-    RegMinus,           // ¼Ä´æÆ÷¼õ
-    RegMulti,           // ¼Ä´æÆ÷³Ë
+    PositiveSign,       // + å•ç›®æ­£å·
+    NegativeSign,       // - å•ç›®è´Ÿå·
+    RegPlus,            // å¯„å­˜å™¨åŠ 
+    RegMinus,           // å¯„å­˜å™¨å‡
+    RegMulti,           // å¯„å­˜å™¨ä¹˜
 
 };
 
@@ -67,37 +67,37 @@ private:
 public:
 	X64TokenType tokenType;
 	X64TokenFlag flag;
-	std::string str;                   			// tokenµÄ×Ö·û´®, string ÀàĞÍ
-	X64RegValue regValue;                        // ¼Ä´æÆ÷µÄÖµ, tokenType Îª Register Ê±ÓĞĞ§
-	X64AsmOperator asmOperator;                  // ÔËËã·ûµÄÖµ, tokenType Îª Operator Ê±ÓĞĞ§
-	uint64_t ulongValue;                            // Êı×ÖµÄÖµ, tokenType Îª Numeric Ê±ÓĞĞ§
-	uint64_t symbolIndex;                           // ·ûºÅÔÚ·ûºÅ±íÖĞµÄË÷Òı, tokenType Îª Symbol Ê±ÓĞĞ§
-	X64Operand tempOperand;              // ÁÙÊ±²Ù×÷Êı, tokenType Îª TempOperand Ê±ÓĞĞ§, ÓÃÓÚ¼ÆËã±í´ïÊ½Ê±ÖĞ¼äÖµ
+	std::string str;                   			// tokençš„å­—ç¬¦ä¸², string ç±»å‹
+	X64RegValue regValue;                        // å¯„å­˜å™¨çš„å€¼, tokenType ä¸º Register æ—¶æœ‰æ•ˆ
+	X64AsmOperator asmOperator;                  // è¿ç®—ç¬¦çš„å€¼, tokenType ä¸º Operator æ—¶æœ‰æ•ˆ
+	uint64_t ulongValue;                            // æ•°å­—çš„å€¼, tokenType ä¸º Numeric æ—¶æœ‰æ•ˆ
+	uint64_t symbolIndex;                           // ç¬¦å·åœ¨ç¬¦å·è¡¨ä¸­çš„ç´¢å¼•, tokenType ä¸º Symbol æ—¶æœ‰æ•ˆ
+	X64Operand tempOperand;              // ä¸´æ—¶æ“ä½œæ•°, tokenType ä¸º TempOperand æ—¶æœ‰æ•ˆ, ç”¨äºè®¡ç®—è¡¨è¾¾å¼æ—¶ä¸­é—´å€¼
 
 	X64Token();
 	static void initTokenInfos();
 
-    // ÊÇ·ñÊÇÔÊĞíÇ°Ãæ´ønameµÄÎ±Ö¸Áî
+    // æ˜¯å¦æ˜¯å…è®¸å‰é¢å¸¦nameçš„ä¼ªæŒ‡ä»¤
     static bool isAllowNamePseudoInstruction(const std::string & str);
-	// ÊÇ·ñÖ¸ÁîÇ°×º
+	// æ˜¯å¦æŒ‡ä»¤å‰ç¼€
 	static bool isInstructionPrefix(const std::string & str);
-	// »ñµÃÖ¸ÁîÇ°×ºµÄIDÖµ
+	// è·å¾—æŒ‡ä»¤å‰ç¼€çš„IDå€¼
 	static CpuInsnPrefixID getInstructionPrefixValue(const std::string & str);
-	// ÊÇ·ñCPUÖ¸Áî
+	// æ˜¯å¦CPUæŒ‡ä»¤
 	static bool isCpuInstruction(const std::string & str);
-	// ÊÇ·ñÎ±Ö¸Áî
+	// æ˜¯å¦ä¼ªæŒ‡ä»¤
 	static bool isPseudoInstruction(const std::string & str);
-	// ÊÇ·ñĞéÄâÖ¸Áî
+	// æ˜¯å¦è™šæ‹ŸæŒ‡ä»¤
 	static bool isVirtualInstruction(const std::string & str);
-	// ÅĞ¶Ï×Ö·û´®ÊÇ·ñÎªÊı×Ötoken
+	// åˆ¤æ–­å­—ç¬¦ä¸²æ˜¯å¦ä¸ºæ•°å­—token
 	static bool isNumericStr(const std::string & str);
-	// ³¢ÊÔ³õ²½½âÊÍÊı×Ö×Ö·û´®Îª uint64
+	// å°è¯•åˆæ­¥è§£é‡Šæ•°å­—å­—ç¬¦ä¸²ä¸º uint64
 	void tryParseToU64Value();
-	// ÊÇ·ñÎª¼Ä´æÆ÷
+	// æ˜¯å¦ä¸ºå¯„å­˜å™¨
 	static bool isRegister(const std::string & str);
-	// »ñÈ¡¼Ä´æÆ÷Öµ
+	// è·å–å¯„å­˜å™¨å€¼
 	static X64RegValue getRegisterValue(const std::string & str);
-	// ÊÇ·ñÎª²Ù×÷·û
+	// æ˜¯å¦ä¸ºæ“ä½œç¬¦
 	static bool isOperator(const std::string & str);
 	//
 	static X64AsmOperator getOperatorValue(const std::string & str);

@@ -7,7 +7,7 @@
 class X64Expression
 {
 public:
-    // 把预处理后的tokens转换为表达式列表,成功返回true，失败返回false
+    // 鎶婇澶勭悊鍚庣殑tokens杞崲涓鸿〃杈惧紡鍒楄〃,鎴愬姛杩斿洖true锛屽け璐ヨ繑鍥瀎alse
 	static bool parseByPreProcessTokens(std::vector<X64Expression> & expressions, std::vector<std::string> & tokens, int startIdx);
 	void calc();
 };

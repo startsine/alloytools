@@ -40,9 +40,9 @@ enum class X64RegValue: uint32_t
 	REG_VALUE_30 = 30,
 	REG_VALUE_31 = 31,
 	//
-	Common = 0x100,                             // Í¨ÓÃ¼Ä´æÆ÷±êÖ¾
-	REG_8bit = 0x200,                           // 8Î»±êÖ¾Ò»°ãÔÚopcodeÖĞ
-	REG_16bit = 0x400,                          // 0x66À©Õ¹£¨opcodeÇ°¼Ó0x66Ç°×º£©
+	Common = 0x100,                             // é€šç”¨å¯„å­˜å™¨æ ‡å¿—
+	REG_8bit = 0x200,                           // 8ä½æ ‡å¿—ä¸€èˆ¬åœ¨opcodeä¸­
+	REG_16bit = 0x400,                          // 0x66æ‰©å±•ï¼ˆopcodeå‰åŠ 0x66å‰ç¼€ï¼‰
 	REG_32bit = 0x800,                          // 
 	REG_64bit = 0x1000,
 	//
@@ -73,8 +73,8 @@ enum class X64RegValue: uint32_t
 	SI = Common | REG_16bit | REG_VALUE_6,
 	DI = Common | REG_16bit | REG_VALUE_7,
 	//
-	REXPreflx_40 = 0x2000,                      // REXµÄ0x40±êÖ¾
-	REXPreflx_W = REXPreflx_40 | 0x4000,        // REX.W ±êÖ¾ £¨À©Õ¹¿í¶ÈÎª64Î»±êÖ¾£©
+	REXPreflx_40 = 0x2000,                      // REXçš„0x40æ ‡å¿—
+	REXPreflx_W = REXPreflx_40 | 0x4000,        // REX.W æ ‡å¿— ï¼ˆæ‰©å±•å®½åº¦ä¸º64ä½æ ‡å¿—ï¼‰
 	RAX = Common | REG_64bit | REXPreflx_W | REG_VALUE_0,
 	RCX = Common | REG_64bit | REXPreflx_W | REG_VALUE_1,
 	RDX = Common | REG_64bit | REXPreflx_W | REG_VALUE_2,
@@ -83,13 +83,13 @@ enum class X64RegValue: uint32_t
 	RBP = Common | REG_64bit | REXPreflx_W | REG_VALUE_5,
 	RSI = Common | REG_64bit | REXPreflx_W | REG_VALUE_6,
 	RDI = Common | REG_64bit | REXPreflx_W | REG_VALUE_7,
-	// SP¡¢BP¡¢SI¡¢DI µÄµÍ8Î»¼Ä´æÆ÷Ê¹ÓÃÊ±ĞèÒª¼Ó REX:0x40 À©Õ¹£¬²»¼Ó¾ÍÊÇ AH¡¢CH¡¢DH¡¢BH
+	// SPã€BPã€SIã€DI çš„ä½8ä½å¯„å­˜å™¨ä½¿ç”¨æ—¶éœ€è¦åŠ  REX:0x40 æ‰©å±•ï¼Œä¸åŠ å°±æ˜¯ AHã€CHã€DHã€BH
 	SPL = Common | REG_8bit | REXPreflx_40 | REG_VALUE_4,
 	BPL = Common | REG_8bit | REXPreflx_40 | REG_VALUE_5,
 	SIL = Common | REG_8bit | REXPreflx_40 | REG_VALUE_6,
 	DIL = Common | REG_8bit | REXPreflx_40 | REG_VALUE_7,
 	//
-	REXPreflx_E = REXPreflx_40 | 0x8000,        // ĞèÒªÀ©Õ¹REX.R / REX.X / REX.B (reg¡¢r/m¡¢SIBÓò) ¡¢À©Õ¹µ½8~15ºÅ¼Ä´æÆ÷
+	REXPreflx_E = REXPreflx_40 | 0x8000,        // éœ€è¦æ‰©å±•REX.R / REX.X / REX.B (regã€r/mã€SIBåŸŸ) ã€æ‰©å±•åˆ°8~15å·å¯„å­˜å™¨
 	//
 	R8B = Common | REG_8bit | REXPreflx_E | REG_VALUE_8,
 	R9B = Common | REG_8bit | REXPreflx_E | REG_VALUE_9,
@@ -127,16 +127,16 @@ enum class X64RegValue: uint32_t
 	R14 = Common | REG_64bit | REXPreflx_W | REXPreflx_E | REG_VALUE_14,
 	R15 = Common | REG_64bit | REXPreflx_W | REXPreflx_E | REG_VALUE_15,
 	//
-	SegmentReg = 0x10000,                       // ¶Î¼Ä´æÆ÷±êÖ¾
-	CtrlReg = 0x20000,                          // ¿ØÖÆ¼Ä´æÆ÷(CR0~CR15)
-	DebugReg = 0x40000,                         // µ÷ÊÔ¼Ä´æÆ÷(DR0~DR15)
-	X87Reg = 0x80000,                           // ¸¡µã¼Ä´æÆ÷±êÖ¾£¨ST0~ST7£©
-	MMXReg = 0x100000,                          // MMX¼Ä´æÆ÷£¨MM0~MM7£¬Êµ¼ÊÊÇST0~ST7µÄ×Ó¼¯£©
-	XMMReg = 0x200000,                          // XMM¼Ä´æÆ÷ SSE (128-bit) (XMM0~XMM31)
-	YMMReg = 0x400000,                          // YMM¼Ä´æÆ÷ AVX-2 (256-bit) (YMM0~YMM31)
-	ZMMReg = 0x800000,                          // ZMM¼Ä´æÆ÷ AVX-512 (512-bit) (ZMM0~ZMM31)
-	TMMReg = 0x1000000,                         // TMM¼Ä´æÆ÷ (Ò»¸ö¼Ä´æÆ÷1KB´óĞ¡µÄ¼Ä´æÆ÷) (TMM0~TMM8)
-	SSEVEX = 0x2000000,                         // SSE¼Ä´æÆ÷À©Õ¹£¨¿ÉÒÔÊ¹ÓÃ XMM15~XMM31, YMM15~YMM31, ZMM15~ZMM31£©
+	SegmentReg = 0x10000,                       // æ®µå¯„å­˜å™¨æ ‡å¿—
+	CtrlReg = 0x20000,                          // æ§åˆ¶å¯„å­˜å™¨(CR0~CR15)
+	DebugReg = 0x40000,                         // è°ƒè¯•å¯„å­˜å™¨(DR0~DR15)
+	X87Reg = 0x80000,                           // æµ®ç‚¹å¯„å­˜å™¨æ ‡å¿—ï¼ˆST0~ST7ï¼‰
+	MMXReg = 0x100000,                          // MMXå¯„å­˜å™¨ï¼ˆMM0~MM7ï¼Œå®é™…æ˜¯ST0~ST7çš„å­é›†ï¼‰
+	XMMReg = 0x200000,                          // XMMå¯„å­˜å™¨ SSE (128-bit) (XMM0~XMM31)
+	YMMReg = 0x400000,                          // YMMå¯„å­˜å™¨ AVX-2 (256-bit) (YMM0~YMM31)
+	ZMMReg = 0x800000,                          // ZMMå¯„å­˜å™¨ AVX-512 (512-bit) (ZMM0~ZMM31)
+	TMMReg = 0x1000000,                         // TMMå¯„å­˜å™¨ (ä¸€ä¸ªå¯„å­˜å™¨1KBå¤§å°çš„å¯„å­˜å™¨) (TMM0~TMM8)
+	SSEVEX = 0x2000000,                         // SSEå¯„å­˜å™¨æ‰©å±•ï¼ˆå¯ä»¥ä½¿ç”¨ XMM15~XMM31, YMM15~YMM31, ZMM15~ZMM31ï¼‰
 	//
 	ES = SegmentReg | REG_VALUE_0,
 	CS = SegmentReg | REG_VALUE_1,

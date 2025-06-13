@@ -7,8 +7,8 @@
 enum class InsnProcessFlag
 {
     None = 0,
-    ProcessTokens = 0x01,                           // Î±Ö¸Áî×Ô¼º´¦Àí token
-    ProcessExpressions = 0x02,                      // Î±Ö¸Áî´¦ÀíulongÖµÒÔÄÚ´óĞ¡µÄ±í´ïÊ½(ÈçDB¡¢DW¡¢DD¡¢DQ)
+    ProcessTokens = 0x01,                           // ä¼ªæŒ‡ä»¤è‡ªå·±å¤„ç† token
+    ProcessExpressions = 0x02,                      // ä¼ªæŒ‡ä»¤å¤„ç†ulongå€¼ä»¥å†…å¤§å°çš„è¡¨è¾¾å¼(å¦‚DBã€DWã€DDã€DQ)
 };
 
 class SourceLine;
@@ -27,7 +27,7 @@ public:
 	InsnProcessFlag getInsnFlag() override;
 };
 
-// »ù±¾Êı¾İ¶¨ÒåÎ±Ö¸Áî (DB,DW,DD,DQ)
+// åŸºæœ¬æ•°æ®å®šä¹‰ä¼ªæŒ‡ä»¤ (DB,DW,DD,DQ)
 class DataDefineBaseInsn : IInsnProcessor
 {
 	////
