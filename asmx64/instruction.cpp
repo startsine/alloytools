@@ -23,7 +23,7 @@ X64CpuInsnList & X64CpuInsnList::getInstance()
 IInsnProcessor * X64CpuInsnList::getInsnProcessor(const std::string & insn)
 {
 	std::string str2 = insn;
-    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return ::tolower(c); });
 	auto obj = htCpuInsns.find(str2);
 	if (obj == htCpuInsns.end()) {
 		return nullptr;
@@ -34,7 +34,7 @@ IInsnProcessor * X64CpuInsnList::getInsnProcessor(const std::string & insn)
 bool X64CpuInsnList::isCpuInstruction(const std::string & str)
 {
 	std::string str2 = str;
-    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return ::tolower(c); });
 	return htCpuInsns.find(str2) != htCpuInsns.end();
 }
 
@@ -58,7 +58,7 @@ X64PseudoInsnList & X64PseudoInsnList::getInstance()
 IInsnProcessor * X64PseudoInsnList::getPseudoInsnProcessor(const std::string & insn)
 {
 	std::string str2 = insn;
-    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return ::tolower(c); });
 	auto obj = htPseudoInsns.find(str2);
 	if (obj == htPseudoInsns.end()) {
 		return nullptr;
@@ -69,7 +69,7 @@ IInsnProcessor * X64PseudoInsnList::getPseudoInsnProcessor(const std::string & i
 bool X64PseudoInsnList::isPseudoInstruction(const std::string & str)
 {
     std::string str2 = str;
-    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return ::tolower(c); });
 	return htPseudoInsns.find(str2) != htPseudoInsns.end();
 }
 

@@ -135,7 +135,7 @@ void X64Token::initOperator()
 bool X64Token::isAllowNamePseudoInstruction(const std::string & str)
 {
     std::string str2 = str;
-    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return ::tolower(c); });
     return htAllowNamePseudoInstruction.find(str2) != htAllowNamePseudoInstruction.end();
 }
 
@@ -143,7 +143,7 @@ bool X64Token::isAllowNamePseudoInstruction(const std::string & str)
 bool X64Token::isInstructionPrefix(const std::string & str) 
 {
 	std::string str2 = str;
-    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return ::tolower(c); });
 	return htInstructionPrefix.find(str2) != htInstructionPrefix.end();
 }
 
@@ -151,7 +151,7 @@ bool X64Token::isInstructionPrefix(const std::string & str)
 CpuInsnPrefixID X64Token::getInstructionPrefixValue(const std::string & str)
 {
 	std::string str2 = str;
-    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return ::tolower(c); });
 	auto obj = htInstructionPrefix.find(str2);
 	if (obj == htInstructionPrefix.end()) {
 		return CpuInsnPrefixID::None;
@@ -194,11 +194,11 @@ void X64Token::tryParseToU64Value()
 	if (this->tokenType == X64TokenType::Numeric) {
 		uint64_t value1 = 0;
 		bool succeed = false;
-		if (str.starts_with("0x") || str.starts_with("0X")) 
+		if (0 == strncmp(str.c_str(), "0x", 2) || 0 == strncmp(str.c_str(), "0X", 2))
 			parseHexToU64(str.substr(2), value1, succeed);
-		else if (str.ends_with("h") || str.ends_with("H")) 
+		else if (str.length() > 0 && (str[str.length() - 1] == 'h') && (str[str.length() - 1] == 'H'))
 			parseHexToU64(str.substr(0, str.length() - 1), value1, succeed);
-		else if (str.starts_with("0b") || str.starts_with("0B")) 
+		else if (0 == strncmp(str.c_str(), "0b", 2) || 0 == strncmp(str.c_str(), "0B", 2))
 			parseBinaryToU64(str.substr(2), value1, succeed);
 		else 
 			parseDecimalToU64(str, value1, succeed);
@@ -214,7 +214,7 @@ void X64Token::tryParseToU64Value()
 bool X64Token::isRegister(const std::string & str)
 {
 	std::string str2 = str;
-    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return ::tolower(c); });
 	return htRegister.find(str2) != htRegister.end();
 }
 
@@ -222,7 +222,7 @@ bool X64Token::isRegister(const std::string & str)
 X64RegValue X64Token::getRegisterValue(const std::string & str)
 {
 	std::string str2 = str;
-    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return ::tolower(c); });
 	auto obj = htRegister.find(str2);
 	if (obj == htRegister.end()) {
 		return X64RegValue::None;
@@ -234,14 +234,14 @@ X64RegValue X64Token::getRegisterValue(const std::string & str)
 bool X64Token::isOperator(const std::string & str)
 {
 	std::string str2 = str;
-    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return ::tolower(c); });
 	return htOperator.find(str2) != htOperator.end();
 }
 
 X64AsmOperator X64Token::getOperatorValue(const std::string & str)
 {
 	std::string str2 = str;
-    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(str2.begin(), str2.end(), str2.begin(), [](unsigned char c){ return ::tolower(c); });
 	auto obj = htOperator.find(str2);
 	if (obj == htOperator.end()) {
 		return X64AsmOperator::None;
