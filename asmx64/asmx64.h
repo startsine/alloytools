@@ -16,9 +16,9 @@
 #include "srcline.h"
 #include "assembler.h"
 
-#include "mov.h"
-#include "segment.h"
-#include "proc.h"
+#include "ins_mov.h"
+#include "ins_segment.h"
+#include "ins_proc.h"
 
 #endif // ASMX64_X64ASM_H
 
