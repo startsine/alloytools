@@ -10,7 +10,7 @@
 #include <unordered_set>
 
 enum class CpuInsnPrefixID;
-enum class X64RegValue: uint32_t;
+enum class X64RegValue: uint64_t;
 
 void parseHexToU64(const std::string &hexStr, uint64_t & value1, bool & succeed);
 void parseBinaryToU64(const std::string &binStr, uint64_t & value1, bool & succeed);
