@@ -5,6 +5,11 @@
 
 using namespace std;
 
+X64Token::X64Token()
+{
+
+}
+
 bool X64Token::initFlag = false;
 
 void X64Token::initTokenInfos()

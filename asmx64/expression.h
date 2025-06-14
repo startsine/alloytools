@@ -16,10 +16,18 @@ public:
     // 计算表达式
     bool calc();
     // 在token-list中查找操作符
-    static int findOperator(std::vector<X64Token> & xTokens, int startIndex, X64AsmOperator opt);
+    static int findOperator(const std::vector<X64Token> & xTokens, int startIndex, X64AsmOperator opt);
+    // 在token-list中查找任何操作符
+    static int findAnyOperator(const std::vector<X64Token> & xTokens, int startIndex);
 private:
     // 计算寻址表达式，就是 [] 的部分, 成功返回 X64Operand，失败返回 null
     X64Operand calcAddressExpression(int start, int end);       // start和end是第一个token和最后一个token的索引，正常来说应该分别是 '[' 和 ']'
+    // 计算寻址表达式表达式内部值,就是[]内部的值 
+    static X64Operand calcAddressExpressionInnerValue(std::vector<X64Token> & xTokens);
+    // 寻址中间值转为内存寻址的结果值
+    X64Operand memoryAddressInfoToRet(const X64Operand & op);
+    // 计算寻址操作的一个最小单元操作
+    static X64Operand calcAddressExpressionMinOperator(const X64Token * left, const X64Token * operatorToken, const X64Token * right);
 };
 
 

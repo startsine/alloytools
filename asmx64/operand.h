@@ -319,7 +319,7 @@ enum class X64OperandType
     MemoryAddressInfo,              // 内存寻址(寻址信息还没有完全，只能做中间值)
 };
 
-enum class MemoryAddressType
+enum class MemoryAddressType: uint64_t
 {
     None = 0,
     // 源码层面的信息
@@ -347,7 +347,7 @@ enum class MemoryAddressType
     with64bitAbsAddr = 0x200000,    // 使用64位绝对地址来寻址，
 };
 
-enum class MemoryAddressModifier
+enum class MemoryAddressModifier: uint64_t
 {
     None = 0,
     BytePtr = 1,                // 用 byte ptr 修饰寻址
@@ -415,6 +415,14 @@ public:
     X64Operand();
     X64Operand(X64RegValue newValue);
     X64Operand(uint64_t newValue);
+
+    X64Operand(const MemoryAddressInfo & info);
+};
+
+class X64RegUtil
+{
+public:
+    static bool is32Or64BitReg(X64RegValue reg);
 };
 
 #endif // ASMX64_OPERAND_H

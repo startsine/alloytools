@@ -5,8 +5,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <string>
+#include <vector>
+#include <list>
 #include <memory>
 
+#include "common.h"
 #include "operand.h"
 #include "tokens.h"
 #include "instruction.h"

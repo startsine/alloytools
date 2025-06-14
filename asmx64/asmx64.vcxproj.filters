@@ -95,5 +95,8 @@
     <ClInclude Include="pseudo\ins_segment.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="common.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
