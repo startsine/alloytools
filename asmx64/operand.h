@@ -307,10 +307,127 @@ enum class X64RegValue: uint32_t
 	//
 };
 
+enum class X64OperandType
+{
+    Unknown = 0,                    // 未知类型
+    Register,                       // 寄存器
+    MemoryAddress,                  // 内存寻址
+    Symbol,                         // 符号
+    ImmediateValue,                 // 立即数(已经转换为ulong,无论整数负数都转换为ulong)
+    ImmediateRaw,                   // 立即数(保留原始字符串表达,需要时再转换,通常是浮点数或者是超大整数)
+    ImmediateString,                // 立即数(字符串-用引号括起来的字符串)
+    MemoryAddressInfo,              // 内存寻址(寻址信息还没有完全，只能做中间值)
+};
+
+enum class MemoryAddressType
+{
+    None = 0,
+    // 源码层面的信息
+    hasReg1 = 0x01,                 // 有寄存器1
+    hasReg2 = 0x02,                 // 有寄存器2 （当有两个寄存器的时候，一定是SIB基址加变址，这时也一定有scale比例因子，隐藏的因子为1）
+    hasExplicitScale = 0x04,        // 源码中有显式的比例因子(如果有显式的比例因子，则reg1和reg2不能互相调换基址寄存器和变址寄存器来适应一些特殊寄存器要求)
+    hasDisp = 0x08,                 // 是否有数值上的偏移量
+    hasSymbol = 0x10,               // 是否由符号来寻址(由符号来决定偏移量)
+    hasAddr64 = 0x20,               // 使用了ADDR64来修饰的符号或disp寻址
+    hasAddr32 = 0x20,               // 使用了ADDR32来修饰的符号或disp寻址
+    // 机器层面
+    withRex_B = 0x100,
+    withRex_X = 0x200,
+    withModRM = 0x1000,             // 此项其实一定有(除了 with64bitAbsAddr之外)
+    withSIB = 0x2000,
+    withDisp8 = 0x4000,
+    withDisp32 = 0x8000,
+    withSegment = 0x10000,          // 带有段前缀
+    withNumericDisp = 0x20000,      // 源码层面带有数值上的偏移量
+    withSymbol = 0x40000,           // 源码层面带有符号上的偏移量 (如果此项目有，则 withDisp32 或 with64bitAbsAddr 一定有其一)
+    with32bitRegAddr = 0x80000,     // 使用了32位寄存器来寻址(如果此项目有，则要加0x67前缀)
+    with32bitImmBase = 0x100000,    // 使用32位的无符号立即数做基址(此时 withSIB 一定有，withDisp32 一定有)
+                                    // 注：规定rbp/r13做基址时必须带偏移量，rsp禁止做变址（rsp做变址表示没有变址也没有比例因子）
+                                    //    所以如果mod==00，并且base==rbp/r13, index==rsp时，表示使用一个无符号的32位数值做基地址(这时可能会产生ADDR32重定位)
+    with64bitAbsAddr = 0x200000,    // 使用64位绝对地址来寻址，
+};
+
+enum class MemoryAddressModifier
+{
+    None = 0,
+    BytePtr = 1,                // 用 byte ptr 修饰寻址
+    WordPtr = 2,                // 用 word ptr 修饰寻址
+    DWordPtr = 4,               // 用 dword ptr 修饰寻址
+    QWordPtr = 8,               // 用 qword ptr 修饰寻址
+    MmWord = 0x10,              // 用 mmword ptr 修饰寻址(同qword ptr)
+    XmmWordPtr = 0x20,          // 用 xmmword ptr 修饰寻址
+    YmmWordPtr = 0x40,          // 用 ymmword ptr 修饰寻址
+    Addr32 = 0x10000000,        // 用 Addr32 修饰过的符号来寻址（32位截断绝对地址寻址）
+    Addr64 = 0x20000000,        // 用 Addr64 修饰过的符号来寻址（64位绝对地址寻址）
+};
+
+
+// 源码层面的寻址信息
+class MemoryAddressInfo
+{
+public:
+    MemoryAddressType type;          // 寻址类型
+    X64RegValue reg1;                // 寄存器1
+    X64RegValue reg2;                // 寄存器2
+    uint8_t scale;                   // 比例因子
+    uint32_t disp32;                 // 内部用ulong以方便表达式计算，实际上是需要转回int产生机器码
+    // public X64RegValue seg;              // 段前缀 // 此标志注释掉，段前缀不应该放在源码层面，就是[]中括号内不应该有段前缀，段前缀应该放[]前面，例如 fs:[rbx]
+    std::string symName;
+    uint64_t symIndex;
+};
+
+// 机器层面的寻址信息
+class MemoryAddressResult
+{
+public:
+    MemoryAddressModifier modifier;  // 寻址目标大小修饰
+    MemoryAddressType type;          // 寻址类型
+    std::string code;                // 寻址产生的机器码(字节串)
+    int codeSize;                    // 机器码长度
+    int relocOffset;                 // 需要重定位时，重定位位置位于本codebyte数组中的偏移
+    X64RegValue indirectReg;         // 间接寻址寄存器(寄存器间接寻址是mod==00, 寄存器间接寻址不能是rsp/r12,带rsp/r12的必须转变为基址+变址寻址)
+    uint64_t disp32;                 // 偏移量(mod==01为带8位偏移量, mod==10为带32位偏移量, mod=11为直接表示寄存器本身) (内部用ulong以方便表达式计算，实际上是需要转回int产生机器码)
+    X64RegValue baseReg;             // 基址寄存器信息(rm==100时，才有SIB字节) [rsp 寄存器不能做为 index 寄存器，只能做 base 寄存器, rsp做index表示没有变址, 而r12却可以做index]
+    X64RegValue indexReg;            // 变址寄存器信息(rm==100时，才有SIB字节)
+    uint8_t sacle;                   // 比例因子(rm==100时，才有SIB字节)
+    std::string symName;             // 符号寻址(规定rbp/r13必须带偏移量,如果mod==00,rm=101时表示直接用一个32位数值来寻址,这里一般是指符号地址)
+    long symIndex;                   // 符号在符号列表的索引(为-1表示找不到)
+                                            // 另一种情况，mod==00，并且base==rbp/r13, index==rsp时，表示使用一个无符号的32位绝对数值(可以是变量符号)做基地址进行ADDR32寻址
+    X64RegValue segReg;              // 段前缀用的段寄存器
+    RelocType relocType;             // 重定位类型, 存在 symbol 时才有效
+
+    MemoryAddressResult()
+    {
+        modifier = MemoryAddressModifier.None;
+        type = MemoryAddressType.None;
+        code = new byte[8];
+        codeSize = 0;
+        relocOffset = 0;
+        indirectReg = X64RegValue.None;
+        disp32 = 0;
+        baseReg = X64RegValue.None;
+        indexReg = X64RegValue.None;
+        sacle = 0;
+        symName = "";
+        symIndex = -1;
+        segReg = X64RegValue.None;
+        relocType = RelocType.None;
+    }
+};
 
 class X64Operand
 {
-	int a;
+public:
+    X64OperandType type;
+    X64RegValue regValue;               // type 为 Register 时有效
+    uint64_t ulongValue;                // type 为 ImmediateValue 时有效
+    std::string bstr;                   // type 为 ImmediateString 时有效
+    uint64_t symIndex;                  // type 为 Symbol 时有效,在符号列表的索引(为0表示找不到)
+    std::string str;                    // type 为 Symbol 或 ImmediateRaw 时有效,存符号字符串,或者立即数的字符串表达
+    MemoryAddressInfo ? addressInfo;    // type 为 MemoryAddressInfo时有效（为内存寻址的中间值，以 [ 开头产生此类型值）
+    MemoryAddressResult ? addressRes;   // type 为 MemoryAddress 时有效（为内存寻址结果值，以 ] 结尾则产生此类型值）
+
+    X64Operand();
 };
 
 #endif // ASMX64_OPERAND_H
