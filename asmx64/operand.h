@@ -383,7 +383,7 @@ class MemoryAddressResult
 public:
     MemoryAddressModifier modifier = MemoryAddressModifier::None;   // 寻址目标大小修饰
     MemoryAddressType type = MemoryAddressType::None;               // 寻址类型
-    uint8_t code[8];                                                // 寻址产生的机器码(字节串)
+    uint8_t code[16];                                               // 寻址产生的机器码(字节串)
     int codeSize = 0;                                               // 机器码长度
     int relocOffset = 0;                                            // 需要重定位时，重定位位置位于本codebyte数组中的偏移
     X64RegValue indirectReg = X64RegValue::None;                    // 间接寻址寄存器(寄存器间接寻址是mod==00, 寄存器间接寻址不能是rsp/r12,带rsp/r12的必须转变为基址+变址寻址)
@@ -410,7 +410,7 @@ public:
     uint64_t symIndex;                  // type 为 Symbol 时有效,在符号列表的索引(为0表示找不到)
     std::string str;                    // type 为 Symbol 或 ImmediateRaw 时有效,存符号字符串,或者立即数的字符串表达
     MemoryAddressInfo addressInfo;      // type 为 MemoryAddressInfo时有效（为内存寻址的中间值，以 [ 开头产生此类型值）
-    ////MemoryAddressResult ? addressRes;   // type 为 MemoryAddress 时有效（为内存寻址结果值，以 ] 结尾则产生此类型值）
+    MemoryAddressResult addressRes;     // type 为 MemoryAddress 时有效（为内存寻址结果值，以 ] 结尾则产生此类型值）
 
     X64Operand();
     X64Operand(X64RegValue newValue);

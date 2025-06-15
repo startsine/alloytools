@@ -558,7 +558,7 @@ X64Operand X64Expression::calcAddressExpressionMinOperator(const X64Token * left
             op1.scale = (uint8_t)op2.disp32;
             u64SetFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasReg2);
             op1.reg2 = op1.reg1;
-            enum64ClearFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasReg1);
+            u64ClearFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasReg1);
             op1.reg1 = X64RegValue::None;
             ret = X64Operand(op1);
             return ret;
@@ -624,17 +624,17 @@ X64Operand X64Expression::memoryAddressInfoToRet(const X64Operand & op)
             }
             else {
                 //// 报错退出
-                return;
+                return target;
             }
             //
             if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasExplicitScale) && (info.reg2 == X64RegValue::RSP || info.reg2 == X64RegValue::ESP)) {
                 //// 这里报错，RSP/ESP不允许做变址寄存器（注:R12可以做变址寄存器）
-                return;
+                return target;
             }
             if ((info.reg1 == X64RegValue::RSP || info.reg1 == X64RegValue::ESP) && (info.reg2 == X64RegValue::RSP || info.reg2 == X64RegValue::ESP)) {
                 //// 这里报错，RSP/ESP不允许做变址寄存器（注:R12可以做变址寄存器）
                 //// 基址和变址寄存器都是RSP的情况
-                return;
+                return target;
             }
             if ((info.reg2 == X64RegValue::RSP || info.reg2 == X64RegValue::ESP) && (info.reg1 != X64RegValue::RSP && info.reg1 != X64RegValue::ESP)) {
                 // 变址为rsp/rsp时,基址为其他寄存器时，把基址与变址对调 (rsp/esp必须做基址寄存器)
@@ -722,93 +722,91 @@ X64Operand X64Expression::memoryAddressInfoToRet(const X64Operand & op)
             if (X64RegUtil::isRexExtensionReg(info.reg2))
                 u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withRex_X);
         }
-        else if (info.type.HasFlag(MemoryAddressType.hasReg1) && (!info.type.HasFlag(MemoryAddressType.hasReg2))) {
+        else if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasReg1) && !u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasReg2)) {
             // 下面处理有 reg1 , 无 reg2 的情况
             int dispStart = 1;
-            use64 = X64RegUtil.Is64BitReg(info.reg1);
+            use64 = X64RegUtil::is64BitReg(info.reg1);
             //
             if (!use64)
-                ret.type |= MemoryAddressType.with32bitRegAddr;             // 用32位寄存器做内存寻址需要加0x67前缀
+                u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::with32bitRegAddr);    // 用32位寄存器做内存寻址需要加0x67前缀        
             //
-            ret.codeSize = 1;
-            ret.type |= MemoryAddressType.withModRM;
-            ret.code[0] = 0;
-            if (info.type.HasFlag(MemoryAddressType.hasDisp) || info.type.HasFlag(MemoryAddressType.hasSymbol)) {
-                if (info.type.HasFlag(MemoryAddressType.hasSymbol)) {
-                    // 如果有符号重定位。自动有disp32， 即使是disp8也会变成disp32
-                    ret.type |= MemoryAddressType.withDisp32;
-                    ret.type |= MemoryAddressType.withSymbol;
-                    ret.symName = info.symName;
-                    ret.relocType = RelocType.ADDR32;
+            res.codeSize = 1;
+            u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withModRM);
+            res.code[0] = 0;
+            if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasSymbol)) {
+                // 如果有符号重定位。自动有disp32， 即使是disp8也会变成disp32
+                u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withDisp32);
+                u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withSymbol);
+                res.symName = info.symName;
+                res.relocType = RelocType::ADDR32;
+            }
+            else if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasDisp)) {
+                long disp = (long)info.disp32;
+                if (disp >= (-128) && disp <= 127) {
+                    u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withDisp8);
                 }
                 else {
-                    long disp = (long)info.disp32;
-                    if (disp >= (-128) && disp <= 127) {
-                        ret.type |= MemoryAddressType.withDisp8;
-                    }
-                    else {
-                        ret.type |= MemoryAddressType.withDisp32;
-                    }
+                    u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withDisp32);
                 }
             }
             else {
-                // 这里判断没有hasDisp时，基地址又是rbp/r13时，必须默默加一个为 0 的 disp8
-                if (info.reg1 == X64RegValue.RBP || info.reg1 == X64RegValue.R13 || info.reg1 == X64RegValue.EBP || info.reg1 == X64RegValue.R13D) {
-                    ret.type |= MemoryAddressType.withDisp8;
+                // 这里判断没有hasDisp时，基地址又是rbp/r13时，必须默默加一个为 0 的 disp8 
+                if (info.reg1 == X64RegValue::RBP || info.reg1 == X64RegValue::R13 || info.reg1 == X64RegValue::EBP || info.reg1 == X64RegValue::R13D) {
+                    u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withDisp8);
                     info.disp32 = 0;
                 }
             }
             // 基地址是RSP/R12的，需要用 SIB 来表达
-            if (info.reg1 == X64RegValue.RSP || info.reg1 == X64RegValue.ESP || info.reg1 == X64RegValue.R12 || info.reg1 == X64RegValue.R12D) {
+            if (info.reg1 == X64RegValue::RSP || info.reg1 == X64RegValue::ESP || info.reg1 == X64RegValue::R12 || info.reg1 == X64RegValue::R12D) {
                 dispStart++;
-                ret.codeSize++;
-                ret.type |= MemoryAddressType.withSIB;
-                ret.code[0] = 0x04;                             // modRM 中的 r/m 域设置为 100b
-                ret.code[1] = 0x24;                             // SIB 中的 scale 设置为 00b, index 设置为 100b, base 设置为 100b (index==100b表示 index和sacle无效)
+                res.codeSize++;
+                u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withSIB);
+                res.code[0] = 0x04;                             // modRM 中的 r/m 域设置为 100b
+                res.code[1] = 0x24;                             // SIB 中的 scale 设置为 00b, index 设置为 100b, base 设置为 100b (index==100b表示 index和sacle无效)
             }
             else {
-                baseValue = (byte)((uint)(info.reg1) & 0x07);
-                ret.code[0] |= baseValue;                       // modRM 中的 r/m 域设置为 寄存器的值
+                baseValue = (uint8_t)((uint64_t)(info.reg1) & 0x07);
+                res.code[0] |= baseValue;                       // modRM 中的 r/m 域设置为 寄存器的值
             }
             //
-            if (ret.type.HasFlag(MemoryAddressType.withDisp8)) {
-                ret.code[0] |= (0x01 << 6);                             // disp8 设置 mod == 01b
-                ret.codeSize += 1;
-                ret.code[dispStart + 0] = (byte)(info.disp32 & 0xff);
+            if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::withDisp8)) {
+                res.code[0] |= (0x01 << 6);                             // disp8 设置 mod == 01b
+                res.codeSize += 1;
+                res.code[dispStart + 0] = (uint8_t)(info.disp32 & 0xff);
             }
-            else if (ret.type.HasFlag(MemoryAddressType.withDisp32)) {
-                ret.code[0] |= (0x02 << 6);                             // disp32 设置 mod == 10b
-                ret.codeSize += 4;
-                ret.code[dispStart + 0] = (byte)(info.disp32 & 0xff);
-                ret.code[dispStart + 1] = (byte)((info.disp32 >> 8) & 0xff);
-                ret.code[dispStart + 2] = (byte)((info.disp32 >> 16) & 0xff);
-                ret.code[dispStart + 3] = (byte)((info.disp32 >> 24) & 0xff);
-                if (ret.type.HasFlag(MemoryAddressType.withSymbol)) {
-                    ret.relocOffset = dispStart;
+            else if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::withDisp32)) {
+                res.code[0] |= (0x02 << 6);                             // disp32 设置 mod == 10b
+                res.codeSize += 4;
+                res.code[dispStart + 0] = (uint8_t)(info.disp32 & 0xff);
+                res.code[dispStart + 1] = (uint8_t)((info.disp32 >> 8) & 0xff);
+                res.code[dispStart + 2] = (uint8_t)((info.disp32 >> 16) & 0xff);
+                res.code[dispStart + 3] = (uint8_t)((info.disp32 >> 24) & 0xff);
+                if (u64HasFlag((uint64_t)res.type, (uint64_t)MemoryAddressType::withSymbol)) {
+                    res.relocOffset = dispStart;
                 }
             }
             // 是否需要扩展 REX
-            if (X64RegUtil.IsRexExtensionReg(info.reg1))
-                ret.type |= MemoryAddressType.withRex_B;
+            if (X64RegUtil::isRexExtensionReg(info.reg1))
+                u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withRex_B);
         }
-        else if ((!info.type.HasFlag(MemoryAddressType.hasReg1)) && info.type.HasFlag(MemoryAddressType.hasReg2)) {
+        else if (!u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasReg1) && u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasReg2)) {
             // 下面处理没 reg1 , 有 reg2 的情况 (没有基址寄存器，但是有变址寄存器，必须后面带一个disp32作为基地址)
-            if (info.reg2 == X64RegValue.RSP || info.reg2 == X64RegValue.ESP) {
+            if (info.reg2 == X64RegValue::RSP || info.reg2 == X64RegValue::ESP) {
                 //// 这里报错，RSP/ESP不允许做变址寄存器（注:R12可以做变址寄存器）
                 //// 基址和变址寄存器都是RSP的情况
-                return;
+                return target;
             }
             //
-            use64 = X64RegUtil.Is64BitReg(info.reg2);
+            use64 = X64RegUtil::is64BitReg(info.reg2);
             //
             if (!use64)
-                ret.type |= MemoryAddressType.with32bitRegAddr;             // 用32位寄存器做内存寻址需要加0x67前缀
-            if (!info.type.HasFlag(MemoryAddressType.hasDisp)) {
+                u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::with32bitRegAddr); // 用32位寄存器做内存寻址需要加0x67前缀        
+            if (!u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasDisp)) {
                 info.disp32 = 0;
             }
-            ret.type |= MemoryAddressType.withDisp32;
+            u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withDisp32);
             // mod == 00，r/m == 100，base == 101时，base基址寄存器字段并不是表示 RBP/EBP/R13，而是要忽略这个基址寄存器，不存在基址寄存器，只存在变址寄存器，并把一个 32 位的偏移量作为基地址。
-            if (info.type.HasFlag(MemoryAddressType.hasExplicitScale)) {
+            if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasExplicitScale)) {
                 switch (info.scale) {
                 case 1:
                     scaleValue = 0;
@@ -824,96 +822,95 @@ X64Operand X64Expression::memoryAddressInfoToRet(const X64Operand & op)
                     break;
                 }
             }
-            indexValue = (byte)((uint)(info.reg2) & 0x07);
-            ret.type |= MemoryAddressType.withSIB;
-            ret.type |= MemoryAddressType.withModRM;
-            ret.codeSize = 6;
-            ret.code[0] = 0x04;     // 0b00000100, mod设为00b, reg未设定, rm=100表示使用SIB
-            ret.code[1] = (byte)(scaleValue << 6);          // SIB的组成是 scale(2bit)、index(3bit)、base(2bit)
-            ret.code[1] |= (byte)(indexValue << 3);
-            ret.code[1] |= 0x05;                            // base设置为 101b (base==101b表示必须带disp做偏移量，此时如果mod==00b，则表示没有基址寄存器,disp的数值作为基址)
-            ret.code[2] = (byte)(info.disp32 & 0xff);
-            ret.code[3] = (byte)((info.disp32 >> 8) & 0xff);
-            ret.code[4] = (byte)((info.disp32 >> 16) & 0xff);
-            ret.code[5] = (byte)((info.disp32 >> 24) & 0xff);
-            if (info.type.HasFlag(MemoryAddressType.hasSymbol)) {
-                ret.type |= MemoryAddressType.withSymbol;
-                ret.symName = info.symName;
-                ret.relocType = RelocType.ADDR32;
-                ret.relocOffset = 2;
+            indexValue = (uint8_t)((uint64_t)(info.reg2) & 0x07);
+            u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withSIB);
+            u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withModRM);
+            res.codeSize = 6;
+            res.code[0] = 0x04;     // 0b00000100, mod设为00b, reg未设定, rm=100表示使用SIB
+            res.code[1] = (uint8_t)(scaleValue << 6);          // SIB的组成是 scale(2bit)、index(3bit)、base(2bit)
+            res.code[1] |= (uint8_t)(indexValue << 3);
+            res.code[1] |= 0x05;                            // base设置为 101b (base==101b表示必须带disp做偏移量，此时如果mod==00b，则表示没有基址寄存器,disp的数值作为基址)
+            res.code[2] = (uint8_t)(info.disp32 & 0xff);
+            res.code[3] = (uint8_t)((info.disp32 >> 8) & 0xff);
+            res.code[4] = (uint8_t)((info.disp32 >> 16) & 0xff);
+            res.code[5] = (uint8_t)((info.disp32 >> 24) & 0xff);
+            if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasSymbol)) {
+                u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withSymbol);
+                res.symName = info.symName;
+                res.relocType = RelocType::ADDR32;
+                res.relocOffset = 2;
             }
             // 是否需要扩展 REX
-            if (X64RegUtil.IsRexExtensionReg(info.reg2))
-                ret.type |= MemoryAddressType.withRex_X;
+            if (X64RegUtil::isRexExtensionReg(info.reg2))
+                u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withRex_X);
         }
         else {          // 没有reg1和reg2的情况
-            if (info.type.HasFlag(MemoryAddressType.hasDisp) || info.type.HasFlag(MemoryAddressType.hasSymbol)) {
-                if (info.type.HasFlag(MemoryAddressType.hasAddr32)) {
+            if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasDisp) || u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasSymbol) ) {
+                if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasAddr32)) {
                     // 使用32位绝对地址，
                     // mod == 00，r/m == 100，base == 101时，base基址寄存器字段并不是表示 RBP/EBP/R13(因为必须带disp)，而是要忽略这个基址寄存器，不存在基址寄存器，只存在变址寄存器，并把后面的一个 32 位的偏移量作为基地址
-                    ret.type |= MemoryAddressType.withModRM;
-                    ret.type |= MemoryAddressType.withSIB;
-                    ret.type |= MemoryAddressType.withDisp32;
-                    ret.code[0] = 0x04;     // mod==00b, rm=100b
-                    ret.code[1] = 0x25;     // scale=00b, index==100b, base=101b
-                    ret.code[2] = (byte)(info.disp32 & 0xff);
-                    ret.code[3] = (byte)((info.disp32 >> 8) & 0xff);
-                    ret.code[4] = (byte)((info.disp32 >> 16) & 0xff);
-                    ret.code[5] = (byte)((info.disp32 >> 24) & 0xff);
-                    ret.codeSize = 6;
-                    if (info.type.HasFlag(MemoryAddressType.hasSymbol)) {
-                        ret.type |= MemoryAddressType.withSymbol;
-                        ret.symName = info.symName;
-                        ret.relocType = RelocType.ADDR32;
-                        ret.relocOffset = 2;
+                    u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withModRM);
+                    u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withSIB);
+                    u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withDisp32);
+                    res.code[0] = 0x04;     // mod==00b, rm=100b
+                    res.code[1] = 0x25;     // scale=00b, index==100b, base=101b
+                    res.code[2] = (uint8_t)(info.disp32 & 0xff);
+                    res.code[3] = (uint8_t)((info.disp32 >> 8) & 0xff);
+                    res.code[4] = (uint8_t)((info.disp32 >> 16) & 0xff);
+                    res.code[5] = (uint8_t)((info.disp32 >> 24) & 0xff);
+                    res.codeSize = 6;
+                    if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasSymbol)) {
+                        u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withSymbol);
+                        res.symName = info.symName;
+                        res.relocType = RelocType::ADDR32;
+                        res.relocOffset = 2;
                     }
                 }
-                else if (info.type.HasFlag(MemoryAddressType.hasAddr64)) {
-                    // 使用64位绝对地址, 只有AL/AX/EAX/RAX 的 mov 指令有效
-                    ret.type |= MemoryAddressType.with64bitAbsAddr;
-                    ret.code[0] = (byte)(info.disp32 & 0xff);
-                    ret.code[1] = (byte)((info.disp32 >> 8) & 0xff);
-                    ret.code[2] = (byte)((info.disp32 >> 16) & 0xff);
-                    ret.code[3] = (byte)((info.disp32 >> 24) & 0xff);
-                    ret.code[4] = (byte)((info.disp32 >> 32) & 0xff);
-                    ret.code[5] = (byte)((info.disp32 >> 40) & 0xff);
-                    ret.code[6] = (byte)((info.disp32 >> 48) & 0xff);
-                    ret.code[7] = (byte)((info.disp32 >> 56) & 0xff);
-                    ret.codeSize = 8;
-                    if (info.type.HasFlag(MemoryAddressType.hasSymbol)) {
-                        ret.type |= MemoryAddressType.withSymbol;
-                        ret.symName = info.symName;
-                        ret.relocType = RelocType.ADDR64;
-                        ret.relocOffset = 0;
+                else if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasAddr64)) {
+                    // 使用64位绝对地址, 只有 mov 64位立即数的指令有效
+                    u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::with64bitAbsAddr);
+                    res.code[0] = (uint8_t)(info.disp32 & 0xff);
+                    res.code[1] = (uint8_t)((info.disp32 >> 8) & 0xff);
+                    res.code[2] = (uint8_t)((info.disp32 >> 16) & 0xff);
+                    res.code[3] = (uint8_t)((info.disp32 >> 24) & 0xff);
+                    res.code[4] = (uint8_t)((info.disp32 >> 32) & 0xff);
+                    res.code[5] = (uint8_t)((info.disp32 >> 40) & 0xff);
+                    res.code[6] = (uint8_t)((info.disp32 >> 48) & 0xff);
+                    res.code[7] = (uint8_t)((info.disp32 >> 56) & 0xff);
+                    res.codeSize = 8;
+                    if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasSymbol)) {
+                        u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withSymbol);
+                        res.symName = info.symName;
+                        res.relocType = RelocType::ADDR64;
+                        res.relocOffset = 0;
                     }
                 }
                 else {
                     // PC 相对寻址
                     // mod==00b, r/m=101b 表示只采用 rip 相对寻址(相对下一条指令) - 注:x86规定rbp/r13必须带8/32的偏移量，如mod==00b则没有偏移量，用以表达rip相对寻址 
-                    ret.type |= MemoryAddressType.withModRM;
-                    ret.code[0] = 0x05;             // mod=00b, reg未知, r/m=101b
-                    ret.code[1] = (byte)(info.disp32 & 0xff);
-                    ret.code[2] = (byte)((info.disp32 >> 8) & 0xff);
-                    ret.code[3] = (byte)((info.disp32 >> 16) & 0xff);
-                    ret.code[4] = (byte)((info.disp32 >> 24) & 0xff);
-                    ret.codeSize = 5;
-                    if (info.type.HasFlag(MemoryAddressType.hasSymbol)) {
-                        ret.type |= MemoryAddressType.withSymbol;
-                        ret.symName = info.symName;
-                        ret.relocType = RelocType.REL32;
-                        ret.relocOffset = 1;
+                    u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withModRM);
+                    res.code[0] = 0x05;             // mod=00b, reg未知, r/m=101b
+                    res.code[1] = (uint8_t)(info.disp32 & 0xff);
+                    res.code[2] = (uint8_t)((info.disp32 >> 8) & 0xff);
+                    res.code[3] = (uint8_t)((info.disp32 >> 16) & 0xff);
+                    res.code[4] = (uint8_t)((info.disp32 >> 24) & 0xff);
+                    res.codeSize = 5;
+                    if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasSymbol)) {
+                        u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withSymbol);
+                        res.symName = info.symName;
+                        res.relocType = RelocType::REL32;
+                        res.relocOffset = 1;
                     }
                 }
             }
             else {
                 //// 报错
-                return;
+                return target;
             }
         }
 
-        op.type = X64OperandType.MemoryAddress;
-        op.addressRes = ret;
-        //MemoryAddress
+        target.type = X64OperandType::MemoryAddress;
+        target.addressRes = res;
     }
 
     return target;
