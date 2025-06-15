@@ -383,7 +383,7 @@ class MemoryAddressResult
 public:
     MemoryAddressModifier modifier = MemoryAddressModifier::None;   // 寻址目标大小修饰
     MemoryAddressType type = MemoryAddressType::None;               // 寻址类型
-    std::string code;                                               // 寻址产生的机器码(字节串)
+    uint8_t code[8];                                                // 寻址产生的机器码(字节串)
     int codeSize = 0;                                               // 机器码长度
     int relocOffset = 0;                                            // 需要重定位时，重定位位置位于本codebyte数组中的偏移
     X64RegValue indirectReg = X64RegValue::None;                    // 间接寻址寄存器(寄存器间接寻址是mod==00, 寄存器间接寻址不能是rsp/r12,带rsp/r12的必须转变为基址+变址寻址)
@@ -423,6 +423,9 @@ class X64RegUtil
 {
 public:
     static bool is32Or64BitReg(X64RegValue reg);
+    static bool is64BitReg(X64RegValue reg);
+    static bool is32BitReg(X64RegValue reg);
+    static bool isRexExtensionReg(X64RegValue reg);
 };
 
 #endif // ASMX64_OPERAND_H

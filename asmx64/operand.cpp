@@ -31,8 +31,25 @@ X64Operand::X64Operand(const MemoryAddressInfo & info)
 
 bool X64RegUtil::is32Or64BitReg(X64RegValue reg)
 {
-    return enum64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::Common) && 
-        (enum64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::REG_64bit) || enum64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::REG_32bit));
+    return u64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::Common) &&
+        (u64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::REG_64bit) || u64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::REG_32bit));
+}
+
+bool X64RegUtil::is64BitReg(X64RegValue reg)
+{
+    return u64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::Common) &&
+        u64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::REG_64bit);
+}
+
+bool X64RegUtil::is32BitReg(X64RegValue reg)
+{
+    return u64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::Common) &&
+        u64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::REG_32bit);
+}
+
+bool X64RegUtil::isRexExtensionReg(X64RegValue reg)
+{
+    return u64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::REXPreflx_E);
 }
 
 
