@@ -604,7 +604,7 @@ X64Operand X64Expression::calcAddressExpressionMinOperator(const X64Token * left
 X64Operand X64Expression::memoryAddressInfoToRet(const X64Operand & op)
 {
     X64Operand target;         // 默认为空结果
-    MemoryAddressResult res;
+    MemoryAddressResult & res = target.addressRes;
     
     if (op.type == X64OperandType::MemoryAddressInfo) {
         MemoryAddressInfo info = op.addressInfo;            //  复制，中途可能需要改写
@@ -910,7 +910,6 @@ X64Operand X64Expression::memoryAddressInfoToRet(const X64Operand & op)
         }
 
         target.type = X64OperandType::MemoryAddress;
-        target.addressRes = res;
     }
 
     return target;
