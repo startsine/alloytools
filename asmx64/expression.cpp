@@ -703,12 +703,12 @@ X64Operand X64Expression::memoryAddressInfoToRet(const X64Operand & op)
             res.code[1] = (uint8_t)(scaleValue << 6);          // SIB的组成是 scale(2bit)、index(3bit)、base(2bit)
             res.code[1] |= (uint8_t)(indexValue << 3);
             res.code[1] |= baseValue;
-            if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::withDisp8)) {
+            if (u64HasFlag((uint64_t)res.type, (uint64_t)MemoryAddressType::withDisp8)) {
                 res.code[0] |= (0x01 << 6);                             // disp8 设置 mod == 01b
                 res.codeSize += 1;
                 res.code[2] = (uint8_t)(info.disp32 & 0xff);
             }
-            else if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::withDisp32)) {
+            else if (u64HasFlag((uint64_t)res.type, (uint64_t)MemoryAddressType::withDisp32)) {
                 res.code[0] |= (0x02 << 6);                             // disp32 设置 mod == 10b
                 res.codeSize += 4;
                 res.code[2] = (uint8_t)(info.disp32 & 0xff);
@@ -769,12 +769,12 @@ X64Operand X64Expression::memoryAddressInfoToRet(const X64Operand & op)
                 res.code[0] |= baseValue;                       // modRM 中的 r/m 域设置为 寄存器的值
             }
             //
-            if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::withDisp8)) {
+            if (u64HasFlag((uint64_t)res.type, (uint64_t)MemoryAddressType::withDisp8)) {
                 res.code[0] |= (0x01 << 6);                             // disp8 设置 mod == 01b
                 res.codeSize += 1;
                 res.code[dispStart + 0] = (uint8_t)(info.disp32 & 0xff);
             }
-            else if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::withDisp32)) {
+            else if (u64HasFlag((uint64_t)res.type, (uint64_t)MemoryAddressType::withDisp32)) {
                 res.code[0] |= (0x02 << 6);                             // disp32 设置 mod == 10b
                 res.codeSize += 4;
                 res.code[dispStart + 0] = (uint8_t)(info.disp32 & 0xff);
