@@ -99,12 +99,6 @@ X64Operand X64Expression::calcAddressExpression(int start, int end)
     return calcRet;
 }
 
-// 计算寻址操作的一个最小单元操作
-X64Operand X64Expression::calcAddressExpressionMinOperator(const X64Token * left, const X64Token * operatorToken, const X64Token * right)
-{
-    return X64Operand();
-}
-
 // 计算寻址表达式表达式内部值
 X64Operand X64Expression::calcAddressExpressionInnerValue(std::vector<X64Token> & xTokens)
 {
@@ -369,6 +363,241 @@ re_calculate:
             }
         }
     }
+}
+
+MemoryAddressInfo X64Expression::toTempMemoryAddressInfo(const X64Token * token)
+{
+    MemoryAddressInfo info;
+    switch (token->tokenType) {
+    case X64TokenType::Numeric:
+        enum64SetFlag((uint64_t*) &info.type, (uint64_t) MemoryAddressType::hasDisp);
+        info.disp32 = token->ulongValue;
+        break;
+    case X64TokenType::Register:
+        enum64SetFlag((uint64_t*)&info.type, (uint64_t)MemoryAddressType::hasReg1);
+        info.reg1 = token->regValue;
+        break;
+    case X64TokenType::TempOperand:
+        if (token->tempOperand.type != X64OperandType::Unknown) {
+            if (token->tempOperand.addressInfo.type != MemoryAddressType::None)
+                info = token->tempOperand.addressInfo;
+        }
+        break;
+    case X64TokenType::Symbol:
+        enum64SetFlag((uint64_t*)&info.type, (uint64_t)MemoryAddressType::hasSymbol);
+        info.symName = token->str;
+        break;
+    }
+    return info;
+}
+
+int X64Expression::getRegCountFromMemoryAddressInfo(MemoryAddressInfo & info)
+{
+    int count = 0;
+    if (enum64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasReg1))
+        count++;
+    if (enum64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasReg2))
+        count++;
+    return count;
+}
+
+// 计算寻址操作的一个最小单元操作
+X64Operand X64Expression::calcAddressExpressionMinOperator(const X64Token * left, const X64Token * operatorToken, const X64Token * right)
+{
+    X64Operand ret;         // 默认为空结果
+
+    if (operatorToken == nullptr)
+        return ret;
+    if (operatorToken->tokenType != X64TokenType::Operator)
+        return ret;
+    if (operatorToken->asmOperator == X64AsmOperator::PositiveSign || operatorToken->asmOperator == X64AsmOperator::NegativeSign) {
+        if (right == nullptr)
+            return ret;
+    }
+    else {
+        if (left == nullptr || right == nullptr)
+            return ret;
+        MemoryAddressInfo op1 = toTempMemoryAddressInfo(left);
+        MemoryAddressInfo op2 = toTempMemoryAddressInfo(right);
+        switch (operatorToken->asmOperator) {
+        case X64AsmOperator::Plus:
+        case X64AsmOperator::RegPlus: {
+            if (getRegCountFromMemoryAddressInfo(op1) + getRegCountFromMemoryAddressInfo(op2) >= 3) {
+                //// 寻址中不循序超过3个寄存器,报错
+                return ret;
+            }
+            if (enum64HasFlag((uint64_t)op1.type, (uint64_t)MemoryAddressType::hasExplicitScale) 
+                    && enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasExplicitScale)) {
+                //// 寻址中不能有2个变址索引,报错
+                return ret;
+            }
+            if (enum64HasFlag((uint64_t)op1.type, (uint64_t)MemoryAddressType::hasReg1)) {
+                if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasReg1)) {
+                    enum64SetFlag((uint64_t*) &op1.type, (uint64_t) MemoryAddressType::hasReg2);
+                    op1.reg2 = op2.reg1;
+                }
+                else if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasReg2)) {
+                    enum64SetFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasReg2);
+                    op1.reg2 = op2.reg2;
+                }
+            }
+            else {
+                if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasReg1)) {
+                    enum64SetFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasReg1);
+                    op1.reg1 = op2.reg1;
+                }
+                else if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasReg2)) {
+                    enum64SetFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasReg2);
+                    op1.reg2 = op2.reg2;
+                }
+            }
+            if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasExplicitScale)) {
+                enum64SetFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasExplicitScale);
+                op1.scale = op2.scale;
+            }
+            if (enum64HasFlag((uint64_t)op1.type, (uint64_t)MemoryAddressType::hasDisp)) {
+                if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasDisp)) {
+                    op1.disp32 += op2.disp32;
+                }
+            }
+            else {
+                if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasDisp)) {
+                    enum64SetFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasDisp);
+                    op1.disp32 = op2.disp32;
+                }
+            }
+            if (enum64HasFlag((uint64_t)op1.type, (uint64_t)MemoryAddressType::hasSymbol)) {
+                if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasSymbol)) {
+                    //// 报错，不允许两个符号来重定位
+                }
+            }
+            else {
+                if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasSymbol)) {
+                    enum64SetFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasSymbol);
+                    op1.symName = op2.symName;
+                }
+            }
+            ret = X64Operand(op1);
+            return ret;
+        }
+        case X64AsmOperator::Minus:
+        case X64AsmOperator::RegMinus: {
+            if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasReg1)) {
+                //// 被减数不能带寄存器
+                return ret;
+            }
+            if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasReg2)) {
+                //// 被减数不能带寄存器
+                return ret;
+            }
+            if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasExplicitScale)) {
+                //// 被减数不能带因子
+                return ret;
+            }
+            if (enum64HasFlag((uint64_t)op1.type, (uint64_t)MemoryAddressType::hasDisp)) {
+                if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasDisp)) {
+                    op1.disp32 -= op2.disp32;
+                }
+            }
+            else {
+                if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasDisp)) {
+                    op1.disp32 = (0 - op2.disp32);
+                }
+            }
+            ret = X64Operand(op1);
+            return ret;
+        }
+        case X64AsmOperator::RegMulti: {
+            if (getRegCountFromMemoryAddressInfo(op1) + getRegCountFromMemoryAddressInfo(op2) >= 2) {
+                //// 报错,两边操作数总寄存器个数大于或者等于2
+                return ret;
+            }
+            if (enum64HasFlag((uint64_t)op1.type, (uint64_t)MemoryAddressType::hasExplicitScale)) {
+                //// 不能带因子
+                return ret;
+            }
+            if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasExplicitScale)) {
+                //// 不能带因子
+                return ret;
+            }
+            if (enum64HasFlag((uint64_t)op1.type, (uint64_t)MemoryAddressType::hasReg2)) {
+                //// 不能带reg2
+                return ret;
+            }
+            if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasReg2)) {
+                //// 不能带reg2
+                return ret;
+            }
+            if (enum64HasFlag((uint64_t)op1.type, (uint64_t)MemoryAddressType::hasReg1)
+                && enum64HasFlag((uint64_t)op1.type, (uint64_t)MemoryAddressType::hasDisp) ) {
+                //// 不能带寄存器又带Disp
+                return ret;
+            }
+            if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasReg1)
+                && enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasDisp) ) {
+                //// 不能带寄存器又带Disp
+                return ret;
+            }
+            // 如果寄存器在右侧，则互换
+            if (enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasReg1)) {
+                MemoryAddressInfo tempForSwap;
+                tempForSwap = op2;
+                op2 = op1;
+                op1 = tempForSwap;
+            }
+            //
+            if (!enum64HasFlag((uint64_t)op2.type, (uint64_t)MemoryAddressType::hasDisp)) {
+                //// 报错,op2必须Disp
+                return ret;
+            }
+            if (op2.disp32 != 1 && op2.disp32 != 2 && op2.disp32 != 4 && op2.disp32 != 8) {
+                //// 报错,op2 disp 不是1/2/4/8
+                return ret;
+            }
+            enum64SetFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasExplicitScale);
+            op1.scale = (uint8_t)op2.disp32;
+            enum64SetFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasReg2);
+            op1.reg2 = op1.reg1;
+            enum64ClearFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasReg1);
+            op1.reg1 = X64RegValue::None;
+            ret = X64Operand(op1);
+            return ret;
+        }
+        case X64AsmOperator::Multiplication: {
+            if (op1.type != MemoryAddressType::hasDisp) {
+                //// 报错,乘法操作只能纯数字
+                return ret;
+            }
+            if (op2.type != MemoryAddressType::hasDisp) {
+                //// 报错,乘法操作只能纯数字
+                return ret;
+            }
+            enum64SetFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasDisp);
+            op1.disp32 = (uint64_t)(op1.disp32 * op2.disp32);
+            ret = X64Operand(op1);
+            return ret;
+        }
+        case X64AsmOperator::Division: {
+            if (op1.type != MemoryAddressType::hasDisp) {
+                //// 报错,除法操作只能纯数字
+                return ret;
+            }
+            if (op2.type != MemoryAddressType::hasDisp) {
+                //// 报错,除法操作只能纯数字
+                return ret;
+            }
+            if (op2.disp32 == 0) {
+                //// 报错,除法不能除以0
+                return ret;
+            }
+            enum64SetFlag((uint64_t*)&op1.type, (uint64_t)MemoryAddressType::hasDisp);
+            op1.disp32 = op1.disp32 / op2.disp32;
+            ret = X64Operand(op1);
+            return ret;
+        }
+        }
+    }
+    return ret;
 }
 
 // 寻址中间值转为内存寻址的结果值

@@ -409,7 +409,7 @@ public:
     std::string bstr;                   // type 为 ImmediateString 时有效
     uint64_t symIndex;                  // type 为 Symbol 时有效,在符号列表的索引(为0表示找不到)
     std::string str;                    // type 为 Symbol 或 ImmediateRaw 时有效,存符号字符串,或者立即数的字符串表达
-    ////MemoryAddressInfo ? addressInfo;    // type 为 MemoryAddressInfo时有效（为内存寻址的中间值，以 [ 开头产生此类型值）
+    MemoryAddressInfo addressInfo;      // type 为 MemoryAddressInfo时有效（为内存寻址的中间值，以 [ 开头产生此类型值）
     ////MemoryAddressResult ? addressRes;   // type 为 MemoryAddress 时有效（为内存寻址结果值，以 ] 结尾则产生此类型值）
 
     X64Operand();

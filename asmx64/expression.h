@@ -28,6 +28,10 @@ private:
     X64Operand memoryAddressInfoToRet(const X64Operand & op);
     // 计算寻址操作的一个最小单元操作
     static X64Operand calcAddressExpressionMinOperator(const X64Token * left, const X64Token * operatorToken, const X64Token * right);
+    // 将token转换为 MemoryAddressInfo 类型对象
+    static MemoryAddressInfo toTempMemoryAddressInfo(const X64Token * token);
+    // 获取 MemoryAddressInfo 对象中有存在几个寄存器了
+    static int getRegCountFromMemoryAddressInfo(MemoryAddressInfo & info);
 };
 
 
