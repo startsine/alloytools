@@ -4,6 +4,7 @@
 #include "asmx64.h"
 
 bool InsnMov::insnInitialized = false;
+std::list<OpcodeInfos> InsnMov::opcodeInfos;
 
 int InsnMov::process(X64Assembler &assembler, std::string insnStr, SourceLine &sourceLine, int pass)
 {

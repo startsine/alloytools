@@ -19,16 +19,15 @@ enum MatchType
     ctrlReg,                        // 操作数是CR0-CR15
 };
 
-enum class MatchForbid
-{
-    None = 0,
-    Forbid_8bit = 0x01,
-    Forbid_16bit = 0x02,
-    Forbid_32bit = 0x04,
-    Forbid_64bit = 0x08,
-    Forbid_mem = 0x10,
-};
+// 指令中禁止一些特殊匹配
+constexpr uint32_t MatchForbid_None = 0;
+constexpr uint32_t MatchForbid_8bit = 0x01;
+constexpr uint32_t MatchForbid_16bit = 0x02;
+constexpr uint32_t MatchForbid_32bit = 0x04;
+constexpr uint32_t MatchForbid_64bit = 0x08;
+constexpr uint32_t MatchForbid_mem = 0x10;
 
+// 指令生成标志
 constexpr uint32_t OpcodeFlag_None = 0;
 constexpr uint32_t OpcodeFlag_ModRM_R = 0x01;                 //  /r :     带 ModRM 并且 其中代表两个值，reg 和 r/m
 constexpr uint32_t OpcodeFlag_ModRM_Digit = 0x02;             //  /digit:  带 ModRM 并且 r/m 域代表r/m, reg 域代表 3bit 的额外 opcode
@@ -51,7 +50,7 @@ public:
     MatchType op2;
     MatchType op3;
     uint32_t opcodeFlag;
-    MatchForbid forbidInfo;
+    uint32_t forbidInfo;
     uint8_t digit;
     // 复位
     void reset();
