@@ -12,7 +12,7 @@ void OpcodeInfos::reset()
     this->op1 = MatchType::None;
     this->op2 = MatchType::None;
     this->op3 = MatchType::None;
-    this->opcodeFlag = OpcodeFlag::None;
+    this->opcodeFlag = OpcodeFlag_None;
     this->forbidInfo = MatchForbid::None;
     this->digit = 0;
 }

@@ -19,7 +19,7 @@ enum MatchType
     ctrlReg,                        // 操作数是CR0-CR15
 };
 
-enum MatchForbid
+enum class MatchForbid
 {
     None = 0,
     Forbid_8bit = 0x01,
@@ -29,18 +29,16 @@ enum MatchForbid
     Forbid_mem = 0x10,
 };
 
-enum OpcodeFlag
-{
-    None = 0,
-    ModRM_R = 0x01,                 //  /r :     带 ModRM 并且 其中代表两个值，reg 和 r/m
-    ModRM_Digit = 0x02,             //  /digit:  带 ModRM 并且 r/m 域代表r/m, reg 域代表 3bit 的额外 opcode
-    bit0Size = 0x04,                //  指令码的 bit0 代表操作数大小, bit0==0是为8bit, bit0==1是为 16/32/64 bit, 
-    bit3Size = 0x08,                //  指令码的 bit3 代表操作数大小, bit3==0是为8bit, bit3==1是为 16/32/64 bit
-    opcodeWithReg = 0x10,           //  将寄存器插入到 opcode 的 bit2-bit0 位置
-    withImm = 0x20,                 //  指令码最后带立即数作为操作数
-    withM64 = 0x40,                 //  指令码最后带64位立即数做寻址
-    RMInRight = 0x80,               //  该bit为1时表示匹配的 R/M 域放置于第2个操作数，为0则R/M 域放置于第1个操作数
-};
+constexpr uint32_t OpcodeFlag_None = 0;
+constexpr uint32_t OpcodeFlag_ModRM_R = 0x01;                 //  /r :     带 ModRM 并且 其中代表两个值，reg 和 r/m
+constexpr uint32_t OpcodeFlag_ModRM_Digit = 0x02;             //  /digit:  带 ModRM 并且 r/m 域代表r/m, reg 域代表 3bit 的额外 opcode
+constexpr uint32_t OpcodeFlag_bit0Size = 0x04;                //  指令码的 bit0 代表操作数大小, bit0==0是为8bit, bit0==1是为 16/32/64 bit, 
+constexpr uint32_t OpcodeFlag_bit3Size = 0x08;                //  指令码的 bit3 代表操作数大小, bit3==0是为8bit, bit3==1是为 16/32/64 bit
+constexpr uint32_t OpcodeFlag_opcodeWithReg = 0x10;           //  将寄存器插入到 opcode 的 bit2-bit0 位置
+constexpr uint32_t OpcodeFlag_withImm = 0x20;                 //  指令码最后带立即数作为操作数
+constexpr uint32_t OpcodeFlag_withM64 = 0x40;                 //  指令码最后带64位立即数做寻址
+constexpr uint32_t OpcodeFlag_RMInRight = 0x80;               //  该bit为1时表示匹配的 R/M 域放置于第2个操作数，为0则R/M 域放置于第1个操作数
+
 
 class OpcodeInfos
 {
@@ -52,7 +50,7 @@ public:
     MatchType op1;
     MatchType op2;
     MatchType op3;
-    OpcodeFlag opcodeFlag;
+    uint32_t opcodeFlag;
     MatchForbid forbidInfo;
     uint8_t digit;
     // 复位

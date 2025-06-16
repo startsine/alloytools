@@ -24,7 +24,7 @@ InsnMov::InsnMov()
     info.numberOfOperand = 2;
     info.op0 = MatchType::acc;
     info.op1 = MatchType::moffset64;
-    info.opcodeFlag = OpcodeFlag::bit0Size | OpcodeFlag::withM64;
+    info.opcodeFlag = OpcodeFlag_bit0Size | OpcodeFlag_withM64;
     opcodeInfos.push_back(info);
 }
 
