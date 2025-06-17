@@ -69,7 +69,7 @@ class X64Assembler;
 class IInsnProcessor
 {
 public:
-    virtual int process(X64Assembler & assembler, std::string insnStr, SourceLine & sourceLine, int pass) = 0;
+    virtual int process(X64Assembler &assembler, const std::string & insnStr, SourceLine &sourceLine, int pass) = 0;
     virtual InsnProcessFlag getInsnFlag() = 0;
 };
 
@@ -77,6 +77,8 @@ class BaseInsn: public IInsnProcessor
 {
 public:
 	InsnProcessFlag getInsnFlag() override;
+protected:
+    int processCpuIns(X64Assembler & assembler, const std::string & insnStr, SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos);
 };
 
 // 基本数据定义伪指令 (DB,DW,DD,DQ)

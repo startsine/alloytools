@@ -6,9 +6,9 @@
 bool InsnMov::insnInitialized = false;
 std::list<OpcodeInfos> InsnMov::opcodeInfos;
 
-int InsnMov::process(X64Assembler &assembler, std::string insnStr, SourceLine &sourceLine, int pass)
+int InsnMov::process(X64Assembler &assembler, const std::string & insnStr, SourceLine &sourceLine, int pass)
 {
-	return 0;
+	return processCpuIns(assembler, insnStr, sourceLine, pass, opcodeInfos);
 }
 
 InsnMov::InsnMov()

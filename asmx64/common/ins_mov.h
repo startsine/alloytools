@@ -9,7 +9,7 @@ class InsnMov : public BaseInsn
 {
 public:
     InsnMov();
-	int process(X64Assembler &assembler, std::string insnStr, SourceLine &sourceLine, int pass) override;
+	int process(X64Assembler &assembler, const std::string & insnStr, SourceLine &sourceLine, int pass) override;
 private:
     static bool insnInitialized;
     static std::list<OpcodeInfos> opcodeInfos;
