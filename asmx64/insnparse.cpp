@@ -27,13 +27,13 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
     printf("process %s. \n", insnStr.c_str());
 
     int insTotalSize = 0;
-    LinkedListNode<OpcodeInfos> ? currentNode;
+    ////LinkedListNode<OpcodeInfos> ? currentNode;
     OpcodeInfos ? info = null;
     OpcodeInfos ? matchedInfo = null;
 
     if (sourceLine.hasLabel) {
         if (pass == 1) {
-            X64Symbol ? sym = asm.globalSymbolList.GetSymbol(sourceLine.labelStr);
+            X64Symbol ? sym = assembler.globalSymbolList.getSymbol(sourceLine.labelStr);
             if (sym is null) {
                 X64Symbol symbol = new X64Symbol();
                 symbol.symbolName = sourceLine.labelStr;

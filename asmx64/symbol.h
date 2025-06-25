@@ -82,5 +82,16 @@ public:
 	size_t getCurrSectionIndex();
 };
 
+class X64Symbol
+{
+
+};
+
+class X64SymbolList
+{
+public:
+    X64Symbol getSymbol(const std::string str);
+};
+
 #endif // ASMX64_SYMBOL_H
 

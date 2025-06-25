@@ -14,6 +14,9 @@ private:
     std::list<SourceLinePrePro> sourceLinesP;           // 将源代码进行预处理的行
     std::list<SourceLine>    sourceLines;
 	X64SectionList 			 sectionList;
+public:
+    X64SymbolList globalSymbolList;
+
     /*
      private 
 
