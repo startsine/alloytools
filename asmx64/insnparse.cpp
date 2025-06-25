@@ -45,7 +45,7 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
                 asm.globalSymbolList.AddSymbol(symbol);
             }
             else {
-                //// ±¨´í£¬ÖØ¸´¶¨Òå·ûºÅ
+                //// æŠ¥é”™ï¼Œé‡å¤å®šä¹‰ç¬¦å·
                 return 0;
             }
         }
@@ -54,14 +54,14 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
         }
     }
 
-    int expressionsCount = sourceLine.expressions != null ? sourceLine.expressions.Count : 0;       // µ±Ç°Ö¸ÁîµÄ±í´ïÊ½µÄ¸öÊı 
+    int expressionsCount = sourceLine.expressions != null ? sourceLine.expressions.Count : 0;       // å½“å‰æŒ‡ä»¤çš„è¡¨è¾¾å¼çš„ä¸ªæ•° 
     currentNode = opcodeInfos.First;
     while (currentNode is not null) {
         info = currentNode.Value;
         if (info.numberOfOperand == expressionsCount) {
             if (info.numberOfOperand == 0) {
                 matchedInfo = noOperand;
-                break;                                              // ²»ĞèÒª²Ù×÷ÊıµÄÖ¸ÁîÖ±½ÓÆ¥Åä
+                break;                                              // ä¸éœ€è¦æ“ä½œæ•°çš„æŒ‡ä»¤ç›´æ¥åŒ¹é…
             }
             //
             if (expressionsCount == 1) {
@@ -89,7 +89,7 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
         currentNode = currentNode.Next;
     }
 
-    // matchedInfo·Ç¿ÕÔò±íÊ¾Æ¥Åä
+    // matchedInfoéç©ºåˆ™è¡¨ç¤ºåŒ¹é…
     if (matchedInfo is not null) {
         insTotalSize = matchedInfo.opcodes!.Length;
         MemoryAddressResult ? mem = null;
@@ -107,8 +107,8 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
         bool flagRexB = false;
         bool addr32bitPrefix = false;
         int bitSize = 0;
-        RelocInfo ? addrRelocInfo = null;         // Ñ°Ö·´úÂëÖĞµÄÖØ¶¨Î»ĞÅÏ¢
-        RelocInfo ? immRelocInfo = null;          // Á¢¼´Êı´úÂëÖĞµÄÖØ¶¨Î»ĞÅÏ¢
+        RelocInfo ? addrRelocInfo = null;         // å¯»å€ä»£ç ä¸­çš„é‡å®šä½ä¿¡æ¯
+        RelocInfo ? immRelocInfo = null;          // ç«‹å³æ•°ä»£ç ä¸­çš„é‡å®šä½ä¿¡æ¯
 
         switch (expressionsCount) {
         case 0: {
@@ -120,14 +120,14 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
         }
                 break;
         case 2: {
-            bitSize = getBaseInsnOpSize2(sourceLine, pass, opcodeInfos);       // µÃµ½Ö¸ÁîµÄ²Ù×÷ÊıµÄÎ»Êı´óĞ¡£¬·µ»Ø8/16/32/64
+            bitSize = getBaseInsnOpSize2(sourceLine, pass, opcodeInfos);       // å¾—åˆ°æŒ‡ä»¤çš„æ“ä½œæ•°çš„ä½æ•°å¤§å°ï¼Œè¿”å›8/16/32/64
             if (bitSize == 0) {
-                //// ±¨´í, ÎŞ·¨¾ö¶¨²Ù×÷ÊıÀàĞÍ
+                //// æŠ¥é”™, æ— æ³•å†³å®šæ“ä½œæ•°ç±»å‹
                 return 0;
             }
             if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_R) || matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_Digit)) {
-                // ´æÔÚ ModRM ×Ö¶Î
-                if (matchedInfo.op0 == MatchType.rm) {                          // Èç¹û op0 Æ¥ÅäÁË R/M Óò
+                // å­˜åœ¨ ModRM å­—æ®µ
+                if (matchedInfo.op0 == MatchType.rm) {                          // å¦‚æœ op0 åŒ¹é…äº† R/M åŸŸ
                     var operand0 = sourceLine.expressions ? [0].operand;
                     var operand1 = sourceLine.expressions ? [1].operand;
                     if (operand0!.type == X64OperandType.MemoryAddress) {
@@ -144,7 +144,7 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
                         regFieldInModRM = operand1.regValue;
                     }
                 }
-                else if (matchedInfo.op1 == MatchType.rm) {                     // Èç¹û op1 Æ¥ÅäÁË R/M Óò
+                else if (matchedInfo.op1 == MatchType.rm) {                     // å¦‚æœ op1 åŒ¹é…äº† R/M åŸŸ
                     var operand0 = sourceLine.expressions ? [0].operand;
                     var operand1 = sourceLine.expressions ? [1].operand;
                     if (operand1!.type == X64OperandType.MemoryAddress) {
@@ -162,7 +162,7 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
                     }
                 }
                 else {
-                    //// ±¨´í
+                    //// æŠ¥é”™
                     return 0;
                 }
                 //
@@ -185,12 +185,12 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
                 }
                 //
                 if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_Digit)) {
-                    // °Ñ²Ù×÷Âë²åÈëµ½ ModRM ÖĞµÄ reg Óò
+                    // æŠŠæ“ä½œç æ’å…¥åˆ° ModRM ä¸­çš„ reg åŸŸ
                     addrCode[0] &= 0xC7;
                     addrCode[0] |= (byte)((matchedInfo.digit & 0x07) << 3);
                 }
                 else { //HasFlag(OpcodeFlag.ModRM_R)
-                    // ½«¼Ä´æÆ÷²åÈëµ½ ModRM ÖĞµÄ reg Óò
+                    // å°†å¯„å­˜å™¨æ’å…¥åˆ° ModRM ä¸­çš„ reg åŸŸ
                     if (regFieldInModRM != X64RegValue.None) {
                         uint regValue = (uint)regFieldInModRM;
                         addrCode[0] &= 0xC7;
@@ -217,19 +217,19 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
                 }
                 if (bitSize == 64)
                     flagRexW = true;
-                // ÏÂÃæ»ñµÃÇ°×º²Ù×÷Âë
+                // ä¸‹é¢è·å¾—å‰ç¼€æ“ä½œç 
                 getPrefixCode(ref prefixCodeSize, sourceLine, matchedInfo, addr32bitPrefix, bitSize, flagRexE, flagRexW, flagRexR, flagRexX, flagRexB);
-                // ´¦Àíimm
+                // å¤„ç†imm
                 if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.withImm)) {
 
                 }
-                // ¸´ÖÆÖ¸ÁîÂë
+                // å¤åˆ¶æŒ‡ä»¤ç 
                 byte[] ? newCode = CombineCode(prefixCodeSize, insCodeSize, addrCodeSize, immCodeSize);
                 if (newCode is not null) {
                     if (pass > 1) {
                         int oldCodeSize = (sourceLine.code != null) ? sourceLine.code.Length : 0;
                         if (oldCodeSize != newCode.Length) {
-                            asm.SetNeedRescan(true);                // ´úÂë´óĞ¡·¢Éú±ä»¯ÁË£¬ĞèÒªÖØĞÂÉ¨Ãè
+                            asm.SetNeedRescan(true);                // ä»£ç å¤§å°å‘ç”Ÿå˜åŒ–äº†ï¼Œéœ€è¦é‡æ–°æ‰«æ
                         }
                     }
                     sourceLine.code = newCode;
@@ -248,14 +248,14 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
         }
                 break;
         default: {
-            //// ±¨´í£¬Ã»ÓĞ³¬¹ı3¸ö²Ù×÷ÊıµÄÖ¸Áî
+            //// æŠ¥é”™ï¼Œæ²¡æœ‰è¶…è¿‡3ä¸ªæ“ä½œæ•°çš„æŒ‡ä»¤
         }
                  break;
         }
 
     }
     else {
-        //// ±¨´í£¬ÕÒ²»µ½Ö¸ÁîÆ¥Åä
+        //// æŠ¥é”™ï¼Œæ‰¾ä¸åˆ°æŒ‡ä»¤åŒ¹é…
         return 0;
     }
 
@@ -263,14 +263,14 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
      public enum OpcodeFlag: uint
 {
     None = 0,
-    ModRM_R = 0x01,                 //  /r :     ´ø ModRM ²¢ÇÒ ÆäÖĞ´ú±íÁ½¸öÖµ£¬reg ºÍ r/m
-    ModRM_Digit = 0x02,             //  /digit:  ´ø ModRM ²¢ÇÒ r/m Óò´ú±ír/m, reg Óò´ú±í 3bit µÄ¶îÍâ opcode
-    bit0Size = 0x04,                //  Ö¸ÁîÂëµÄ bit0 ´ú±í²Ù×÷Êı´óĞ¡, bit0==0ÊÇÎª8bit, bit0==1ÊÇÎª 16/32/64 bit,
-    bit3Size = 0x08,                //  Ö¸ÁîÂëµÄ bit3 ´ú±í²Ù×÷Êı´óĞ¡, bit3==0ÊÇÎª8bit, bit3==1ÊÇÎª 16/32/64 bit
-    opcodeWithReg = 0x10,           //  ½«¼Ä´æÆ÷²åÈëµ½ opcode µÄ bit2-bit0 Î»ÖÃ
-    withImm = 0x20,                 //  Ö¸ÁîÂë×îºó´øÁ¢¼´Êı×÷Îª²Ù×÷Êı
+    ModRM_R = 0x01,                 //  /r :     å¸¦ ModRM å¹¶ä¸” å…¶ä¸­ä»£è¡¨ä¸¤ä¸ªå€¼ï¼Œreg å’Œ r/m
+    ModRM_Digit = 0x02,             //  /digit:  å¸¦ ModRM å¹¶ä¸” r/m åŸŸä»£è¡¨r/m, reg åŸŸä»£è¡¨ 3bit çš„é¢å¤– opcode
+    bit0Size = 0x04,                //  æŒ‡ä»¤ç çš„ bit0 ä»£è¡¨æ“ä½œæ•°å¤§å°, bit0==0æ˜¯ä¸º8bit, bit0==1æ˜¯ä¸º 16/32/64 bit,
+    bit3Size = 0x08,                //  æŒ‡ä»¤ç çš„ bit3 ä»£è¡¨æ“ä½œæ•°å¤§å°, bit3==0æ˜¯ä¸º8bit, bit3==1æ˜¯ä¸º 16/32/64 bit
+    opcodeWithReg = 0x10,           //  å°†å¯„å­˜å™¨æ’å…¥åˆ° opcode çš„ bit2-bit0 ä½ç½®
+    withImm = 0x20,                 //  æŒ‡ä»¤ç æœ€åå¸¦ç«‹å³æ•°ä½œä¸ºæ“ä½œæ•°
     withM64 = 0x40,
-    RMInRight = 0x80,               //  ¸ÃbitÎª1Ê±±íÊ¾Æ¥ÅäµÄ R/M Óò·ÅÖÃÓÚµÚ2¸ö²Ù×÷Êı£¬Îª0ÔòR/M Óò·ÅÖÃÓÚµÚ1¸ö²Ù×÷Êı
+    RMInRight = 0x80,               //  è¯¥bitä¸º1æ—¶è¡¨ç¤ºåŒ¹é…çš„ R/M åŸŸæ”¾ç½®äºç¬¬2ä¸ªæ“ä½œæ•°ï¼Œä¸º0åˆ™R/M åŸŸæ”¾ç½®äºç¬¬1ä¸ªæ“ä½œæ•°
 }
          */
 
