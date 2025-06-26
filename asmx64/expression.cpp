@@ -287,7 +287,7 @@ re_calculate:
                 // 存在操作符列表则从右往左开始计算（因为遇到更高优先级的操作符才会继续 Add 到 operatorIndexes）
                 vector<X64Token> bTokens = aTokens;
                 X64Operand result;
-                for (int i = operatorIndexes.size() - 1; i >= 0; i--) {
+                for (int i = (int)(operatorIndexes.size() - 1); i >= 0; i--) {
                     int optIndex = operatorIndexes[i];
                     if ((int)bTokens.size() > optIndex + 2) {
                         //// 报错。操作符右边还有不止一个操作数

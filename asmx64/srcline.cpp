@@ -33,7 +33,7 @@ SourceLoader::~SourceLoader()
 void SourceLoader::loadFile(const std::string & filepath)
 {
 #ifdef _WIN32
-    int slen = filepath.length();
+    int slen = (int) filepath.length();
     shared_ptr<wchar_t> pw(new wchar_t[slen + 2], [](wchar_t * p) { delete[] p; } );
     int number = MultiByteToWideChar(CP_UTF8, 0, filepath.c_str(), -1, pw.get(), slen + 2);
     if (number == 0) {
@@ -53,7 +53,7 @@ void SourceLoader::loadFile(const std::string & filepath)
     if (readSize != 0) {
         endOfFile = false;
         curCursor = 2;
-        endCursor = 2 + readSize;
+        endCursor = (int)(2 + readSize);
     } else {
         endOfFile = true;
     }
@@ -81,7 +81,7 @@ uint8_t SourceLoader::getByte(bool * pEOF)
                 curCursor = 0;
                 endCursor = movSize;
                 if (fileStream != nullptr) {
-                    int n = fread(&buffer[movSize], 1, BUFF_SIZE, fileStream);
+                    int n = (int) fread(&buffer[movSize], 1, BUFF_SIZE, fileStream);
                     if (n > 0) {
                         endOfFile = false;
                         endCursor += n;

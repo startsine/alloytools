@@ -370,7 +370,7 @@ public:
     X64RegValue reg1 = X64RegValue::None;                   // 寄存器1
     X64RegValue reg2 = X64RegValue::None;                   // 寄存器2
     uint8_t scale = 0;                                      // 比例因子
-    uint32_t disp32 = 0;                                    // 内部用ulong以方便表达式计算，实际上是需要转回int产生机器码
+    uint64_t disp32 = 0;                                    // 内部用uint64以方便表达式计算，实际上是需要转回int产生机器码(注：64位立即数时采用uint64产生机器码)
     // public X64RegValue seg;                              // 段前缀 // 此标志注释掉，段前缀不应该放在源码层面，就是[]中括号内不应该有段前缀，段前缀应该放[]前面，例如 fs:[rbx]
     std::string symName;
     uint64_t symIndex = 0;
