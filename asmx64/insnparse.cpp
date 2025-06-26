@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include "asmx64.h"
 
+using namespace std;
+
 OpcodeInfos::OpcodeInfos()
 {
     reset();
@@ -28,6 +30,11 @@ InsnProcessFlag BaseInsn::getInsnFlag()
 }
 
 OpcodeInfos BaseInsn::noOperand;
+uint8_t BaseInsn::finalCode[32];           // 全体code
+uint8_t BaseInsn::prefixCode[32];          // 前缀部分的code
+uint8_t BaseInsn::insCode[32];             // 指令部分的code
+uint8_t BaseInsn::addrCode[32];            // 内存寻址部分的code
+uint8_t BaseInsn::immCode[32];             // 立即数部分的code
 
 int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnStr, SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos)
 {
@@ -112,8 +119,8 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
         bool flagRexB = false;
         bool addr32bitPrefix = false;
         int bitSize = 0;
-        RelocInfo * addrRelocInfo = nullptr;         // 寻址代码中的重定位信息
-        RelocInfo * immRelocInfo = nullptr;          // 立即数代码中的重定位信息
+        unique_ptr<RelocInfo> addrRelocInfo = nullptr;         // 寻址代码中的重定位信息
+        unique_ptr<RelocInfo> immRelocInfo = nullptr;          // 立即数代码中的重定位信息
 
         switch (expressionsCount) {
         case 0: {
@@ -149,20 +156,20 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
                         regFieldInModRM = operand1.regValue;
                     }
                 }
-                else if (matchedInfo.op1 == MatchType.rm) {                     // 如果 op1 匹配了 R/M 域
-                    var operand0 = sourceLine.expressions ? [0].operand;
-                    var operand1 = sourceLine.expressions ? [1].operand;
-                    if (operand1!.type == X64OperandType.MemoryAddress) {
-                        mem = operand1.addressRes;
+                else if (matchedInfo->op1 == MatchType::rm) {                     // 如果 op1 匹配了 R/M 域
+                    auto & operand0 = sourceLine.expressions[0].operand;
+                    auto & operand1 = sourceLine.expressions[1].operand;
+                    if (operand1.type == X64OperandType::MemoryAddress) {
+                        mem = & operand1.addressRes;
                     }
-                    else if (operand1!.type == X64OperandType.Register) {
+                    else if (operand1.type == X64OperandType::Register) {
                         rmFieldInModRM = operand1.regValue;
                     }
-                    else if (operand1!.type == X64OperandType.Symbol) {
+                    else if (operand1.type == X64OperandType::Symbol) {
                         // to-do
                     }
                     //
-                    if (operand0!.type == X64OperandType.Register) {
+                    if (operand0.type == X64OperandType::Register) {
                         regFieldInModRM = operand0.regValue;
                     }
                 }
@@ -171,76 +178,79 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
                     return 0;
                 }
                 //
-                Array.Copy(matchedInfo.opcodes, insCode, matchedInfo.opcodes.Length);
-                insCodeSize = matchedInfo.opcodes.Length;
-                Array.Copy(mem!.code, addrCode, mem.codeSize);
-                addrCodeSize = mem.codeSize;
+                memcpy(insCode, matchedInfo->opcodes, matchedInfo->opcodesSize);
+                insCodeSize = matchedInfo->opcodesSize;
+
+                memcpy(addrCode, mem->code, mem->codeSize);
+                addrCodeSize = mem->codeSize;
+                
                 //
-                if (mem.type.HasFlag(MemoryAddressType.withRex_X))
+                if (u64HasFlag((uint64_t)mem->type, (uint64_t)MemoryAddressType::withRex_X))
                     flagRexX = true;
-                if (mem.type.HasFlag(MemoryAddressType.withRex_B))
+                if (u64HasFlag((uint64_t)mem->type, (uint64_t)MemoryAddressType::withRex_B))
                     flagRexB = true;
-                if (mem.type.HasFlag(MemoryAddressType.with32bitRegAddr))
+                if (u64HasFlag((uint64_t)mem->type, (uint64_t)MemoryAddressType::with32bitRegAddr))
                     addr32bitPrefix = true;
-                if (mem.type.HasFlag(MemoryAddressType.hasSymbol)) {
-                    addrRelocInfo = new RelocInfo();
-                    addrRelocInfo.offset = (uint)mem.relocOffset;
-                    addrRelocInfo.type = mem.relocType;
-                    addrRelocInfo.name = mem.symName;
+                if (u64HasFlag((uint64_t)mem->type, (uint64_t)MemoryAddressType::hasSymbol)) {
+                    addrRelocInfo = make_unique<RelocInfo>();
+                    addrRelocInfo->offset = (uint32_t)mem->relocOffset;
+                    addrRelocInfo->type = mem->relocType;
+                    addrRelocInfo->name = mem->symName;
                 }
                 //
-                if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_Digit)) {
+                if (u32HasFlag(matchedInfo->opcodeFlag, OpcodeFlag_ModRM_Digit)) {
                     // 把操作码插入到 ModRM 中的 reg 域
                     addrCode[0] &= 0xC7;
-                    addrCode[0] |= (byte)((matchedInfo.digit & 0x07) << 3);
+                    addrCode[0] |= (uint8_t)((matchedInfo->digit & 0x07) << 3);
                 }
                 else { //HasFlag(OpcodeFlag.ModRM_R)
                     // 将寄存器插入到 ModRM 中的 reg 域
-                    if (regFieldInModRM != X64RegValue.None) {
-                        uint regValue = (uint)regFieldInModRM;
+                    if (regFieldInModRM != X64RegValue::None) {
+                        uint64_t regValue = (uint64_t)regFieldInModRM;
                         addrCode[0] &= 0xC7;
-                        addrCode[0] |= (byte)((regValue & 0x07) << 3);
+                        addrCode[0] |= (uint8_t)((regValue & 0x07) << 3);
                     }
-                    if (X64RegUtil.IsRexExtensionReg(regFieldInModRM))
+                    if (X64RegUtil::isRexExtensionReg(regFieldInModRM))
                         flagRexR = true;
-                    if (X64RegUtil.IsRexPrefixReg(regFieldInModRM))
+                    if (X64RegUtil::isRexPrefixReg(regFieldInModRM))
                         flagRexE = true;
                 }
                 //
-                if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.bit0Size)) {
+                if (u32HasFlag(matchedInfo->opcodeFlag, OpcodeFlag_bit0Size)) {
                     if (bitSize != 8) {
                         insCode[insCodeSize - 1] |= 0x01;
                     }
                 }
-                if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.bit3Size)) {
+                if (u32HasFlag(matchedInfo->opcodeFlag, OpcodeFlag_bit3Size)) {
                     if (bitSize != 8) {
                         insCode[insCodeSize - 1] |= 0x08;
                     }
                 }
-                if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.withImm)) {
+                if (u32HasFlag(matchedInfo->opcodeFlag, OpcodeFlag_withImm)) {
                     int bytesize = bitSize / 8;
+                    //// to-do
                 }
                 if (bitSize == 64)
                     flagRexW = true;
                 // 下面获得前缀操作码
-                getPrefixCode(ref prefixCodeSize, sourceLine, matchedInfo, addr32bitPrefix, bitSize, flagRexE, flagRexW, flagRexR, flagRexX, flagRexB);
+                getPrefixCode(prefixCodeSize, sourceLine, *matchedInfo, addr32bitPrefix, bitSize, flagRexE, flagRexW, flagRexR, flagRexX, flagRexB);
                 // 处理imm
-                if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.withImm)) {
+                if (u32HasFlag(matchedInfo->opcodeFlag, OpcodeFlag_withImm)) {
 
                 }
                 // 复制指令码
-                byte[] ? newCode = CombineCode(prefixCodeSize, insCodeSize, addrCodeSize, immCodeSize);
-                if (newCode is not null) {
+                int newCodeSize = combineCode(prefixCodeSize, insCodeSize, addrCodeSize, immCodeSize);
+                if (newCodeSize != 0) {
                     if (pass > 1) {
-                        int oldCodeSize = (sourceLine.code != null) ? sourceLine.code.Length : 0;
-                        if (oldCodeSize != newCode.Length) {
-                            asm.SetNeedRescan(true);                // 代码大小发生变化了，需要重新扫描
+                        int oldCodeSize = (int) sourceLine.code.size();
+                        if (oldCodeSize != newCodeSize) {
+                            assembler.setNeedRescan(true);                // 代码大小发生变化了，需要重新扫描
                         }
                     }
                     sourceLine.code = newCode;
                     RelocInfo[] ? relocs = CombineRelocs(addrRelocInfo, immRelocInfo, prefixCodeSize, insCodeSize, addrCodeSize);
                     sourceLine.relocInfos = relocs;
-                    totalCodeSize = newCode.Length;
+                    totalCodeSize = newCodeSize;
                 }
                 if (totalCodeSize > 0)
                     asm.AddCodeSize((uint)totalCodeSize, sourceLine, pass);
@@ -291,6 +301,17 @@ bool BaseInsn::checkOperandMatch(const X64Operand * operand, MatchType matchType
 int BaseInsn::getBaseInsnOpSize2(const SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos)
 {
     return 100000;
+}
+
+int BaseInsn::getPrefixCode(int & prefixCodeSize, const SourceLine & sourceLine, const OpcodeInfos & matchedInfo,
+    bool addr32bit, int bitSize, bool flagRexE, bool flagRexW, bool flagRexR, bool flagRexX, bool flagRexB)
+{
+    return 2;
+}
+
+int combineCode(int prefixCodeSize, int insCodeSize, int addrCodeSize, int immCodeSize)
+{
+    return 15;
 }
 
 

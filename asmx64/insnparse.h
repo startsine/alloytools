@@ -82,8 +82,17 @@ protected:
     int processCpuIns(X64Assembler & assembler, const std::string & insnStr, SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos);
     bool checkOperandMatch(const X64Operand * operand, MatchType matchType);
     int getBaseInsnOpSize2(const SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos);
-private:
+    int getPrefixCode(int & prefixCodeSize, const SourceLine & sourceLine, const OpcodeInfos & matchedInfo,
+        bool addr32bit, int bitSize, bool flagRexE, bool flagRexW, bool flagRexR, bool flagRexX, bool flagRexB);
+
     static OpcodeInfos noOperand;
+    static uint8_t finalCode[32];           // 全体code
+    static uint8_t prefixCode[32];          // 前缀部分的code
+    static uint8_t insCode[32];             // 指令部分的code
+    static uint8_t addrCode[32];            // 内存寻址部分的code
+    static uint8_t immCode[32];             // 立即数部分的code
+private:
+    int combineCode(int prefixCodeSize, int insCodeSize, int addrCodeSize, int immCodeSize);
 };
 
 // 基本数据定义伪指令 (DB,DW,DD,DQ)

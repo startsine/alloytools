@@ -169,5 +169,8 @@ void X64Assembler::assemblePass2()
     
 }
 
-
+void X64Assembler::setNeedRescan(bool value1)
+{
+    boNeedReScan = value1;
+}
 

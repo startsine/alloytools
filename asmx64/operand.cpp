@@ -52,5 +52,8 @@ bool X64RegUtil::isRexExtensionReg(X64RegValue reg)
     return u64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::REXPreflx_E);
 }
 
-
+bool X64RegUtil::isRexPrefixReg(X64RegValue reg)
+{
+    return u64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::REXPreflx_40);
+}
 
