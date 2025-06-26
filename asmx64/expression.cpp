@@ -658,7 +658,7 @@ X64Operand X64Expression::memoryAddressInfoToRet(const X64Operand & op)
                 res.relocOffset = 2;
             }
             else if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasDisp)) {
-                long disp = (long)info.disp32;
+                int64_t disp = (int64_t)info.disp32;
                 if (disp >= (-128) && disp <= 127) {
                     u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withDisp8);
                 }
@@ -741,7 +741,7 @@ X64Operand X64Expression::memoryAddressInfoToRet(const X64Operand & op)
                 res.relocType = RelocType::ADDR32;
             }
             else if (u64HasFlag((uint64_t)info.type, (uint64_t)MemoryAddressType::hasDisp)) {
-                long disp = (long)info.disp32;
+                int64_t disp = (int64_t)info.disp32;
                 if (disp >= (-128) && disp <= 127) {
                     u64SetFlag((uint64_t*)&res.type, (uint64_t)MemoryAddressType::withDisp8);
                 }

@@ -25,7 +25,7 @@ Symbol* X64SymbolList::getSymbol(const std::string str)
     return NULL;
 }
 
-long X64SymbolList::addSymbol(Symbol & symbol)
+int64_t X64SymbolList::addSymbol(Symbol & symbol)
 {
     return 0;
 }

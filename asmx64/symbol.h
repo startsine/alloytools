@@ -87,7 +87,7 @@ class X64SymbolList
 {
 public:
     Symbol* getSymbol(const std::string str);
-    long addSymbol(Symbol & symbol);
+    int64_t addSymbol(Symbol & symbol);
 };
 
 #endif // ASMX64_SYMBOL_H

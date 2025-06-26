@@ -392,7 +392,7 @@ public:
     X64RegValue indexReg = X64RegValue::None;                       // 变址寄存器信息(rm==100时，才有SIB字节)
     uint8_t sacle = 0;                                              // 比例因子(rm==100时，才有SIB字节)
     std::string symName;                                            // 符号寻址(规定rbp/r13必须带偏移量,如果mod==00,rm=101时表示直接用一个32位数值来寻址,这里一般是指符号地址)
-    long symIndex = -1;                                             // 符号在符号列表的索引(为-1表示找不到)
+    int64_t symIndex = -1;                                          // 符号在符号列表的索引(为-1表示找不到)
                                                                     // 另一种情况，mod==00，并且base==rbp/r13, index==rsp时，表示使用一个无符号的32位绝对数值(可以是变量符号)做基地址进行ADDR32寻址
     X64RegValue segReg = X64RegValue::None;                         // 段前缀用的段寄存器
     RelocType relocType;                                            // 重定位类型, 存在 symbol 时才有效
