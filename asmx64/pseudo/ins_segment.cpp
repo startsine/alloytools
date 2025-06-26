@@ -8,7 +8,7 @@ InsnProcessFlag Segment::getInsnFlag()
     return InsnProcessFlag::None;
 }
 
-int Segment::process(X64Assembler &assembler, std::string insnStr, SourceLine &sourceLine, int pass) 
+int Segment::process(X64Assembler &assembler, const std::string & insnStr, SourceLine &sourceLine, int pass)
 {
     return 0;
 }

@@ -20,5 +20,13 @@ size_t X64SectionList::getCurrSectionIndex()
 	return 0;
 }
 
+Symbol* X64SymbolList::getSymbol(const std::string str)
+{
+    return NULL;
+}
 
+long X64SymbolList::addSymbol(Symbol & symbol)
+{
+    return 0;
+}
 

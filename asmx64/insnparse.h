@@ -74,6 +74,8 @@ public:
     virtual InsnProcessFlag getInsnFlag() = 0;
 };
 
+class RelocInfo;
+
 class BaseInsn: public IInsnProcessor
 {
 public:
@@ -93,6 +95,7 @@ protected:
     static uint8_t immCode[32];             // 立即数部分的code
 private:
     int combineCode(int prefixCodeSize, int insCodeSize, int addrCodeSize, int immCodeSize);
+    std::vector<RelocInfo> combineRelocs(std::shared_ptr<RelocInfo> addrRelocInfo, std::shared_ptr<RelocInfo> immRelocInfo, int prefixCodeSize, int insCodeSize, int addrCodeSize);
 };
 
 // 基本数据定义伪指令 (DB,DW,DD,DQ)

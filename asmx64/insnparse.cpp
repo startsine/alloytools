@@ -119,8 +119,8 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
         bool flagRexB = false;
         bool addr32bitPrefix = false;
         int bitSize = 0;
-        unique_ptr<RelocInfo> addrRelocInfo = nullptr;         // 寻址代码中的重定位信息
-        unique_ptr<RelocInfo> immRelocInfo = nullptr;          // 立即数代码中的重定位信息
+        shared_ptr<RelocInfo> addrRelocInfo = nullptr;         // 寻址代码中的重定位信息
+        shared_ptr<RelocInfo> immRelocInfo = nullptr;          // 立即数代码中的重定位信息
 
         switch (expressionsCount) {
         case 0: {
@@ -247,13 +247,17 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
                             assembler.setNeedRescan(true);                // 代码大小发生变化了，需要重新扫描
                         }
                     }
+                    std::vector<uint8_t> newCode;
+                    for (int i = 0; i < newCodeSize; i++) {
+                        newCode.push_back(finalCode[i]);
+                    }
                     sourceLine.code = newCode;
-                    RelocInfo[] ? relocs = CombineRelocs(addrRelocInfo, immRelocInfo, prefixCodeSize, insCodeSize, addrCodeSize);
+                    vector<RelocInfo> relocs = combineRelocs(addrRelocInfo, immRelocInfo, prefixCodeSize, insCodeSize, addrCodeSize);
                     sourceLine.relocInfos = relocs;
                     totalCodeSize = newCodeSize;
                 }
                 if (totalCodeSize > 0)
-                    asm.AddCodeSize((uint)totalCodeSize, sourceLine, pass);
+                    assembler.addCodeSize((uint32_t)totalCodeSize, sourceLine, pass);
                 return totalCodeSize;
             }
         }
@@ -309,9 +313,13 @@ int BaseInsn::getPrefixCode(int & prefixCodeSize, const SourceLine & sourceLine,
     return 2;
 }
 
-int combineCode(int prefixCodeSize, int insCodeSize, int addrCodeSize, int immCodeSize)
+int BaseInsn::combineCode(int prefixCodeSize, int insCodeSize, int addrCodeSize, int immCodeSize)
 {
     return 15;
 }
 
-
+std::vector<RelocInfo> BaseInsn::combineRelocs(std::shared_ptr<RelocInfo> addrRelocInfo, std::shared_ptr<RelocInfo> immRelocInfo, int prefixCodeSize, int insCodeSize, int addrCodeSize)
+{
+    std::vector<RelocInfo> a;
+    return a;
+}

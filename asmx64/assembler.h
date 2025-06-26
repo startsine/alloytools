@@ -30,8 +30,9 @@ private:
 public:
     X64Assembler();
     void assemble(const std::string & filepath);
-    uint64_t getCurrOffset(long sectionIndex);
+    uint64_t getCurrOffset(uint64_t sectionIndex);
     void setNeedRescan(bool value1);
+    void addCodeSize(uint32_t codesize, SourceLine & sourceLine, int pass);
 };
 
 #endif // 

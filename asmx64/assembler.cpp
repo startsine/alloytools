@@ -174,3 +174,14 @@ void X64Assembler::setNeedRescan(bool value1)
     boNeedReScan = value1;
 }
 
+void X64Assembler::addCodeSize(uint32_t codesize, SourceLine & sourceLine, int pass)
+{
+
+}
+
+uint64_t X64Assembler::getCurrOffset(uint64_t sectionIndex)
+{
+    return 0;
+}
+
+

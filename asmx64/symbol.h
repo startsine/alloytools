@@ -38,7 +38,7 @@ public:
 	uint64_t offsetValue = 0;                                        // 在 record 中的偏移量 (为const时，这里存放值)
 	SymbolSizeType sizeType = SymbolSizeType::None;                    // 符号的大小类型
 	SymbolVisibilityType visibType = SymbolVisibilityType::None;       // 可见性
-	long sectionIndex = -1;                                          // 位于哪个 section 
+	int64_t sectionIndex = -1;                                          // 位于哪个 section 
 };
 
 // 重定位类型
