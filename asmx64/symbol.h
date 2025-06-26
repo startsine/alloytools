@@ -6,7 +6,7 @@
 #include <string>
 
 // 符号大小类型
-enum class SymboSizeType
+enum class SymbolSizeType
 {
 	None = 0,
 	Const,                              // 常量符号，用等号 = 定义
@@ -18,7 +18,7 @@ enum class SymboSizeType
 };
 
 // 符号可见性
-enum class SymboVisibilityType
+enum class SymbolVisibilityType
 {
 	None = 0,
 	Static,                             // 默认，本文件可见
@@ -36,8 +36,8 @@ class Symbol
 public:
 	std::string symbolName;                                          // 符号名
 	uint64_t offsetValue = 0;                                        // 在 record 中的偏移量 (为const时，这里存放值)
-	SymboSizeType sizeType = SymboSizeType::None;                    // 符号的大小类型
-	SymboVisibilityType visibType = SymboVisibilityType::None;       // 可见性
+	SymbolSizeType sizeType = SymbolSizeType::None;                    // 符号的大小类型
+	SymbolVisibilityType visibType = SymbolVisibilityType::None;       // 可见性
 	long sectionIndex = -1;                                          // 位于哪个 section 
 };
 
@@ -82,15 +82,12 @@ public:
 	size_t getCurrSectionIndex();
 };
 
-class X64Symbol
-{
-
-};
 
 class X64SymbolList
 {
 public:
-    X64Symbol getSymbol(const std::string str);
+    Symbol* getSymbol(const std::string str);
+    long addSymbol(Symbol & symbol);
 };
 
 #endif // ASMX64_SYMBOL_H

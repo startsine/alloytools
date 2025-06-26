@@ -30,6 +30,7 @@ private:
 public:
     X64Assembler();
     void assemble(const std::string & filepath);
+    uint64_t getCurrOffset(long sectionIndex);
 };
 
 #endif // 

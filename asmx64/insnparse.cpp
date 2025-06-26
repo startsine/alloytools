@@ -4,6 +4,11 @@
 #include <stddef.h>
 #include "asmx64.h"
 
+OpcodeInfos::OpcodeInfos()
+{
+    reset();
+}
+
 void OpcodeInfos::reset()
 {
     this->opcodesSize = 0;
@@ -22,27 +27,23 @@ InsnProcessFlag BaseInsn::getInsnFlag()
 	return InsnProcessFlag::None;
 }
 
+OpcodeInfos BaseInsn::noOperand;
+
 int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnStr, SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos)
 {
     printf("process %s. \n", insnStr.c_str());
 
-    int insTotalSize = 0;
-    ////LinkedListNode<OpcodeInfos> ? currentNode;
-    OpcodeInfos ? info = null;
-    OpcodeInfos ? matchedInfo = null;
-
     if (sourceLine.hasLabel) {
         if (pass == 1) {
-            X64Symbol ? sym = assembler.globalSymbolList.getSymbol(sourceLine.labelStr);
-            if (sym is null) {
-                X64Symbol symbol = new X64Symbol();
+            Symbol * sym = assembler.globalSymbolList.getSymbol(sourceLine.labelStr);
+            if (sym == nullptr) {
+                Symbol symbol;
                 symbol.symbolName = sourceLine.labelStr;
-                symbol.sizeType = SymboSizeType.Proc;
-                symbol.varType = SymbolVarType.NotConst;
-                symbol.fragmentIndex = sourceLine.fragmentIndex;
-                symbol.recordIndex = sourceLine.recordIndex;
-                symbol.offsetValue = asm.GetCurrOffset(sourceLine.fragmentIndex, sourceLine.recordIndex);
-                asm.globalSymbolList.AddSymbol(symbol);
+                symbol.sizeType = SymbolSizeType::Proc;
+                symbol.sectionIndex = sourceLine.sectionIndex;
+                symbol.offsetValue = assembler.getCurrOffset(sourceLine.sectionIndex);
+                symbol.visibType = SymbolVisibilityType::None;
+                assembler.globalSymbolList.addSymbol(symbol);
             }
             else {
                 //// 报错，重复定义符号
@@ -54,47 +55,51 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
         }
     }
 
-    int expressionsCount = sourceLine.expressions != null ? sourceLine.expressions.Count : 0;       // 当前指令的表达式的个数 
-    currentNode = opcodeInfos.First;
-    while (currentNode is not null) {
-        info = currentNode.Value;
-        if (info.numberOfOperand == expressionsCount) {
-            if (info.numberOfOperand == 0) {
-                matchedInfo = noOperand;
+    int insTotalSize = 0;
+    std::list<OpcodeInfos>::const_iterator info = opcodeInfos.cend();
+    const OpcodeInfos * matchedInfo = nullptr;
+
+    int expressionsCount = (int) sourceLine.expressions.size();       // 当前指令的表达式的个数 
+    auto currentNode = opcodeInfos.cbegin();
+    while (currentNode != opcodeInfos.cend()) {
+        info = currentNode;
+        if (info->numberOfOperand == expressionsCount) {
+            if (info->numberOfOperand == 0) {
+                matchedInfo = & noOperand;
                 break;                                              // 不需要操作数的指令直接匹配
             }
             //
             if (expressionsCount == 1) {
-                if (checkOperandMatch(sourceLine.expressions ? [0].operand, info.op0)) {
-                    matchedInfo = info;
+                if (checkOperandMatch(&(sourceLine.expressions[0].operand), info->op0)) {
+                    matchedInfo = &*info;
                     break;
                 }
             }
             else if (expressionsCount == 2) {
-                if (checkOperandMatch(sourceLine.expressions ? [0].operand, info.op0) &&
-                    checkOperandMatch(sourceLine.expressions ? [1].operand, info.op1)) {
-                    matchedInfo = info;
+                if (checkOperandMatch(&(sourceLine.expressions[0].operand), info->op0) &&
+                    checkOperandMatch(&(sourceLine.expressions[1].operand), info->op1)) {
+                    matchedInfo = &*info;
                     break;
                 }
             }
             else if (expressionsCount == 3) {
-                if (checkOperandMatch(sourceLine.expressions ? [0].operand, info.op0) &&
-                    checkOperandMatch(sourceLine.expressions ? [1].operand, info.op1) &&
-                    checkOperandMatch(sourceLine.expressions ? [2].operand, info.op2)) {
-                    matchedInfo = info;
+                if (checkOperandMatch(&(sourceLine.expressions[0].operand), info->op0) &&
+                    checkOperandMatch(&(sourceLine.expressions[1].operand), info->op1) &&
+                    checkOperandMatch(&(sourceLine.expressions[2].operand), info->op2)) {
+                    matchedInfo = &*info;
                     break;
                 }
             }
         }
-        currentNode = currentNode.Next;
+        currentNode++;
     }
 
     // matchedInfo非空则表示匹配
-    if (matchedInfo is not null) {
-        insTotalSize = matchedInfo.opcodes!.Length;
-        MemoryAddressResult ? mem = null;
-        X64RegValue regFieldInModRM = X64RegValue.None;
-        X64RegValue rmFieldInModRM = X64RegValue.None;
+    if (matchedInfo != nullptr) {
+        insTotalSize = matchedInfo->opcodesSize;
+        MemoryAddressResult * mem = nullptr;
+        X64RegValue regFieldInModRM = X64RegValue::None;
+        X64RegValue rmFieldInModRM = X64RegValue::None;
         int prefixCodeSize = 0;
         int insCodeSize = 0;
         int addrCodeSize = 0;
@@ -107,40 +112,40 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
         bool flagRexB = false;
         bool addr32bitPrefix = false;
         int bitSize = 0;
-        RelocInfo ? addrRelocInfo = null;         // 寻址代码中的重定位信息
-        RelocInfo ? immRelocInfo = null;          // 立即数代码中的重定位信息
+        RelocInfo * addrRelocInfo = nullptr;         // 寻址代码中的重定位信息
+        RelocInfo * immRelocInfo = nullptr;          // 立即数代码中的重定位信息
 
         switch (expressionsCount) {
         case 0: {
 
         }
-                break;
+            break;
         case 1: {
 
         }
-                break;
+            break;
         case 2: {
             bitSize = getBaseInsnOpSize2(sourceLine, pass, opcodeInfos);       // 得到指令的操作数的位数大小，返回8/16/32/64
             if (bitSize == 0) {
                 //// 报错, 无法决定操作数类型
                 return 0;
             }
-            if (matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_R) || matchedInfo.opcodeFlag.HasFlag(OpcodeFlag.ModRM_Digit)) {
+            if (u32HasFlag(matchedInfo->opcodeFlag, OpcodeFlag_ModRM_R) || u32HasFlag(matchedInfo->opcodeFlag, OpcodeFlag_ModRM_Digit)) {
                 // 存在 ModRM 字段
-                if (matchedInfo.op0 == MatchType.rm) {                          // 如果 op0 匹配了 R/M 域
-                    var operand0 = sourceLine.expressions ? [0].operand;
-                    var operand1 = sourceLine.expressions ? [1].operand;
-                    if (operand0!.type == X64OperandType.MemoryAddress) {
-                        mem = operand0.addressRes;
+                if (matchedInfo->op0 == MatchType::rm) {                        // 如果 op0 匹配了 R/M 域
+                    auto & operand0 = sourceLine.expressions[0].operand;
+                    auto & operand1 = sourceLine.expressions[1].operand;
+                    if (operand0.type == X64OperandType::MemoryAddress) {
+                        mem = & operand0.addressRes;
                     }
-                    else if (operand0!.type == X64OperandType.Register) {
+                    else if (operand0.type == X64OperandType::Register) {
                         rmFieldInModRM = operand0.regValue;
                     }
-                    else if (operand0!.type == X64OperandType.Symbol) {
+                    else if (operand0.type == X64OperandType::Symbol) {
                         // to-do
                     }
                     //
-                    if (operand1!.type == X64OperandType.Register) {
+                    if (operand1.type == X64OperandType::Register) {
                         regFieldInModRM = operand1.regValue;
                     }
                 }
@@ -278,8 +283,14 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
     return 0;
 }
 
+bool BaseInsn::checkOperandMatch(const X64Operand * operand, MatchType matchType)
+{
+    return false;
+}
 
-
-
+int BaseInsn::getBaseInsnOpSize2(const SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos)
+{
+    return 100000;
+}
 
 

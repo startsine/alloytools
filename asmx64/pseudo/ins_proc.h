@@ -4,7 +4,7 @@
 class Proc : public IInsnProcessor 
 {
 public:
-	int process(X64Assembler &assembler, std::string insnStr, SourceLine &sourceLine, int pass) override;
+	int process(X64Assembler &assembler, const std::string & insnStr, SourceLine &sourceLine, int pass) override;
 	InsnProcessFlag getInsnFlag() override;
 };
 

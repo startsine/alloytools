@@ -52,6 +52,7 @@ public:
     uint32_t opcodeFlag;
     uint32_t forbidInfo;
     uint8_t digit;
+    OpcodeInfos();
     // 复位
     void reset();
 };
@@ -79,6 +80,10 @@ public:
 	InsnProcessFlag getInsnFlag() override;
 protected:
     int processCpuIns(X64Assembler & assembler, const std::string & insnStr, SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos);
+    bool checkOperandMatch(const X64Operand * operand, MatchType matchType);
+    int getBaseInsnOpSize2(const SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos);
+private:
+    static OpcodeInfos noOperand;
 };
 
 // 基本数据定义伪指令 (DB,DW,DD,DQ)
