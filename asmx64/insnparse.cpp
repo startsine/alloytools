@@ -192,7 +192,7 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
                 if (u64HasFlag((uint64_t)mem->type, (uint64_t)MemoryAddressType::with32bitRegAddr))
                     addr32bitPrefix = true;
                 if (u64HasFlag((uint64_t)mem->type, (uint64_t)MemoryAddressType::hasSymbol)) {
-                    addrRelocInfo = make_unique<RelocInfo>();
+                    addrRelocInfo = make_shared<RelocInfo>();
                     addrRelocInfo->offset = (uint32_t)mem->relocOffset;
                     addrRelocInfo->type = mem->relocType;
                     addrRelocInfo->name = mem->symName;
@@ -323,3 +323,4 @@ std::vector<RelocInfo> BaseInsn::combineRelocs(std::shared_ptr<RelocInfo> addrRe
     std::vector<RelocInfo> a;
     return a;
 }
+

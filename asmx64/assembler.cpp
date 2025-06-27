@@ -5,9 +5,9 @@
 
 using namespace std;
 
-X64Assembler::X64Assembler()
+X64Assembler::X64Assembler() :
+    sectionList(this)
 {
-    
 }
 
 void X64Assembler::assemble(const std::string & filepath)

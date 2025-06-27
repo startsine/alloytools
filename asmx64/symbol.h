@@ -76,15 +76,23 @@ class X64Section
 public:
 };
 
+class X64Assembler;
+
 class X64SectionList
 {
+protected:
+    int64_t currFragmentIndex;
+    X64Assembler * assembler;
 public:
+    X64SectionList(X64Assembler * assem);
 	size_t getCurrSectionIndex();
 };
 
 
 class X64SymbolList
 {
+protected:
+    std::unordered_map<std::string, Symbol> symbols;
 public:
     Symbol* getSymbol(const std::string str);
     int64_t addSymbol(Symbol & symbol);
