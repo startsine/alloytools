@@ -16,13 +16,28 @@ Section::Section(const std::string & sectionName, uint32_t align)
 }
 
 X64SectionList::X64SectionList(X64Assembler * assem)
-    : currFragmentIndex(-1), assembler(assem)
+    : currSectionIndex(-1), assembler(assem)
 {
 }
 
-size_t X64SectionList::getCurrSectionIndex()
+int64_t X64SectionList::getCurrSectionIndex()
 {
-	return 0;
+    if (sectionList.size() == 0) {
+        Section x64TextSection(".text");
+        sectionList.push_back(x64TextSection);
+        currSectionIndex = (int64_t)(sectionList.size() - 1);
+    }
+    return currSectionIndex;
+}
+
+Section & X64SectionList::getCurrSection()
+{
+    if (sectionList.size() == 0) {
+        Section x64TextSection(".text");
+        sectionList.push_back(x64TextSection);
+        currSectionIndex = (int64_t)(sectionList.size() - 1);
+    }
+    return sectionList[currSectionIndex];
 }
 
 Symbol* X64SymbolList::getSymbol(const std::string str)
@@ -34,7 +49,7 @@ Symbol* X64SymbolList::getSymbol(const std::string str)
     return & obj->second;
 }
 
-int64_t X64SymbolList::addSymbol(Symbol & symbol)
+int X64SymbolList::addSymbol(Symbol & symbol)
 {
     std::string key = symbol.symbolName;
     auto obj = symbols.find(key);
