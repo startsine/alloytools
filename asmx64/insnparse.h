@@ -12,7 +12,7 @@ enum MatchType
     acc,                            // 操作数是AL,AX,EAX,RAX
     reg,                            // 操作数是一个通用寄存器
     rm,                             // 操作数是寄存器或者内存寻址
-    //moffset32,                      // 操作数是内存寻址，用[imm]寻址的
+    //moffset32,                    // 操作数是内存寻址，用[imm]寻址的
     moffset64,                      // 操作数是内存寻址，用[imm64]寻址的
     segReg,                         // 操作数是段寄存器
     debugReg,                       // 操作数是DR0-DR15
@@ -82,6 +82,7 @@ public:
 	InsnProcessFlag getInsnFlag() override;
 protected:
     int processCpuIns(X64Assembler & assembler, const std::string & insnStr, SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos);
+    // 判断操作数是否与指定的类型是否匹配
     bool checkOperandMatch(const X64Operand * operand, MatchType matchType);
     int getBaseInsnOpSize2(const SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos);
     int getPrefixCode(int & prefixCodeSize, const SourceLine & sourceLine, const OpcodeInfos & matchedInfo,

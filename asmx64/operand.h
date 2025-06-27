@@ -422,6 +422,7 @@ public:
 class X64RegUtil
 {
 public:
+    static bool isCommonReg(X64RegValue reg);
     static bool is32Or64BitReg(X64RegValue reg);
     static bool is64BitReg(X64RegValue reg);
     static bool is32BitReg(X64RegValue reg);

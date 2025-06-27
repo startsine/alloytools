@@ -297,8 +297,61 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
     return 0;
 }
 
+// 判断操作数是否与指定的类型是否匹配
 bool BaseInsn::checkOperandMatch(const X64Operand * operand, MatchType matchType)
 {
+    if (operand == nullptr) {
+        return false;
+    }
+    switch (matchType) {
+    case MatchType::reg: {   // 判断操作数是否为一个通用寄存器
+        if (operand->type == X64OperandType::Register) {
+            if (X64RegUtil::isCommonReg(operand->regValue)) {
+                return true;
+            }
+        }
+    }
+                         break;
+    case MatchType::rm: {
+        if (operand->type == X64OperandType::Register) {
+            if (X64RegUtil::isCommonReg(operand->regValue)) {
+                return true;
+            }
+        }
+        if (operand->type == X64OperandType::MemoryAddress) {
+            return true;
+        }
+        if (operand->type == X64OperandType::Symbol) {
+            // TO-DO, 这里要判断 不加 offset 修饰的符号当作内存寻址
+        }
+    }
+                        break;
+    case MatchType::acc: {
+        if (operand->type == X64OperandType::Register) {
+            if (operand->regValue == X64RegValue::AL || operand->regValue == X64RegValue::AX
+                || operand->regValue == X64RegValue::EAX || operand->regValue == X64RegValue::RAX) {
+                return true;
+            }
+        }
+    }
+                         break;            
+    case MatchType::imm: {
+        //if (operand.type) {
+
+        //}
+    }
+                         break;
+                        /*
+
+                imm,                            // 操作数是立即数
+                rm,                             // 操作数是寄存器或者内存寻址
+                //moffset32,                      // 操作数是内存寻址，用[imm]寻址的
+                moffset64,                      // 操作数是内存寻址，用[imm64]寻址的
+                segReg,                         // 操作数是段寄存器
+                debugReg,                       // 操作数是DR0-DR15
+                ctrlReg,                        // 操作数是CR0-CR15
+                         */
+    }
     return false;
 }
 

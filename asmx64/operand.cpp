@@ -29,6 +29,11 @@ X64Operand::X64Operand(const MemoryAddressInfo & info)
 
 }
 
+bool X64RegUtil::isCommonReg(X64RegValue reg)
+{
+    return u64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::Common);
+}
+
 bool X64RegUtil::is32Or64BitReg(X64RegValue reg)
 {
     return u64HasFlag((uint64_t)reg, (uint64_t)X64RegValue::Common) &&
