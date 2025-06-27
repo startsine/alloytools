@@ -166,7 +166,49 @@ void X64Assembler::assemblePass1()
 
 void X64Assembler::assemblePass2()
 {
+    /*
+    if (sourceLines == null)
+    return;
+IInsnProcessor? insnProcessor = null;
+ulong lineTotal = sourceLines!.Count;
+ulong lineCnt;
+for (lineCnt = 0; lineCnt < lineTotal; lineCnt++) {
+    SourceLine curLine = sourceLines[lineCnt];
+    //
+    if (!curLine.hasInsn && !curLine.hasLabel)
+        continue;
+
+    if (curLine.hasLabel && !curLine.hasInsn) {
+        // 重新获得label的值，并与旧值比较
+    }
+    string insnStr = curLine.hasInsn ? curLine.insnStr : "";
+    if (X64Token.isCpuInstruction(insnStr)) {
+    }
+    else if (X64Token.isVirtualInstruction(insnStr)) {
+    }
+    else if (X64Token.isPseudoInstruction(insnStr)) {
+    }
+
+    if (X64Token.isCpuInstruction(insnStr)) {
+        insnProcessor = X64CpuInsnList.Instance.GetInsnProcessor(insnStr);
+    }
+    else if (X64Token.isVirtualInstruction(insnStr)) {
+        //
+    }
+    else if (X64Token.isPseudoInstruction(insnStr)) {
+        insnProcessor = X64PseudoInsnList.Instance.GetPseudoInsnProcessor(insnStr);
+    }
+    else {
+        //// 不认识的指令，报错
+        continue;
+    }
+
+    if (insnProcessor is not null) {
+        insnProcessor.process(this, insnStr, curLine, 2);
+    }
+}
     
+    */
 }
 
 void X64Assembler::setNeedRescan(bool value1)
