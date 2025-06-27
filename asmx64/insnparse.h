@@ -87,6 +87,7 @@ protected:
     int getBaseInsnOpSize2(const SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos);
     int getPrefixCode(int & prefixCodeSize, const SourceLine & sourceLine, const OpcodeInfos & matchedInfo,
         bool addr32bit, int bitSize, bool flagRexE, bool flagRexW, bool flagRexR, bool flagRexX, bool flagRexB);
+    int getOpSize(const X64Operand * op);
 
     static OpcodeInfos noOperand;
     static uint8_t finalCode[32];           // 全体code

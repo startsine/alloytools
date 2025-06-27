@@ -423,12 +423,17 @@ class X64RegUtil
 {
 public:
     static bool isCommonReg(X64RegValue reg);
+    static bool is8BitReg(X64RegValue reg);
+    static bool is16BitReg(X64RegValue reg);
     static bool is32Or64BitReg(X64RegValue reg);
     static bool is64BitReg(X64RegValue reg);
     static bool is32BitReg(X64RegValue reg);
     static bool isRexExtensionReg(X64RegValue reg);
     // 是否是需要REX扩展的寄存器 (8-15) 以及 SPL、BPL、SIL、DIL
     static bool isRexPrefixReg(X64RegValue reg);
+    static bool isSegReg(X64RegValue reg);
+    static bool isCtrlReg(X64RegValue reg);
+    static bool isDebugReg(X64RegValue reg);
 };
 
 #endif // ASMX64_OPERAND_H

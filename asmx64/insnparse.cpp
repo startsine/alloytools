@@ -355,9 +355,57 @@ bool BaseInsn::checkOperandMatch(const X64Operand * operand, MatchType matchType
     return false;
 }
 
+int BaseInsn::getOpSize(const X64Operand * op)
+{
+    if (op == nullptr) {
+        return 0;
+    }
+    if (op->type == X64OperandType::Register) {
+        if (X64RegUtil::is8BitReg(op->regValue)) {
+            return 8;
+        }
+        if (X64RegUtil::is16BitReg(op->regValue)) {
+            return 16;
+        }
+        if (X64RegUtil::is32BitReg(op->regValue)) {
+            return 32;
+        }
+        if (X64RegUtil::is64BitReg(op->regValue)) {
+            return 64;
+        }
+        if (X64RegUtil::isSegReg(op->regValue)) {
+            return 16;
+        }
+        if (X64RegUtil::isDebugReg(op->regValue)) {
+            return 64;
+        }
+        if (X64RegUtil::isCtrlReg(op->regValue)) {
+            return 64;
+        }
+    }
+    return 0;
+}
+
 int BaseInsn::getBaseInsnOpSize2(const SourceLine & sourceLine, int pass, const std::list<OpcodeInfos> & opcodeInfos)
 {
-    return 100000;
+    int opSize0, opSize1;
+    int ret = 0;
+    opSize0 = getOpSize(& sourceLine.expressions[0].operand);
+    opSize1 = getOpSize(& sourceLine.expressions[1].operand);
+    if (opSize0 == 0 && opSize1 == 0) {
+        //// 报错
+        return 0;
+    }
+    if ((opSize0 != 0 && opSize1 != 0) && opSize0 != opSize1) {
+        //// 报错
+        return 0;
+    }
+    if (opSize0 != 0)
+        ret = opSize0;
+    else if (opSize1 != 0)
+        ret = opSize1;
+
+    return ret;
 }
 
 int BaseInsn::getPrefixCode(int & prefixCodeSize, const SourceLine & sourceLine, const OpcodeInfos & matchedInfo,
