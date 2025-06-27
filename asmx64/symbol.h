@@ -83,6 +83,7 @@ public:
     X64SectionList(X64Assembler * assem);
     int64_t getCurrSectionIndex();
     Section & getCurrSection();
+    Section & getSectionByIndex(int64_t index);
 };
 
 

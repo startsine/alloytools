@@ -174,14 +174,17 @@ void X64Assembler::setNeedRescan(bool value1)
     boNeedReScan = value1;
 }
 
-void X64Assembler::addCodeSize(uint32_t codesize, SourceLine & sourceLine, int pass)
+void X64Assembler::addCodeSize(uint64_t codesize, SourceLine & sourceLine, int pass)
 {
-
+    auto & section = sectionList.getCurrSection();
+    section.size += codesize;
+    return;
 }
 
 uint64_t X64Assembler::getCurrOffset(uint64_t sectionIndex)
 {
-    return 0;
+    auto & section = sectionList.getSectionByIndex(sectionIndex);
+    return section.size;
 }
 
 

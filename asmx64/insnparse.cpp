@@ -257,7 +257,7 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
                     totalCodeSize = newCodeSize;
                 }
                 if (totalCodeSize > 0)
-                    assembler.addCodeSize((uint32_t)totalCodeSize, sourceLine, pass);
+                    assembler.addCodeSize((uint64_t)totalCodeSize, sourceLine, pass);
                 return totalCodeSize;
             }
         }
@@ -411,17 +411,85 @@ int BaseInsn::getBaseInsnOpSize2(const SourceLine & sourceLine, int pass, const 
 int BaseInsn::getPrefixCode(int & prefixCodeSize, const SourceLine & sourceLine, const OpcodeInfos & matchedInfo,
     bool addr32bit, int bitSize, bool flagRexE, bool flagRexW, bool flagRexR, bool flagRexX, bool flagRexB)
 {
-    return 2;
+    uint8_t rex = 0;
+    int cnt = 0;
+    // 前缀排列 F0, F2/F3, 67, 66, 64/65, 40  (LOCK，REP, 寻址, 16位操作, 段前缀, 寄存器扩展)
+    if (flagRexE || flagRexW || flagRexR || flagRexX || flagRexB)
+        rex = 0x40;
+    if (flagRexW)
+        rex |= 0x08;
+    if (flagRexR)
+        rex |= 0x04;
+    if (flagRexX)
+        rex |= 0x02;
+    if (flagRexB)
+        rex |= 0x01;
+    //// TO-DO 加上 LOCK,rep前缀
+    if (addr32bit)
+        prefixCode[cnt++] = 0x67;
+    if (bitSize == 16)
+        prefixCode[cnt++] = 0x66;
+    //// TO-DO 加上段前缀
+    if (rex != 0)
+        prefixCode[cnt++] = rex;
+
+    prefixCodeSize = cnt;
+    return cnt;
 }
 
 int BaseInsn::combineCode(int prefixCodeSize, int insCodeSize, int addrCodeSize, int immCodeSize)
 {
-    return 15;
+    int codeCnt = 0;
+    int totalSize = prefixCodeSize + insCodeSize + addrCodeSize + immCodeSize;
+    if (totalSize <= 0) {
+        return 0;
+    }
+    if (prefixCodeSize > 0) {
+        memcpy(&finalCode[codeCnt], prefixCode, prefixCodeSize);
+        codeCnt += prefixCodeSize;
+    }
+    if (insCodeSize > 0) {
+        memcpy(&finalCode[codeCnt], insCode, insCodeSize);
+        codeCnt += insCodeSize;
+    }
+    if (addrCodeSize > 0) {
+        memcpy(&finalCode[codeCnt], addrCode, addrCodeSize);
+        codeCnt += addrCodeSize;
+    }
+    if (immCodeSize > 0) {
+        memcpy(&finalCode[codeCnt], immCode, immCodeSize);
+        codeCnt += immCodeSize;
+    }
+    return totalSize;
 }
 
 std::vector<RelocInfo> BaseInsn::combineRelocs(std::shared_ptr<RelocInfo> addrRelocInfo, std::shared_ptr<RelocInfo> immRelocInfo, int prefixCodeSize, int insCodeSize, int addrCodeSize)
 {
-    std::vector<RelocInfo> a;
-    return a;
+    std::vector<RelocInfo> ret;
+
+    int relocCount = 0;
+    if (addrRelocInfo != nullptr)
+        relocCount++;
+    if (immRelocInfo != nullptr)
+        relocCount++;
+    if (relocCount == 0) {
+        return ret;
+    }
+    //
+    if (addrRelocInfo != nullptr) {
+        RelocInfo reloc;
+        reloc.name = addrRelocInfo->name;
+        reloc.offset = addrRelocInfo->offset + (uint32_t)prefixCodeSize + (uint32_t)insCodeSize;
+        reloc.type = addrRelocInfo->type;
+        ret.push_back(reloc);
+    }
+    if (immRelocInfo != nullptr) {
+        RelocInfo reloc;
+        reloc.name = immRelocInfo->name;
+        reloc.offset = immRelocInfo->offset + (uint32_t)prefixCodeSize + (uint32_t)insCodeSize + (uint32_t)addrCodeSize;
+        reloc.type = immRelocInfo->type;
+        ret.push_back(reloc);
+    }
+    return ret;
 }
 

@@ -40,6 +40,11 @@ Section & X64SectionList::getCurrSection()
     return sectionList[currSectionIndex];
 }
 
+Section & X64SectionList::getSectionByIndex(int64_t index)
+{
+    return sectionList[index];
+}
+
 Symbol* X64SymbolList::getSymbol(const std::string str)
 {
     auto obj = symbols.find(str);
