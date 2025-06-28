@@ -5,9 +5,82 @@
 
 using namespace std;
 
+void X64Expression::reset()
+{
+    tokens.clear();
+    calculated = false;
+    operand.type = X64OperandType::Unknown;
+    operand.addressInfo.type = MemoryAddressType::None;
+    operand.addressRes.type = MemoryAddressType::None;;
+}
+
+// 把预处理的tokens转换为表达式列表,成功返回true，失败返回false
 bool X64Expression::parseByPreProcessTokens(std::vector<X64Expression> & expressions, std::vector<std::string> & tokens, int startIdx)
 {
-	return true;
+    if (startIdx < (int) tokens.size()) {
+        X64Expression expr;
+        for (int i = startIdx; i < (int) tokens.size(); i++) {
+            string & token = tokens[i];
+            if (token == ",") {                     // end current expression
+                expressions.push_back(expr);
+                expr.reset();
+            }
+            else if (token == "\'" || token == "\"") {
+                string currMark = token;
+                if (i + 1 >= (int) tokens.size()) {
+                    //报错，不完整的字符串表达式
+                }
+                if (tokens[i + 1] == currMark) {
+                    // 空字符串的情形
+                    X64Token exprToken;
+                    exprToken.tokenType = X64TokenType::String;
+                    expr.tokens.push_back(exprToken);
+                    i++;
+                    continue;
+                }
+                if (i + 2 >= (int)tokens.size()) {
+                    //报错，不完整的字符串表达式
+                }
+                if (tokens[i + 2] == currMark) {
+                    // 真实字符串的情形
+                    X64Token exprToken;
+                    exprToken.tokenType = X64TokenType::String;
+                    exprToken.str = tokens[i + 1];
+                    expr.tokens.push_back(exprToken);
+                    i += 2;
+                    continue;
+                }
+                //这里加入报错，不完整的字符串表达式
+            }
+            else {
+                X64Token exprToken;
+                if (X64Token::isNumericStr(token)) {
+                    exprToken.tokenType = X64TokenType::Numeric;
+                    exprToken.str = token;
+                    exprToken.tryParseToU64Value();
+                }
+                else if (X64Token::isRegister(token)) {
+                    exprToken.tokenType = X64TokenType::Register;
+                    exprToken.str = token;
+                    exprToken.regValue = X64Token::getRegisterValue(token);
+                }
+                else if (X64Token::isOperator(token)) {
+                    exprToken.tokenType = X64TokenType::Operator;
+                    exprToken.str = token;
+                    exprToken.asmOperator = X64Token::getOperatorValue(token);
+                }
+                else {  // 标识符的情况
+                    exprToken.tokenType = X64TokenType::Symbol;
+                    exprToken.str = token;
+                    // 添加到符号表
+                    exprToken.symbolIndex = 0;                      // 这里要改为符号表索引
+                }
+                expr.tokens.push_back(exprToken);
+            }
+        }
+        expressions.push_back(expr);
+    }
+    return true;
 }
 
 bool X64Expression::calc()

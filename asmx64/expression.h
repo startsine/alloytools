@@ -11,6 +11,8 @@ public:
     bool calculated = false;                                             // 已经计算标志
     X64Operand operand;                                                  // 结果操作数
 
+    // 复位数据
+    void reset();
     // 把预处理后的tokens转换为表达式列表,成功返回true，失败返回false
 	static bool parseByPreProcessTokens(std::vector<X64Expression> & expressions, std::vector<std::string> & tokens, int startIdx);
     // 计算表达式
