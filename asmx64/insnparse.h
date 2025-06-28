@@ -36,7 +36,7 @@ constexpr uint32_t OpcodeFlag_bit3Size = 0x08;                //  指令码的 b
 constexpr uint32_t OpcodeFlag_opcodeWithReg = 0x10;           //  将寄存器插入到 opcode 的 bit2-bit0 位置
 constexpr uint32_t OpcodeFlag_withImm = 0x20;                 //  指令码最后带立即数作为操作数
 constexpr uint32_t OpcodeFlag_withM64 = 0x40;                 //  指令码最后带64位立即数做寻址
-constexpr uint32_t OpcodeFlag_RMInRight = 0x80;               //  该bit为1时表示匹配的 R/M 域放置于第2个操作数，为0则R/M 域放置于第1个操作数
+constexpr uint32_t OpcodeFlag_RMOnRight = 0x80;               //  该bit为1时表示匹配的 R/M 域放置于第2个操作数，为0则R/M 域放置于第1个操作数
 
 
 class OpcodeInfos

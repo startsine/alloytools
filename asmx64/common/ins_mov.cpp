@@ -52,7 +52,7 @@ InsnMov::InsnMov()
     info.numberOfOperand = 2;
     info.op0 = MatchType::reg;
     info.op1 = MatchType::rm;
-    info.opcodeFlag = OpcodeFlag_ModRM_R | OpcodeFlag_bit0Size | OpcodeFlag_RMInRight;
+    info.opcodeFlag = OpcodeFlag_ModRM_R | OpcodeFlag_bit0Size | OpcodeFlag_RMOnRight;
     opcodeInfos.push_back(info);
     // MOV reg, imm == B0 +r i /s3
     info.reset();
@@ -81,7 +81,7 @@ InsnMov::InsnMov()
     info.op0 = MatchType::rm;
     info.op1 = MatchType::segReg;
     info.opcodeFlag = OpcodeFlag_ModRM_R;
-    info.forbidInfo = MatchForbid_8bit;              // ½ûÖ¹8bit²Ù×÷
+    info.forbidInfo = MatchForbid_8bit;              // ç¦æ­¢8bitæ“ä½œ
     opcodeInfos.push_back(info);
     // MOV segReg, reg/mem16 == 8E /r
     info.reset();
@@ -90,8 +90,8 @@ InsnMov::InsnMov()
     info.numberOfOperand = 2;
     info.op0 = MatchType::segReg;
     info.op1 = MatchType::rm;
-    info.opcodeFlag = OpcodeFlag_ModRM_R | OpcodeFlag_RMInRight;
-    info.forbidInfo = MatchForbid_8bit | MatchForbid_32bit | MatchForbid_64bit;    // ½ûÖ¹8/32/64bit²Ù×÷
+    info.opcodeFlag = OpcodeFlag_ModRM_R | OpcodeFlag_RMOnRight;
+    info.forbidInfo = MatchForbid_8bit | MatchForbid_32bit | MatchForbid_64bit;    // ç¦æ­¢8/32/64bitæ“ä½œ
     opcodeInfos.push_back(info);
     // MOV reg64, DRn == 0F 21 /r
     info.reset();
@@ -102,7 +102,7 @@ InsnMov::InsnMov()
     info.op0 = MatchType::rm;
     info.op1 = MatchType::debugReg;
     info.opcodeFlag = OpcodeFlag_ModRM_R;
-    info.forbidInfo = MatchForbid_8bit | MatchForbid_16bit | MatchForbid_32bit | MatchForbid_mem;   // ½ûÖ¹ÄÚ´æ²Ù×÷ºÍ8/16/32bit¼Ä´æÆ÷
+    info.forbidInfo = MatchForbid_8bit | MatchForbid_16bit | MatchForbid_32bit | MatchForbid_mem;   // ç¦æ­¢å†…å­˜æ“ä½œå’Œ8/16/32bitå¯„å­˜å™¨
     opcodeInfos.push_back(info);
     // MOV DRn, reg64 == 0F 23 /r
     info.reset();
@@ -112,8 +112,8 @@ InsnMov::InsnMov()
     info.numberOfOperand = 2;
     info.op0 = MatchType::debugReg;
     info.op1 = MatchType::rm;
-    info.opcodeFlag = OpcodeFlag_ModRM_R | OpcodeFlag_RMInRight;
-    info.forbidInfo = MatchForbid_8bit | MatchForbid_16bit | MatchForbid_32bit | MatchForbid_mem;   // ½ûÖ¹ÄÚ´æ²Ù×÷ºÍ8/16/32bit¼Ä´æÆ÷
+    info.opcodeFlag = OpcodeFlag_ModRM_R | OpcodeFlag_RMOnRight;
+    info.forbidInfo = MatchForbid_8bit | MatchForbid_16bit | MatchForbid_32bit | MatchForbid_mem;   // ç¦æ­¢å†…å­˜æ“ä½œå’Œ8/16/32bitå¯„å­˜å™¨
     opcodeInfos.push_back(info);
     // MOV reg64, CRn == 0F 20 /r
     info.reset();
@@ -124,7 +124,7 @@ InsnMov::InsnMov()
     info.op0 = MatchType::rm;
     info.op1 = MatchType::ctrlReg;
     info.opcodeFlag = OpcodeFlag_ModRM_R;
-    info.forbidInfo = MatchForbid_8bit | MatchForbid_16bit | MatchForbid_32bit | MatchForbid_mem;   // ½ûÖ¹ÄÚ´æ²Ù×÷ºÍ8/16/32bit¼Ä´æÆ÷
+    info.forbidInfo = MatchForbid_8bit | MatchForbid_16bit | MatchForbid_32bit | MatchForbid_mem;   // ç¦æ­¢å†…å­˜æ“ä½œå’Œ8/16/32bitå¯„å­˜å™¨
     opcodeInfos.push_back(info);
     // MOV CRn, reg64 == 0F 22 /r
     info.reset();
@@ -134,8 +134,8 @@ InsnMov::InsnMov()
     info.numberOfOperand = 2;
     info.op0 = MatchType::ctrlReg;
     info.op1 = MatchType::rm;
-    info.opcodeFlag = OpcodeFlag_ModRM_R | OpcodeFlag_RMInRight;
-    info.forbidInfo = MatchForbid_8bit | MatchForbid_16bit | MatchForbid_32bit | MatchForbid_mem;   // ½ûÖ¹ÄÚ´æ²Ù×÷ºÍ8/16/32bit¼Ä´æÆ÷
+    info.opcodeFlag = OpcodeFlag_ModRM_R | OpcodeFlag_RMOnRight;
+    info.forbidInfo = MatchForbid_8bit | MatchForbid_16bit | MatchForbid_32bit | MatchForbid_mem;   // ç¦æ­¢å†…å­˜æ“ä½œå’Œ8/16/32bitå¯„å­˜å™¨
     opcodeInfos.push_back(info);
 }
 
