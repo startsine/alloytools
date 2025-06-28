@@ -26,7 +26,8 @@ X64Operand::X64Operand(uint64_t newValue)
 
 X64Operand::X64Operand(const MemoryAddressInfo & info)
 {
-
+    type = X64OperandType::MemoryAddressInfo;
+    addressInfo = info;
 }
 
 bool X64RegUtil::isCommonReg(X64RegValue reg)
