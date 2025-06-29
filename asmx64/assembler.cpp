@@ -52,7 +52,9 @@ void X64Assembler::assemblePass1()
         SourceLine parsedLine;
         //
         parsedLine.rawContent = curLine.rawLine;
+        // 下面判断如果是空行则不处理
         if (curLine.tokens.size() == 0) {
+            addLine(parsedLine);
             continue;
         }
         try {
@@ -160,55 +162,48 @@ void X64Assembler::assemblePass1()
 			}
         } catch (...) {
         }
-
+        addLine(parsedLine);
     }
 }
 
 void X64Assembler::assemblePass2()
 {
-    /*
-    if (sourceLines == null)
-    return;
-IInsnProcessor? insnProcessor = null;
-ulong lineTotal = sourceLines!.Count;
-ulong lineCnt;
-for (lineCnt = 0; lineCnt < lineTotal; lineCnt++) {
-    SourceLine curLine = sourceLines[lineCnt];
-    //
-    if (!curLine.hasInsn && !curLine.hasLabel)
-        continue;
-
-    if (curLine.hasLabel && !curLine.hasInsn) {
-        // 重新获得label的值，并与旧值比较
+    if (sourceLines.size() == 0) {
+        return;
     }
-    string insnStr = curLine.hasInsn ? curLine.insnStr : "";
-    if (X64Token.isCpuInstruction(insnStr)) {
-    }
-    else if (X64Token.isVirtualInstruction(insnStr)) {
-    }
-    else if (X64Token.isPseudoInstruction(insnStr)) {
-    }
-
-    if (X64Token.isCpuInstruction(insnStr)) {
-        insnProcessor = X64CpuInsnList.Instance.GetInsnProcessor(insnStr);
-    }
-    else if (X64Token.isVirtualInstruction(insnStr)) {
+    IInsnProcessor * insnProcessor = nullptr;						 // 指令处理器
+    size_t lineCnt = 0;
+    for (auto it = sourceLines.begin(); it != sourceLines.end(); it++) {
+        lineCnt++;
+        SourceLine & curLine = *it;
+        if (!curLine.hasInsn && !curLine.hasLabel)
+            continue;
+        if (curLine.hasLabel && !curLine.hasInsn) {
+            // TO-DO 重新获得label的值，并与旧值比较
+        }
+        string & insnStr = curLine.insnStr;
+        if (X64Token::isCpuInstruction(insnStr)) {
+            insnProcessor = X64CpuInsnList::getInstance().getInsnProcessor(insnStr);
+        }
+        else if (X64Token::isVirtualInstruction(insnStr)) {
+        }
+        else if (X64Token::isPseudoInstruction(insnStr)) {
+            insnProcessor = X64PseudoInsnList::getInstance().getPseudoInsnProcessor(insnStr);
+        }
+        else {
+            //// TO-DO 不认识的指令，报错
+            continue;
+        }
         //
-    }
-    else if (X64Token.isPseudoInstruction(insnStr)) {
-        insnProcessor = X64PseudoInsnList.Instance.GetPseudoInsnProcessor(insnStr);
-    }
-    else {
-        //// 不认识的指令，报错
-        continue;
-    }
-
-    if (insnProcessor is not null) {
-        insnProcessor.process(this, insnStr, curLine, 2);
+        if (insnProcessor != nullptr) {
+            insnProcessor->process(*this, insnStr, curLine, 2);
+        }
     }
 }
-    
-    */
+
+void X64Assembler::addLine(SourceLine & parsedLine)
+{
+    sourceLines.push_back(parsedLine);
 }
 
 void X64Assembler::setNeedRescan(bool value1)

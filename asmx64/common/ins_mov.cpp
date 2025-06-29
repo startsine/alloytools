@@ -19,9 +19,7 @@ int InsnMov::process(X64Assembler &assembler, const std::string & insnStr, Sourc
 /s3     OpcodeFlag_bit3Size          指令码的 bit3 代表操作数大小, bit3==0是为8bit, bit3==1是为 16/32/64 bit
 +r      OpcodeFlag_opcodeWithReg     将寄存器 reg 插入到 opcode 的 bit2-bit0 位置
 i       OpcodeFlag_withImm           指令码最后带立即数作为操作数
-
 */
-
 
 InsnMov::InsnMov()
 {
