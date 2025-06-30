@@ -42,6 +42,7 @@ class SourceLine
 {
 public:
     std::string rawContent;                          // 源码行的原始内容
+    std::string bincode;                             // 改行对应的二进制代码
     std::vector<X64Expression> expressions;     // 当前行的表达式列表(指令后面的表达式)
     bool hasInsn = false;                        // 该行是否拥有指令(包括指令与伪指令、虚拟指令等)
     bool hasLabel = false;                       // 该行是否拥有标签符号

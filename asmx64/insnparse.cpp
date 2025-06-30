@@ -239,6 +239,7 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
 
                 }
                 // 复制指令码
+                sourceLine.bincode = "";
                 int newCodeSize = combineCode(prefixCodeSize, insCodeSize, addrCodeSize, immCodeSize);
                 if (newCodeSize != 0) {
                     if (pass > 1) {
@@ -255,7 +256,10 @@ int BaseInsn::processCpuIns(X64Assembler & assembler, const std::string & insnSt
                     vector<RelocInfo> relocs = combineRelocs(addrRelocInfo, immRelocInfo, prefixCodeSize, insCodeSize, addrCodeSize);
                     sourceLine.relocInfos = relocs;
                     totalCodeSize = newCodeSize;
+                    // set bincode
+                    sourceLine.bincode = std::string((char*)finalCode, newCodeSize);
                 }
+                //
                 if (totalCodeSize > 0)
                     assembler.addCodeSize((uint64_t)totalCodeSize, sourceLine, pass);
                 return totalCodeSize;
