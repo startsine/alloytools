@@ -181,6 +181,11 @@ void X64Assembler::assemblePass2()
         if (curLine.hasLabel && !curLine.hasInsn) {
             // TO-DO 重新获得label的值，并与旧值比较
         }
+        // 有些表达式在第一遍没有计算完整的，在第二遍需要重新计算 
+        for (auto it2 = curLine.expressions.begin(); it2 != curLine.expressions.end(); it2++) {
+            it2->calc();
+        }
+        //
         string & insnStr = curLine.insnStr;
         if (X64Token::isCpuInstruction(insnStr)) {
             insnProcessor = X64CpuInsnList::getInstance().getInsnProcessor(insnStr);
