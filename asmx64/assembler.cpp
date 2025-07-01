@@ -21,6 +21,7 @@ void X64Assembler::assemble(const std::string & filepath)
     parser.parse();
     
     assemblePass1();
+    setNeedRescan(false);
 
     do {
         assemblePass2();

@@ -54,6 +54,9 @@
     <ClCompile Include="common\ins_mov.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="output.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asmx64.h">
@@ -96,6 +99,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="output.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

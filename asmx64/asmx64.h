@@ -18,6 +18,7 @@
 #include "symbol.h"
 #include "srcline.h"
 #include "assembler.h"
+#include "output.h"
 
 #include "common/ins_mov.h"
 #include "pseudo/ins_segment.h"
