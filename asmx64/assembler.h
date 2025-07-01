@@ -33,6 +33,7 @@ public:
     void assemble(const std::string & filepath);
     uint64_t getCurrOffset(uint64_t sectionIndex);
     void setNeedRescan(bool value1);
+    bool isNeedRescan();
     void addCodeSize(uint64_t codesize, SourceLine & sourceLine, int pass);
     
 };

@@ -217,6 +217,11 @@ void X64Assembler::setNeedRescan(bool value1)
     boNeedReScan = value1;
 }
 
+bool X64Assembler::isNeedRescan()
+{
+    return boNeedReScan;
+}
+
 void X64Assembler::addCodeSize(uint64_t codesize, SourceLine & sourceLine, int pass)
 {
     auto & section = sectionList.getCurrSection();
