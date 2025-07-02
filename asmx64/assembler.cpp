@@ -31,6 +31,9 @@ void X64Assembler::assemble(const std::string & filepath)
         printf("=====哈哈=====\n");
     } while (true);
 
+    ElfWriter elf(this);
+    elf.write();
+
     //Console.WriteLine("open ok");
     //string s = Encoding.UTF8.GetString(src);
     //Console.WriteLine(s);
