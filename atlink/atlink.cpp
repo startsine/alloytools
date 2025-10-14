@@ -1,20 +1,60 @@
 ﻿// atlink.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
 //
 
-#include <iostream>
+#include <stdio.h>
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
+static int atlink_main(int argc, char ** argv)
+{
+    if (argc > 1) {
+        //try {
+        //    
+        //}
+        //catch (...) {
+        //    //
+        //}
+    }
+    return 0;
+}
+
+
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    int ret;
+#ifdef _WIN32
+    int i;
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+    const wchar_t * cmdline = GetCommandLineW();
+    int argsSize;
+    wchar_t ** wargList = CommandLineToArgvW(cmdline, &argsSize);
+    char ** byteArgList = new char *[argsSize + 1];
+    for (i = 0; i < argsSize; i++) {
+        size_t wlen = wcslen(wargList[i]);
+        size_t maxByteLen = (wlen + 1) * 4;             // in UTF-8, max size of one character is 4
+        char * byteArg = new char[maxByteLen];
+        BOOL usedDefaultChar;
+        WideCharToMultiByte(CP_UTF8, 0, wargList[i], (int)(wlen + 1), byteArg, (int)maxByteLen, "_", &usedDefaultChar);
+        byteArgList[i] = byteArg;
+    }
+    byteArgList[i] = nullptr;
+    LocalFree(wargList);
+    //
+    ret = atlink_main(argsSize, byteArgList);
+
+    for (i = 0; i < argsSize; i++) {
+        delete[] byteArgList[i];
+    }
+    delete[] byteArgList;
+
+#else
+    ret = atlink_main(argsSize, byteArgList);
+#endif
+
+    return ret;
 }
 
-// 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
-// 调试程序: F5 或调试 >“开始调试”菜单
 
-// 入门使用技巧: 
-//   1. 使用解决方案资源管理器窗口添加/管理文件
-//   2. 使用团队资源管理器窗口连接到源代码管理
-//   3. 使用输出窗口查看生成输出和其他消息
-//   4. 使用错误列表窗口查看错误
-//   5. 转到“项目”>“添加新项”以创建新的代码文件，或转到“项目”>“添加现有项”以将现有代码文件添加到项目
-//   6. 将来，若要再次打开此项目，请转到“文件”>“打开”>“项目”并选择 .sln 文件
