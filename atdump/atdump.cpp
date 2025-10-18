@@ -11,11 +11,11 @@
 static int checkFileType(const char * filename)
 {
     unsigned char b[4] = {0};
-    FILE * srcFile = fopen(filename, "rb");
+    FILE * srcFile = fopen_utf8(filename, "rb");
     if (srcFile != nullptr) {
         fread(b, 1, 4, srcFile);
         fclose(srcFile);
-        if (0 == strncmp((char*)b, "\x7fELF", 4))
+        if (0 == strncmp((char*)b, "\177ELF", 4))
             return FILE_TYPE_ELF;
     }
     return -1;
