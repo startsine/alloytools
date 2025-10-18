@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asmx64", "asmx64\asmx64.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "atlink", "atlink\atlink.vcxproj", "{F63A5DBB-0955-4228-8BE7-BA7FC5AE3F1A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "atdump", "atdump\atdump.vcxproj", "{2762FC78-9EC3-4459-B7FC-D8F3FF9800FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{F63A5DBB-0955-4228-8BE7-BA7FC5AE3F1A}.Release|x64.Build.0 = Release|x64
 		{F63A5DBB-0955-4228-8BE7-BA7FC5AE3F1A}.Release|x86.ActiveCfg = Release|Win32
 		{F63A5DBB-0955-4228-8BE7-BA7FC5AE3F1A}.Release|x86.Build.0 = Release|Win32
+		{2762FC78-9EC3-4459-B7FC-D8F3FF9800FC}.Debug|x64.ActiveCfg = Debug|x64
+		{2762FC78-9EC3-4459-B7FC-D8F3FF9800FC}.Debug|x64.Build.0 = Debug|x64
+		{2762FC78-9EC3-4459-B7FC-D8F3FF9800FC}.Debug|x86.ActiveCfg = Debug|Win32
+		{2762FC78-9EC3-4459-B7FC-D8F3FF9800FC}.Debug|x86.Build.0 = Debug|Win32
+		{2762FC78-9EC3-4459-B7FC-D8F3FF9800FC}.Release|x64.ActiveCfg = Release|x64
+		{2762FC78-9EC3-4459-B7FC-D8F3FF9800FC}.Release|x64.Build.0 = Release|x64
+		{2762FC78-9EC3-4459-B7FC-D8F3FF9800FC}.Release|x86.ActiveCfg = Release|Win32
+		{2762FC78-9EC3-4459-B7FC-D8F3FF9800FC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
