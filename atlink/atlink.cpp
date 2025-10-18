@@ -20,7 +20,7 @@ static int atlink_main(int argc, char ** argv)
 
 
 
-int main()
+int main(int argc, char ** argv)
 {
     int ret;
 #ifdef _WIN32
@@ -50,7 +50,7 @@ int main()
     delete[] byteArgList;
 
 #else
-    ret = atlink_main(argsSize, byteArgList);
+    ret = atlink_main(argc, argv);
 #endif
 
     return ret;
