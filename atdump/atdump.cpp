@@ -7,6 +7,7 @@
 #include "common_io.h"
 
 #define FILE_TYPE_ELF           1
+void dumpElfFile(const char * filename);
 
 static int checkFileType(const char * filename)
 {
@@ -21,7 +22,6 @@ static int checkFileType(const char * filename)
     return -1;
 }
 
-void dumpElfFile(const char * filename);
 
 static int atdump_main(int argc, char ** argv)
 {
