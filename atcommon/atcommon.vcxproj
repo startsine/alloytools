@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="at_elf.h" />
     <ClInclude Include="at_io.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />

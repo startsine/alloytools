@@ -24,6 +24,9 @@
     <ClInclude Include="at_io.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="at_elf.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="atcommon.cpp">
