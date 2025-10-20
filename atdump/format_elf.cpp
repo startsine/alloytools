@@ -1,15 +1,27 @@
-﻿#include <stdio.h>
+﻿#include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <string>
+#include <vector>
 #include "at_io.h"
-
+#include "at_elf.h"
 
 class ElfParser {
 private:
     FILE * elf;
     const long long elfStartOffset;
     const long long elfTotalSize;
-    bool isBigEndian;
+    bool isBigEndian;                           
+    bool isElf64;
+    unsigned short stringTableSectionIndex = 0;
+    uint64_t sectionTableOffset = 0;
+    uint16_t sectionEntryCount = 0;
+    uint64_t programTableOffset = 0;
+    uint16_t programEntryCount = 0;
+    std::vector<Elf64SectionEntry> sectionTable64;
+    char * strtab = nullptr;
+    uint64_t strtabSize = 0;
+    std::vector<const char * > sectionNameList;
 
 private:
 
@@ -66,14 +78,34 @@ private:
         return ((a7 << 56) | (a6 << 48) | (a5 << 40) | (a4 << 32) | (a3 << 24) | (a2 << 16) | (a1 << 8) | a0);
     }
 
+    int elfSeek(long long offset, int origin) {
+        int v = fseek_long(elf, offset, origin);
+        if (feof(elf)) {
+            throw(std::string("out of file"));
+        }
+        long long curr = get_file_curr_pointer(elf);
+        if (curr > elfStartOffset + elfTotalSize) {
+            throw(std::string("out of file"));
+        }
+        return v;
+    }
+
+    const char * getString(uint64_t offset) {
+        if (strtab == nullptr)  return "";
+        if (offset >= strtabSize) return "";
+        const char * str = &strtab[offset];
+        return str;
+    }
 
     void dumpElfHeader() {
         unsigned char ident[16];
         fread(ident, 1, 16);
         // EI_CLASS == 4
         const char * bitSize = "未知";
+        isElf64 = true;
         if (ident[4] == 1) {
             bitSize = "32位";
+            isElf64 = false;
         }
         else if (ident[4] == 2) {
             bitSize = "64位";
@@ -148,10 +180,12 @@ private:
         // 程序头表位置: e_phoff
         unsigned long long e_phoff = read_u64();
         printf("程序头表位置:         0x%016llu\n", e_phoff);
+        programTableOffset = e_phoff;
 
         // 节表头位置: e_shoff
         unsigned long long e_shoff = read_u64();
-        printf("程序头表位置:         0x%016llu\n", e_shoff);
+        printf("节表头位置:         0x%016llu\n", e_shoff);
+        sectionTableOffset = e_shoff;
 
         // 处理器特殊标志: e_flags
         unsigned int e_flags = read_u32();
@@ -168,6 +202,7 @@ private:
         // 程序头表项个数: e_phnum
         unsigned short e_phnum = read_u16();
         printf("程序头表项个数:         0x%d\n", (int)e_phnum);
+        programEntryCount = e_phnum;
 
         // 节表项大小: e_shentsize
         unsigned short e_shentsize = read_u16();
@@ -176,23 +211,65 @@ private:
         // 节表项个数: e_shnum
         unsigned short e_shnum = read_u16();
         printf("节表项个数:         0x%d\n", (int)e_shnum);
+        sectionEntryCount = e_shnum;
 
         // 字符串表节的索引: e_shstrndx
         unsigned short e_shstrndx = read_u16();
         printf("字符串表节的索引:         0x%d\n", (int)e_shstrndx);
-
-        /*
-        typedef struct
-
-        Elf64_Half e_shstrndx; // Section name string table index 
-    } Elf64_Ehdr;
-        */
+        stringTableSectionIndex = e_shstrndx;
     }
+
+    void dumpSectionHeader() {
+        if (sectionEntryCount == 0 || sectionTableOffset == 0) return;
+        elfSeek((int64_t)sectionTableOffset, SEEK_SET);
+        if (isElf64) {
+            for (uint32_t i = 0; i < sectionEntryCount; i++) {
+                Elf64SectionEntry section;
+                section.section_name = read_u32();
+                section.section_type = read_u32();
+                section.section_flags = read_u64();
+                section.section_addr = read_u64();
+                section.section_offset = read_u64();
+                section.section_size = read_u64();
+                section.section_link = read_u32();
+                section.section_info = read_u32();
+                section.section_addralign = read_u64();
+                section.section_entsize = read_u64();
+                sectionTable64.push_back(section);
+            }
+            // 读取字符串表
+            if (stringTableSectionIndex != 0 && stringTableSectionIndex < sectionEntryCount) {
+                Elf64SectionEntry & section = sectionTable64[stringTableSectionIndex];
+                strtabSize = section.section_size;
+                strtab = new char[strtabSize + 4];
+                elfSeek((int64_t)section.section_offset, SEEK_SET);
+                fread(strtab, 1, (size_t)strtabSize);
+            }
+            // 读取所有section名
+            sectionNameList.clear();
+            for (uint32_t i = 0; i < sectionTable64.size(); i++) {
+                const char * str = getString(sectionTable64[i].section_name);
+                sectionNameList.push_back(str);
+            }
+
+            for (uint32_t i = 1; i < sectionTable64.size(); i++) {
+                printf("name: %s\n", sectionNameList[i]);
+            }
+            //
+        }
+        //
+        
+
+
+    }
+
+
 
     void parse2() {
         if (elf == nullptr) return;
         try {
             dumpElfHeader();
+            dumpSectionHeader();
         }
         catch (std::string s) {
 
@@ -207,6 +284,8 @@ public:
     ~ElfParser() {
         if (elf)    fclose(elf);
         elf = nullptr;
+        if (strtab != nullptr)  delete[] strtab;
+        strtab = nullptr;
     }
 
     void parse() {
