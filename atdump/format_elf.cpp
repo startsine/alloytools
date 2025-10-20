@@ -5,6 +5,7 @@
 #include <vector>
 #include "at_io.h"
 #include "at_elf.h"
+#include "at_util.h"
 
 class ElfParser {
 private:
@@ -95,6 +96,52 @@ private:
         if (offset >= strtabSize) return "";
         const char * str = &strtab[offset];
         return str;
+    }
+
+    const char * getSectionTypeDesc(uint32_t type) {
+        static char unknownText[32];
+        if (type < 0x60000000) {
+            switch (type)
+            {
+            case 0:
+                return "NULL";
+            case 1:
+                return "PROGBITS";
+            case 2:
+                return "SYMTAB";
+            case 3:
+                return "STRTAB";
+            case 4:
+                return "RELA";
+            case 5:
+                return "HASH";
+            case 6:
+                return "DYNAMIC";
+            case 7:
+                return "NOTE";
+            case 8:
+                return "NOBITS";
+            case 9:
+                return "REL";
+            case 10:
+                return "SHLIB";
+            case 11:
+                return "DYNSYM";
+            default:
+                snprintf(unknownText, sizeof(unknownText), "unknown-0x%08u", type);
+                return unknownText;
+            }
+        }
+        else if (type >= 0x60000000 && type <= 0x60000000) {
+            snprintf(unknownText, sizeof(unknownText), "OS-0x%08u", type);
+            return unknownText;
+        }
+        else if (type >= 0x70000000 && type <= 0x7FFFFFFF) {
+            snprintf(unknownText, sizeof(unknownText), "PROC-0x%08u", type);
+            return unknownText;
+        }
+        snprintf(unknownText, sizeof(unknownText), "unknown-0x%08u", type);
+        return unknownText;
     }
 
     void dumpElfHeader() {
@@ -193,29 +240,29 @@ private:
 
         // ELF头大小: e_ehsize
         unsigned short e_ehsize = read_u16();
-        printf("ELF 头大小:         0x%d\n", (int)e_ehsize);
+        printf("ELF 头大小:         %d\n", (int)e_ehsize);
 
         // 程序头表项大小: e_phentsize
         unsigned short e_phentsize = read_u16();
-        printf("程序头表项大小:         0x%d\n", (int)e_phentsize);
+        printf("程序头表项大小:         %d\n", (int)e_phentsize);
 
         // 程序头表项个数: e_phnum
         unsigned short e_phnum = read_u16();
-        printf("程序头表项个数:         0x%d\n", (int)e_phnum);
+        printf("程序头表项个数:         %d\n", (int)e_phnum);
         programEntryCount = e_phnum;
 
         // 节表项大小: e_shentsize
         unsigned short e_shentsize = read_u16();
-        printf("节表项大小:         0x%d\n", (int)e_shentsize);
+        printf("节表项大小:         %d\n", (int)e_shentsize);
 
         // 节表项个数: e_shnum
         unsigned short e_shnum = read_u16();
-        printf("节表项个数:         0x%d\n", (int)e_shnum);
+        printf("节表项个数:         %d\n", (int)e_shnum);
         sectionEntryCount = e_shnum;
 
         // 字符串表节的索引: e_shstrndx
         unsigned short e_shstrndx = read_u16();
-        printf("字符串表节的索引:         0x%d\n", (int)e_shstrndx);
+        printf("字符串表节的索引:         %d\n", (int)e_shstrndx);
         stringTableSectionIndex = e_shstrndx;
     }
 
@@ -256,6 +303,99 @@ private:
                 printf("name: %s\n", sectionNameList[i]);
             }
             //
+            size_t maxNameLength = 0;           // section名最大长度
+            size_t maxTypeLength = 0;           // section type 最大长度
+            bool secAddrUse64 = false;          // section addr 是否用64位
+            bool secOffsetUse64 = false;        // section offset 是否用64位
+            int maxSizeDigits = 0;              // section size 最大占多少位10进制数字
+            int maxLinkDigits = 0;              // section link 最大占多少位10进制数字
+            int maxInfoDigits = 0;              // section info 最大占多少位10进制数字
+            bool secAddrAlignUse64 = false;     // section addralign 是否用64位
+            int maxEntSizeDigits = 0;           // section entsize 最大占多少位10进制数字
+            for (uint32_t i = 1; i < sectionTable64.size(); i++) {
+                Elf64SectionEntry & section = sectionTable64[i];
+                //
+                if (strlen(sectionNameList[i]) > maxNameLength) {
+                    maxNameLength = strlen(sectionNameList[i]);
+                }
+                const char * typeSesc = getSectionTypeDesc(section.section_type);
+                if (strlen(typeSesc) > maxTypeLength) {
+                    maxTypeLength = strlen(typeSesc);
+                }
+                if (section.section_addr > 0xffffffff) {
+                    secAddrUse64 = true;
+                }
+                if (section.section_offset > 0xffffffff) {
+                    secOffsetUse64 = true;
+                }
+                if (get_number_digits(section.section_size) > maxSizeDigits) {
+                    maxSizeDigits = get_number_digits(section.section_size);
+                }
+                if (get_number_digits((uint64_t)section.section_link) > maxLinkDigits) {
+                    maxLinkDigits = get_number_digits((uint64_t)section.section_link);
+                }
+                if (get_number_digits((uint64_t)section.section_info) > maxInfoDigits) {
+                    maxInfoDigits = get_number_digits((uint64_t)section.section_info);
+                }
+                if (section.section_addralign > 0xffffffff) {
+                    secAddrAlignUse64 = true;
+                }
+                if (get_number_digits(section.section_entsize) > maxEntSizeDigits) {
+                    maxEntSizeDigits = get_number_digits(section.section_entsize);
+                }
+            }
+            //
+            if (maxSizeDigits < 4)  maxSizeDigits = 4;
+            if (maxLinkDigits < 4)  maxLinkDigits = 4;
+            if (maxInfoDigits < 4)  maxInfoDigits = 4;
+            if (maxEntSizeDigits < 7) maxEntSizeDigits = 7;
+            //
+            for (uint32_t i = 1; i < sectionTable64.size(); i++) {
+                char format[128];
+                Elf64SectionEntry & section = sectionTable64[i];
+                // section name
+                snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxNameLength);
+                printf(format, sectionNameList[i]);
+                // section type
+                const char * typeSesc = getSectionTypeDesc(section.section_type);
+                snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxTypeLength);
+                printf(format, typeSesc);
+                // section addr
+                if (secAddrUse64) {
+                    printf("0x%016X ", section.section_addr);
+                } else {
+                    printf("0x%08X ", (uint32_t) section.section_addr);
+                }
+                // section offset
+                if (secOffsetUse64) {
+                    printf("0x%016X ", section.section_offset);
+                }
+                else {
+                    printf("0x%08X ", (uint32_t)section.section_offset);
+                }
+                // section size
+                snprintf(format, sizeof(format), "%%%dd ", maxSizeDigits);
+                printf(format, section.section_size);
+                // section link
+                snprintf(format, sizeof(format), "%%%dd ", maxLinkDigits);
+                printf(format, section.section_link);
+                // section info
+                snprintf(format, sizeof(format), "%%%dd ", maxInfoDigits);
+                printf(format, section.section_info);
+                // section addralign
+                if (secAddrAlignUse64) {
+                    printf("0x%016X ", section.section_addralign);
+                }
+                else {
+                    printf("0x%08X ", (uint32_t)section.section_addralign);
+                }
+                // section entsize
+                snprintf(format, sizeof(format), "%%%dd ", maxEntSizeDigits);
+                printf(format, section.section_entsize);
+                // 
+                printf("\n");
+            }
+            
         }
         //
         
