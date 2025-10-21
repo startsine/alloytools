@@ -127,20 +127,32 @@ private:
                 return "SHLIB";
             case 11:
                 return "DYNSYM";
+            case 14:
+                return "INIT_ARRAY";
+            case 15:
+                return "FINI_ARRAY";
+            case 16:
+                return "PREINIT_ARRAY";
+            case 17:
+                return "GROUP";
+            case 18:
+                return "SYMTAB_SHNDX";
+            case 19:
+                return "RELR";
             default:
-                snprintf(unknownText, sizeof(unknownText), "unknown-0x%08u", type);
+                snprintf(unknownText, sizeof(unknownText), "unknown-0x%08x", type);
                 return unknownText;
             }
         }
         else if (type >= 0x60000000 && type <= 0x60000000) {
-            snprintf(unknownText, sizeof(unknownText), "OS-0x%08u", type);
+            snprintf(unknownText, sizeof(unknownText), "OS-0x%08x", type);
             return unknownText;
         }
         else if (type >= 0x70000000 && type <= 0x7FFFFFFF) {
-            snprintf(unknownText, sizeof(unknownText), "PROC-0x%08u", type);
+            snprintf(unknownText, sizeof(unknownText), "PROC-0x%08x", type);
             return unknownText;
         }
-        snprintf(unknownText, sizeof(unknownText), "unknown-0x%08u", type);
+        snprintf(unknownText, sizeof(unknownText), "unknown-0x%08x", type);
         return unknownText;
     }
 
@@ -183,7 +195,7 @@ private:
         }
         printf("ABI:         %s\n", abiType);
         // EI_OSABI == 8
-        printf("ABI 版本:         %d\n", ident[6]);
+        printf("ABI 版本:         %d\n", ident[8]);
 
         printf("----\n");
 
@@ -303,6 +315,7 @@ private:
                 printf("name: %s\n", sectionNameList[i]);
             }
             //
+            int maxSectionIdDigits = 0;         // section 序号 最大占多少位10进制数字
             size_t maxNameLength = 0;           // section名最大长度
             size_t maxTypeLength = 0;           // section type 最大长度
             bool secAddrUse64 = false;          // section addr 是否用64位
@@ -315,6 +328,9 @@ private:
             for (uint32_t i = 1; i < sectionTable64.size(); i++) {
                 Elf64SectionEntry & section = sectionTable64[i];
                 //
+                if (get_number_digits((int64_t) i) > maxSectionIdDigits) {
+                    maxSectionIdDigits = get_number_digits((int64_t) i);
+                }
                 if (strlen(sectionNameList[i]) > maxNameLength) {
                     maxNameLength = strlen(sectionNameList[i]);
                 }
@@ -353,6 +369,9 @@ private:
             for (uint32_t i = 1; i < sectionTable64.size(); i++) {
                 char format[128];
                 Elf64SectionEntry & section = sectionTable64[i];
+                // id
+                snprintf(format, sizeof(format), "%%%dd ", maxSectionIdDigits);
+                printf(format, (int) i);
                 // section name
                 snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxNameLength);
                 printf(format, sectionNameList[i]);
@@ -392,7 +411,31 @@ private:
                 // section entsize
                 snprintf(format, sizeof(format), "%%%dd ", maxEntSizeDigits);
                 printf(format, section.section_entsize);
-                // 
+                // flag
+                char flagStr[64] = {0};
+                int flagStrCnt = 0;
+                if (section.section_flags & ELF_SECTION_FLAG_ALLOC) flagStr[flagStrCnt++] = 'A';
+                if (section.section_flags & ELF_SECTION_FLAG_WRITE) flagStr[flagStrCnt++] = 'W';
+                if (section.section_flags & ELF_SECTION_FLAG_EXEC) flagStr[flagStrCnt++] = 'X';
+                if (section.section_flags & ELF_SECTION_FLAG_MERGE) flagStr[flagStrCnt++] = 'M';
+                if (section.section_flags & ELF_SECTION_FLAG_STRING) flagStr[flagStrCnt++] = 'S';
+                if (section.section_flags & ELF_SECTION_GROUP) flagStr[flagStrCnt++] = 'G';
+                if (section.section_flags & ELF_SECTION_TLS) flagStr[flagStrCnt++] = 'T';
+
+                if (section.section_flags & ELF_SECTION_FLAG_INFO_LINK) flagStr[flagStrCnt++] = 'I';
+                if (section.section_flags & ELF_SECTION_FLAG_LINK_ORDER) flagStr[flagStrCnt++] = 'L';
+                if (section.section_flags & ELF_SECTION_COMPRESSED) flagStr[flagStrCnt++] = 'C';
+                if (section.section_flags & ELF_SECTION_GNU_MBIND) flagStr[flagStrCnt++] = 'D';
+                //if (section.section_flags & ELF_SECTION_EXCLUDE) flagStr[flagStrCnt++] = 'E';
+                /*
+Key to Flags:
+  O (extra OS processing required),
+  C (compressed), x (unknown), o (OS specific),
+  l (large), p (processor specific)
+*/
+
+                if (flagStr[0] != 0)
+                    printf("[%s]", flagStr);
                 printf("\n");
             }
             
