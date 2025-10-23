@@ -31,5 +31,18 @@ typedef struct
 #define ELF_SECTION_GNU_RETAIN          (1 << 21)
 #define ELF_SECTION_GNU_MBIND           (1 << 24)
 
+typedef struct
+{
+    uint32_t pro_type;              // Type of segment 
+    uint32_t pro_flags;             // Segment attributes 
+    uint64_t pro_offset;            // Offset in file 
+    uint64_t pro_vaddr;             // Virtual address in memory 
+    uint64_t pro_paddr;             // Reserved 
+    uint64_t pro_filesz;            // Size of segment in file 
+    uint64_t pro_memsz;             // Size of segment in memory 
+    uint64_t pro_align;             // Alignment of segment 
+} Elf64ProgramEntry;
+
+
 
 

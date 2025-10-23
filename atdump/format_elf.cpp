@@ -20,9 +20,10 @@ private:
     uint64_t programTableOffset = 0;
     uint16_t programEntryCount = 0;
     std::vector<Elf64SectionEntry> sectionTable64;
+    std::vector<const char * > sectionNameList;
     char * strtab = nullptr;
     uint64_t strtabSize = 0;
-    std::vector<const char * > sectionNameList;
+    std::vector<Elf64ProgramEntry> programTable64;
 
 private:
 
@@ -156,6 +157,46 @@ private:
         return unknownText;
     }
 
+    const char * getProgramTypeDesc(uint32_t type) {
+        static char unknownText[32];
+        if (type < 0x60000000) {
+            switch (type)
+            {
+            case 0:
+                return "NULL";
+            case 1:
+                return "LOAD";
+            case 2:
+                return "DYNAMIC";
+            case 3:
+                return "INTERP";
+            case 4:
+                return "NOTE";
+            case 5:
+                return "SHLIB";
+            case 6:
+                return "PHDR";
+            case 7:
+                return "TLS";
+            case 8:
+                return "NUM";                   //umber of defined types
+            default:
+                snprintf(unknownText, sizeof(unknownText), "unknown-0x%08x", type);
+                return unknownText;
+            }
+        }
+        else if (type >= 0x60000000 && type <= 0x60000000) {
+            snprintf(unknownText, sizeof(unknownText), "OS-0x%08x", type);
+            return unknownText;
+        }
+        else if (type >= 0x70000000 && type <= 0x7FFFFFFF) {
+            snprintf(unknownText, sizeof(unknownText), "PROC-0x%08x", type);
+            return unknownText;
+        }
+        snprintf(unknownText, sizeof(unknownText), "unknown-0x%08x", type);
+        return unknownText;
+    }
+
     void dumpElfHeader() {
         unsigned char ident[16];
         fread(ident, 1, 16);
@@ -234,16 +275,16 @@ private:
 
         // 程序入口点 : e_entry
         unsigned long long e_entry = read_u64();
-        printf("程序入口地址:         0x%016llu\n", e_entry);
+        printf("程序入口地址:         0x%016llx\n", e_entry);
 
         // 程序头表位置: e_phoff
         unsigned long long e_phoff = read_u64();
-        printf("程序头表位置:         0x%016llu\n", e_phoff);
+        printf("程序头表位置:         0x%016llx\n", e_phoff);
         programTableOffset = e_phoff;
 
         // 节表头位置: e_shoff
         unsigned long long e_shoff = read_u64();
-        printf("节表头位置:         0x%016llu\n", e_shoff);
+        printf("节表头位置:         0x%016llx\n", e_shoff);
         sectionTableOffset = e_shoff;
 
         // 处理器特殊标志: e_flags
@@ -310,10 +351,6 @@ private:
                 const char * str = getString(sectionTable64[i].section_name);
                 sectionNameList.push_back(str);
             }
-
-            for (uint32_t i = 1; i < sectionTable64.size(); i++) {
-                printf("name: %s\n", sectionNameList[i]);
-            }
             //
             int maxSectionIdDigits = 0;         // section 序号 最大占多少位10进制数字
             size_t maxNameLength = 0;           // section名最大长度
@@ -325,6 +362,7 @@ private:
             int maxInfoDigits = 0;              // section info 最大占多少位10进制数字
             bool secAddrAlignUse64 = false;     // section addralign 是否用64位
             int maxEntSizeDigits = 0;           // section entsize 最大占多少位10进制数字
+            
             for (uint32_t i = 1; i < sectionTable64.size(); i++) {
                 Elf64SectionEntry & section = sectionTable64[i];
                 //
@@ -366,8 +404,55 @@ private:
             if (maxInfoDigits < 4)  maxInfoDigits = 4;
             if (maxEntSizeDigits < 7) maxEntSizeDigits = 7;
             //
+            char format[128];
+            putchar('\n');
+            printf("节表:\n");
+            for (int i = 0; i < maxSectionIdDigits; i++)
+                putchar(' ');
+            putchar(' ');
+            // section name
+            snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxNameLength);
+            printf(format, "name");
+            // section type
+            snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxTypeLength);
+            printf(format, "type");
+            // section addr
+            if (secAddrUse64) {
+                printf("%-18s ", "addr");
+            }
+            else {
+                printf("%-10s ", "addr");
+            }
+            // section offset
+            if (secOffsetUse64) {
+                printf("%-18s ", "offset");
+            }
+            else {
+                printf("%-10s ", "offset");
+            }
+            // section size
+            snprintf(format, sizeof(format), "%%%ds ", maxSizeDigits);
+            printf(format, "size");
+            // section link
+            snprintf(format, sizeof(format), "%%%ds ", maxLinkDigits);
+            printf(format, "link");
+            // section info
+            snprintf(format, sizeof(format), "%%%ds ", maxInfoDigits);
+            printf(format, "info");
+            // section addralign
+            if (secAddrAlignUse64) {
+                printf("%-18s ", "addralign");
+            }
+            else {
+                printf("%-10s ", "addralign");
+            }
+            // section entsize
+            snprintf(format, sizeof(format), "%%%ds ", maxEntSizeDigits);
+            printf(format, "entsize");
+            printf("flag");
+            putchar('\n');
+            //
             for (uint32_t i = 1; i < sectionTable64.size(); i++) {
-                char format[128];
                 Elf64SectionEntry & section = sectionTable64[i];
                 // id
                 snprintf(format, sizeof(format), "%%%dd ", maxSectionIdDigits);
@@ -428,11 +513,11 @@ private:
                 if (section.section_flags & ELF_SECTION_GNU_MBIND) flagStr[flagStrCnt++] = 'D';
                 //if (section.section_flags & ELF_SECTION_EXCLUDE) flagStr[flagStrCnt++] = 'E';
                 /*
-Key to Flags:
-  O (extra OS processing required),
-  C (compressed), x (unknown), o (OS specific),
-  l (large), p (processor specific)
-*/
+                    Key to Flags:
+                      O (extra OS processing required),
+                      C (compressed), x (unknown), o (OS specific),
+                      l (large), p (processor specific)
+                    */
 
                 if (flagStr[0] != 0)
                     printf("[%s]", flagStr);
@@ -446,6 +531,103 @@ Key to Flags:
 
     }
 
+    void dumpProgramHeader() {
+        if (programEntryCount == 0 || programTableOffset == 0) return;
+        elfSeek((int64_t)programTableOffset, SEEK_SET);
+        if (isElf64) {
+            for (uint32_t i = 0; i < programEntryCount; i++) {
+                Elf64ProgramEntry entry;
+                entry.pro_type = read_u32();
+                entry.pro_flags = read_u32();
+                entry.pro_offset = read_u64();
+                entry.pro_vaddr = read_u64();
+                entry.pro_paddr = read_u64();
+                entry.pro_filesz = read_u64();
+                entry.pro_memsz = read_u64();
+                entry.pro_align = read_u64();
+                programTable64.push_back(entry);
+            }
+            int maxProgramIdDigits = 0;         // program header 序号 最大占多少位10进制数字
+            size_t maxTypeLength = 0;           // program type 最大长度
+            bool vAddrUse64 = false;            // vaddr 是否用64位
+            bool offsetUse64 = false;           // offset 是否用64位
+            int maxMemSizeDigits = 0;           // memsz
+            int maxFileSizeDigits = 0;          // filesz
+            int maxAlignDigits = 0;             // align
+            for (uint32_t i = 0; i < programTable64.size(); i++) {                      // program header 从0条目开始都是实质内容，不留空
+                Elf64ProgramEntry & programEntry = programTable64[i];
+                //
+                if (get_number_digits((int64_t)i) > maxProgramIdDigits) {
+                    maxProgramIdDigits = get_number_digits((int64_t)i);
+                }
+                const char * typeSesc = getProgramTypeDesc(programEntry.pro_type);
+                if (strlen(typeSesc) > maxTypeLength) {
+                    maxTypeLength = strlen(typeSesc);
+                }
+                if (programEntry.pro_vaddr > 0xffffffff) {
+                    vAddrUse64 = true;
+                }
+                if (programEntry.pro_offset > 0xffffffff) {
+                    vAddrUse64 = true;
+                }
+                if (get_number_digits(programEntry.pro_memsz) > maxMemSizeDigits) {
+                    maxMemSizeDigits = get_number_digits(programEntry.pro_memsz);
+                }
+                if (get_number_digits(programEntry.pro_filesz) > maxFileSizeDigits) {
+                    maxFileSizeDigits = get_number_digits(programEntry.pro_filesz);
+                }
+                if (get_number_digits(programEntry.pro_align) > maxAlignDigits) {
+                    maxAlignDigits = get_number_digits(programEntry.pro_align);
+                }
+            }
+            char format[128];
+            putchar('\n');
+            printf("程序头表:\n");
+            for (int i = 0; i < maxProgramIdDigits; i++)
+                putchar(' ');
+            putchar(' ');
+            // type
+            snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxTypeLength);
+            printf(format, "type");
+            putchar('\n');
+            //
+            for (uint32_t i = 0; i < programTable64.size(); i++) {
+                Elf64ProgramEntry & programEntry = programTable64[i];
+                // id
+                snprintf(format, sizeof(format), "%%%dd ", maxProgramIdDigits);
+                printf(format, (int)i);
+                // type
+                const char * typeSesc = getProgramTypeDesc(programEntry.pro_type);
+                snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxTypeLength);
+                printf(format, typeSesc);
+                // vaddr
+                if (vAddrUse64) {
+                    printf("0x%016X ", programEntry.pro_vaddr);
+                }
+                else {
+                    printf("0x%08X ", (uint32_t)programEntry.pro_vaddr);
+                }
+                // vaddr
+                if (offsetUse64) {
+                    printf("0x%016X ", programEntry.pro_offset);
+                }
+                else {
+                    printf("0x%08X ", (uint32_t)programEntry.pro_offset);
+                }
+                // mem size
+                snprintf(format, sizeof(format), "%%%dlld ", maxMemSizeDigits);
+                printf(format, programEntry.pro_memsz);
+                // file size
+                snprintf(format, sizeof(format), "%%%dlld ", maxFileSizeDigits);
+                printf(format, programEntry.pro_filesz);
+                // align
+                snprintf(format, sizeof(format), "%%%dlld ", maxAlignDigits);
+                printf(format, programEntry.pro_align);
+
+                putchar('\n');
+            }
+        }
+    }
 
 
     void parse2() {
@@ -453,6 +635,7 @@ Key to Flags:
         try {
             dumpElfHeader();
             dumpSectionHeader();
+            dumpProgramHeader();
         }
         catch (std::string s) {
 
