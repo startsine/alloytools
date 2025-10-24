@@ -162,32 +162,67 @@ private:
         if (type < 0x60000000) {
             switch (type)
             {
-            case 0:
+            case ELF_SEGMENT_TYPE_NULL:
                 return "NULL";
-            case 1:
+            case ELF_SEGMENT_TYPE_LOAD:
                 return "LOAD";
-            case 2:
+            case ELF_SEGMENT_TYPE_DYNAMIC:
                 return "DYNAMIC";
-            case 3:
+            case ELF_SEGMENT_TYPE_INTERP:
                 return "INTERP";
-            case 4:
+            case ELF_SEGMENT_TYPE_NOTE:
                 return "NOTE";
-            case 5:
+            case ELF_SEGMENT_TYPE_SHLIB:
                 return "SHLIB";
-            case 6:
+            case ELF_SEGMENT_TYPE_PHDR:
                 return "PHDR";
-            case 7:
+            case ELF_SEGMENT_TYPE_TLS:
                 return "TLS";
-            case 8:
+            case ELF_SEGMENT_TYPE_NUM:
                 return "NUM";                   //umber of defined types
             default:
                 snprintf(unknownText, sizeof(unknownText), "unknown-0x%08x", type);
                 return unknownText;
             }
         }
-        else if (type >= 0x60000000 && type <= 0x60000000) {
-            snprintf(unknownText, sizeof(unknownText), "OS-0x%08x", type);
-            return unknownText;
+        else if (type >= 0x60000000 && type <= 0x6FFFFFFF) {
+            switch (type) {
+            case ELF_SEGMENT_TYPE_SUNW_UNWIND:
+                return "SUNW_UNWIND";
+            case ELF_SEGMENT_TYPE_GNU_EH_FRAME:
+                return "EH_FRAME";
+            case ELF_SEGMENT_TYPE_GNU_STACK:
+                return "GNU_STACK";
+            case ELF_SEGMENT_TYPE_GNU_RELRO:
+                return "GNU_RELRO";
+            case ELF_SEGMENT_TYPE_GNU_PROPERTY:
+                return "GNU_PROPERTY";
+            case ELF_SEGMENT_TYPE_GNU_SFRAME:
+                return "GNU_SFRAME";
+            case ELF_SEGMENT_TYPE_OPENBSD_MUTABLE:
+                return "OPENBSD_MUTABLE";
+            case ELF_SEGMENT_TYPE_OPENBSD_RANDOMIZE:
+                return "OPENBSD_RANDOMIZE";
+            case ELF_SEGMENT_TYPE_OPENBSD_WXNEEDED:
+                return "OPENBSD_WXNEEDED";
+            case ELF_SEGMENT_TYPE_OPENBSD_NOBTCFI:
+                return "OPENBSD_NOBTCFI";
+            case ELF_SEGMENT_TYPE_OPENBSD_SYSCALLS:
+                return "OPENBSD_SYSCALLS";
+            case ELF_SEGMENT_TYPE_OPENBSD_BOOTDATA:
+                return "OPENBSD_BOOTDATA";
+            case ELF_SEGMENT_TYPE_SUNWBSS:
+                return "SUNWBSS";
+            case ELF_SEGMENT_TYPE_SUNWSTACK:
+                return "SUNWSTACK";
+            case ELF_SEGMENT_TYPE_SUNWDTRACE:
+                return "SUNWDTRACE";
+            case ELF_SEGMENT_TYPE_SUNWCAP:
+                return "SUNWCAP";
+            default:
+                snprintf(unknownText, sizeof(unknownText), "OS-0x%08x", type);
+                return unknownText;
+            }
         }
         else if (type >= 0x70000000 && type <= 0x7FFFFFFF) {
             snprintf(unknownText, sizeof(unknownText), "PROC-0x%08x", type);
@@ -623,7 +658,33 @@ private:
                 // align
                 snprintf(format, sizeof(format), "%%%dlld ", maxAlignDigits);
                 printf(format, programEntry.pro_align);
-
+                // flag
+                char flagStr[64] = { 0 };
+                int flagStrCnt = 0;
+                if (ELF_SEGMENT_FLAG_READABLE & programEntry.pro_flags) {
+                    flagStr[flagStrCnt++] = 'R';
+                }
+                if (ELF_SEGMENT_FLAG_WRITABLE & programEntry.pro_flags) {
+                    flagStr[flagStrCnt++] = 'W';
+                }
+                if (ELF_SEGMENT_FLAG_EXECUTABLE & programEntry.pro_flags) {
+                    flagStr[flagStrCnt++] = 'X';
+                }
+                if (flagStr[0] != 0)
+                    printf("[%s]", flagStr);
+                // 显示动态连接器
+                if (ELF_SEGMENT_TYPE_INTERP == programEntry.pro_type) {
+                    char loaderName[256];
+                    elfSeek(programEntry.pro_offset, SEEK_SET);
+                    memset(loaderName, 0, sizeof(loaderName));
+                    int readSize = programEntry.pro_filesz;
+                    if (readSize > sizeof(loaderName)) {
+                        readSize = sizeof(loaderName);
+                    }
+                    fread(loaderName, 1, readSize);
+                    printf("  加载器: %s", loaderName);
+                }
+                //
                 putchar('\n');
             }
         }
