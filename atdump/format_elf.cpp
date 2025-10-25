@@ -3,9 +3,23 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include <memory>
 #include "at_io.h"
 #include "at_elf.h"
 #include "at_util.h"
+
+class DynEntryShowInfo {
+public:
+    std::string  showText;
+    enum {
+        SHOW_INT,
+        SHOW_HEX32,
+        SHOW_HEX64,
+        SHOW_HEX,
+        SHOW_BYTE_SIZE,
+        SHOW_CUSTOM,
+    } showType;
+};
 
 class ElfParser {
 private:
@@ -21,11 +35,41 @@ private:
     uint16_t programEntryCount = 0;
     std::vector<Elf64SectionEntry> sectionTable64;
     std::vector<const char * > sectionNameList;
-    char * strtab = nullptr;
-    uint64_t strtabSize = 0;
+    char * shstrtab = nullptr;
+    uint64_t shStrTabSize = 0;
     std::vector<Elf64ProgramEntry> programTable64;
+    std::vector<Elf64DynEntry> dynEntries64;
+    char * dynstr = nullptr;
+    uint64_t dynStrSize = 0;
 
 private:
+
+    uint64_t addrToFileOffset(uint64_t addr) {
+        for (size_t i = 0; i < programTable64.size(); i++) {
+            const Elf64ProgramEntry & entry = programTable64[i];
+            if (ELF_SEGMENT_TYPE_LOAD == entry.pro_type) {
+                if (addr >= entry.pro_vaddr && addr < (entry.pro_vaddr + entry.pro_memsz)) {
+                    size_t delta = addr - entry.pro_vaddr;
+                    size_t newOffset = delta + entry.pro_offset;
+                    if (newOffset < (entry.pro_offset + entry.pro_filesz)) {
+                        return newOffset;
+                    }
+                }
+            }
+        }
+        //
+        for (size_t i = 0; i < programTable64.size(); i++) {
+            const Elf64ProgramEntry & entry = programTable64[i];
+            if (addr >= entry.pro_vaddr && addr < (entry.pro_vaddr + entry.pro_memsz)) {
+                size_t delta = addr - entry.pro_vaddr;
+                size_t newOffset = delta + entry.pro_offset;
+                if (newOffset < (entry.pro_offset + entry.pro_filesz)) {
+                    return newOffset;
+                }
+            }
+        }
+        return 0;
+    }
 
     size_t fread(void* buffer, size_t eSize, size_t eCount) {
         long long curr = get_file_curr_pointer(elf);
@@ -80,6 +124,16 @@ private:
         return ((a7 << 56) | (a6 << 48) | (a5 << 40) | (a4 << 32) | (a3 << 24) | (a2 << 16) | (a1 << 8) | a0);
     }
 
+    std::string readString() {
+        std::vector<char> s;
+        char ch;
+        do {
+            ch = (char) fgetc(elf);
+            s.push_back(ch);
+        } while (ch != 0);
+        return std::string(s.data(), s.size());
+    }
+
     int elfSeek(long long offset, int origin) {
         int v = fseek_long(elf, offset, origin);
         if (feof(elf)) {
@@ -92,10 +146,10 @@ private:
         return v;
     }
 
-    const char * getString(uint64_t offset) {
-        if (strtab == nullptr)  return "";
-        if (offset >= strtabSize) return "";
-        const char * str = &strtab[offset];
+    const char * getSectionString(uint64_t offset) {
+        if (shstrtab == nullptr)  return "";
+        if (offset >= shStrTabSize) return "";
+        const char * str = &shstrtab[offset];
         return str;
     }
 
@@ -375,15 +429,15 @@ private:
             // 读取字符串表
             if (stringTableSectionIndex != 0 && stringTableSectionIndex < sectionEntryCount) {
                 Elf64SectionEntry & section = sectionTable64[stringTableSectionIndex];
-                strtabSize = section.section_size;
-                strtab = new char[strtabSize + 4];
+                shStrTabSize = section.section_size;
+                shstrtab = new char[shStrTabSize + 4];
                 elfSeek((int64_t)section.section_offset, SEEK_SET);
-                fread(strtab, 1, (size_t)strtabSize);
+                fread(shstrtab, 1, (size_t)shStrTabSize);
             }
             // 读取所有section名
             sectionNameList.clear();
             for (uint32_t i = 0; i < sectionTable64.size(); i++) {
-                const char * str = getString(sectionTable64[i].section_name);
+                const char * str = getSectionString(sectionTable64[i].section_name);
                 sectionNameList.push_back(str);
             }
             //
@@ -690,6 +744,321 @@ private:
         }
     }
 
+    DynEntryShowInfo getDynTypeDesc(uint64_t type) {
+        DynEntryShowInfo info;
+        switch (type) {
+        case DYN_TYPE_NULL:
+            info.showText = "NULL";
+            info.showType = info.SHOW_INT;
+            break;
+        case DYN_TYPE_NEEDED:
+            info.showText = "NEEDED";
+            info.showType = info.SHOW_CUSTOM;
+            break;
+        case DYN_TYPE_PLTRELSZ:
+            info.showText = "PLTRELSZ";
+            info.showType = info.SHOW_BYTE_SIZE;
+            break;
+        case DYN_TYPE_PLTGOT:
+            info.showText = "PLTGOT";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_HASH:
+            info.showText = "HASH";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_STRTAB:
+            info.showText = "STRTAB";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_SYMTAB:
+            info.showText = "SYMTAB";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_RELA:
+            info.showText = "RELA";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_RELASZ:
+            info.showText = "RELASZ";
+            info.showType = info.SHOW_BYTE_SIZE;
+            break;
+        case DYN_TYPE_RELAENT:
+            info.showText = "RELAENT";
+            info.showType = info.SHOW_BYTE_SIZE;
+            break;
+        case DYN_TYPE_STRSZ:
+            info.showText = "STRSZ";
+            info.showType = info.SHOW_BYTE_SIZE;
+            break;
+        case DYN_TYPE_SYMENT:
+            info.showText = "SYMENT";
+            info.showType = info.SHOW_BYTE_SIZE;
+            break;
+        case DYN_TYPE_INIT:
+            info.showText = "INIT";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_FINI:
+            info.showText = "FINI";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_SONAME:
+            info.showText = "SONAME";
+            info.showType = info.SHOW_CUSTOM;
+            break;
+        case DYN_TYPE_RPATH:
+            info.showText = "RPATH";
+            info.showType = info.SHOW_CUSTOM;
+            break;
+        case DYN_TYPE_SYMBOLIC:
+            info.showText = "SYMBOLIC";
+            info.showType = info.SHOW_INT;
+            break;
+        case DYN_TYPE_REL:
+            info.showText = "REL";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_RELSZ:
+            info.showText = "RELSZ";
+            info.showType = info.SHOW_BYTE_SIZE;
+            break;
+        case DYN_TYPE_RELENT:
+            info.showText = "RELENT";
+            info.showType = info.SHOW_BYTE_SIZE;
+            break;
+        case DYN_TYPE_PLTREL:
+            info.showText = "PLTREL";
+            info.showType = info.SHOW_CUSTOM;
+            break;
+        case DYN_TYPE_DEBUG:
+            info.showText = "DEBUG";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_TEXTREL:
+            info.showText = "TEXTREL";
+            info.showType = info.SHOW_INT;
+            break;
+        case DYN_TYPE_JMPREL:
+            info.showText = "JMPREL";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_BIND_NOW:
+            info.showText = "BIND_NOW";
+            info.showType = info.SHOW_INT;
+            break;
+        case DYN_TYPE_INIT_ARRAY:
+            info.showText = "INIT_ARRAY";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_FINI_ARRAY:
+            info.showText = "FINI_ARRAY";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_INIT_ARRAYSZ:
+            info.showText = "INIT_ARRAYSZ";
+            info.showType = info.SHOW_BYTE_SIZE;
+            break;
+        case DYN_TYPE_FINI_ARRAYSZ:
+            info.showText = "FINI_ARRAYSZ";
+            info.showType = info.SHOW_BYTE_SIZE;
+            break;
+        case DYN_TYPE_RUNPATH:
+            info.showText = "RUNPATH";
+            info.showType = info.SHOW_CUSTOM;
+            break;
+        case DYN_TYPE_FLAGS:
+            info.showText = "FLAGS";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_PREINIT_ARRAY:
+            info.showText = "PREINIT_ARRAY";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_PREINIT_ARRAYSZ:
+            info.showText = "PREINIT_ARRAYSZ";
+            info.showType = info.SHOW_BYTE_SIZE;
+            break;
+        case DYN_TYPE_SYMTAB_SHNDX:
+            info.showText = "SYMTAB_SHNDX";
+            info.showType = info.SHOW_INT;
+            break;
+        case DYN_TYPE_RELRSZ:
+            info.showText = "RELRSZ";
+            info.showType = info.SHOW_BYTE_SIZE;
+            break;
+        case DYN_TYPE_RELR:
+            info.showText = "RELR";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_RELRENT:
+            info.showText = "RELRENT";
+            info.showType = info.SHOW_BYTE_SIZE;
+            break;
+        case DYN_TYPE_GNU_HASH:
+            info.showText = "GNU_HASH";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_FLAGS_1:
+            info.showText = "FLAGS_1";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_VERNEED:
+            info.showText = "VERNEED";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_VERNEEDNUM:
+            info.showText = "VERNEEDNUM";
+            info.showType = info.SHOW_INT;
+            break;
+        case DYN_TYPE_VERSYM:
+            info.showText = "VERSYM";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_RELACOUNT:
+            info.showText = "RELACOUNT";
+            info.showType = info.SHOW_INT;
+            break;
+        case DYN_TYPE_VERDEF:
+            info.showText = "VERDEF";
+            info.showType = info.SHOW_HEX;
+            break;
+        case DYN_TYPE_VERDEFNUM:
+            info.showText = "VERDEFNUM";
+            info.showType = info.SHOW_INT;
+            break;
+        default: {
+            char tmpstr[256];
+            snprintf(tmpstr, sizeof(tmpstr), "unknown-0x%llx", type);
+            info.showText = tmpstr;
+            info.showType = info.SHOW_HEX;
+        }
+            break;
+        }
+        return info;
+    }
+
+    void dumpDynamicSegment() {
+        bool found = false;
+        uint64_t size = 0;
+        uint64_t offset = 0;
+        for (size_t i = 0; i < programTable64.size(); i++) {
+            if (programTable64[i].pro_type == ELF_SEGMENT_TYPE_DYNAMIC) {
+                found = true;
+                offset = programTable64[i].pro_offset;
+                size = programTable64[i].pro_filesz;
+                break;
+            }
+        }
+        if (!found)   return;
+        printf("\n");
+        
+        if (offset > 0xffffffff)
+            printf("\n动态链接信息, 文件偏移: 0x%016llx, 数据大小: %lld\n", offset, size);
+        else 
+            printf("\n动态链接信息, 文件偏移: 0x%08x, 数据大小: %lld\n", (uint32_t)offset, size);
+        printf("-----------------\n");
+        //
+        elfSeek(offset, SEEK_SET);
+        uint64_t value1, value2;
+        while (size > 0) {
+            value1 = read_u64();
+            value2 = read_u64();
+            size -= 16;
+            Elf64DynEntry entry;
+            entry.d_tag = (int64_t) value1;
+            entry.d_un.d_val = value2;
+            dynEntries64.push_back(entry);
+            if (value1 == 0 && value2 == 0)
+                break;
+        }
+        // 读取动态链接所需要的字符串表
+        uint64_t strTabAddr = 0;
+        uint64_t strTabSize = 0;
+        for (size_t i = 0; i < dynEntries64.size(); i++) {
+            const Elf64DynEntry & entry = dynEntries64[i]; 
+            if (entry.d_tag == DYN_TYPE_STRTAB) {
+                strTabAddr = entry.d_un.d_ptr;
+            }
+            if (entry.d_tag == DYN_TYPE_STRSZ) {
+                strTabSize = entry.d_un.d_val;
+            }
+        }
+        uint64_t strTabOffset = addrToFileOffset(strTabAddr);
+        char * mem = new char[strTabSize + 4];
+        elfSeek(strTabOffset, SEEK_SET);
+        fread(mem, 1, strTabSize);
+        dynstr = mem;
+        dynStrSize = strTabSize;
+        //
+        size_t maxTypeLength = 0;
+        for (size_t i = 0; i < dynEntries64.size(); i++) {
+            DynEntryShowInfo info = getDynTypeDesc(dynEntries64[i].d_tag);
+            if (info.showText.length() > maxTypeLength) {
+                maxTypeLength = info.showText.length();
+            }
+        }
+        //
+        char format[128];
+        for (size_t i = 0; i < dynEntries64.size(); i++) {
+            const Elf64DynEntry & entry = dynEntries64[i];
+            DynEntryShowInfo info = getDynTypeDesc(entry.d_tag);
+            // type
+            snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxTypeLength);
+            printf(format, info.showText.c_str());
+            // value
+            if (info.showType == info.SHOW_INT) {
+                printf("%lld", (uint64_t)entry.d_un.d_val);
+            }
+            else if (info.showType == info.SHOW_HEX) {
+                if (entry.d_un.d_val > 0xffffffff) {
+                    printf("0x%016llx", (uint64_t)entry.d_un.d_val);
+                }
+                else {
+                    printf("0x%08x", (uint32_t)entry.d_un.d_val);
+                }
+            }
+            else if (info.showType == info.SHOW_BYTE_SIZE) {
+                printf("%lld 字节", (uint64_t)entry.d_un.d_val);
+            }
+            else if (info.showType == info.SHOW_CUSTOM) {
+                if (DYN_TYPE_NEEDED == entry.d_tag) {
+                    const char * libName;
+                    if (entry.d_un.d_val < strTabSize) {
+                        libName = & dynstr[entry.d_un.d_val];
+                    }
+                    else {
+                        libName = "";
+                    }
+                    printf("依赖:  %s", libName);
+                }
+                else if (DYN_TYPE_SONAME == entry.d_tag) {
+                    const char * soName;
+                    if (entry.d_un.d_val < strTabSize) {
+                        soName = &dynstr[entry.d_un.d_val];
+                    }
+                    else {
+                        soName = "";
+                    }
+                    printf("本库名:  %s", soName);
+                }
+                else if (DYN_TYPE_PLTREL == entry.d_tag) {
+                    printf("%lld", entry.d_un.d_val);
+                    if (entry.d_un.d_val == DYN_TYPE_RELA) {
+                        printf(" => RELA");
+                    }
+                    else if (entry.d_un.d_val == DYN_TYPE_REL) {
+                        printf(" => REL");
+                    }
+                    else if (entry.d_un.d_val == DYN_TYPE_RELR) {
+                        printf(" => RELR");
+                    }
+                }
+            }
+            putchar('\n');
+        }
+    }
+
 
     void parse2() {
         if (elf == nullptr) return;
@@ -697,6 +1066,7 @@ private:
             dumpElfHeader();
             dumpSectionHeader();
             dumpProgramHeader();
+            dumpDynamicSegment();
         }
         catch (std::string s) {
 
@@ -711,8 +1081,10 @@ public:
     ~ElfParser() {
         if (elf)    fclose(elf);
         elf = nullptr;
-        if (strtab != nullptr)  delete[] strtab;
-        strtab = nullptr;
+        if (shstrtab != nullptr)  delete[] shstrtab;
+        shstrtab = nullptr;
+        if (dynstr != nullptr) delete[] dynstr;
+        dynstr = nullptr;
     }
 
     void parse() {
