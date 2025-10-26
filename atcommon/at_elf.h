@@ -31,6 +31,27 @@ typedef struct
 #define ELF_SECTION_GNU_RETAIN          (1 << 21)
 #define ELF_SECTION_GNU_MBIND           (1 << 24)
 
+#define ELF_SECTION_TYPE_NULL	0		// Section header table entry unused 
+#define ELF_SECTION_TYPE_PROGBITS	1		// Program specific (private) data 
+#define ELF_SECTION_TYPE_SYMTAB	2		// Link editing symbol table 
+#define ELF_SECTION_TYPE_STRTAB	3		// A string table
+#define ELF_SECTION_TYPE_RELA	4		// Relocation entries with addends 
+#define ELF_SECTION_TYPE_HASH	5		// A symbol hash table 
+#define ELF_SECTION_TYPE_DYNAMIC	6		// Information for dynamic linking 
+#define ELF_SECTION_TYPE_NOTE	7		// Information that marks file 
+#define ELF_SECTION_TYPE_NOBITS	8		// Section occupies no space in file 
+#define ELF_SECTION_TYPE_REL		9		// Relocation entries, no addends 
+#define ELF_SECTION_TYPE_SHLIB	10		// Reserved, unspecified semantics 
+#define ELF_SECTION_TYPE_DYNSYM	11		// Dynamic linking symbol table 
+
+#define ELF_SECTION_TYPE_INIT_ARRAY	  14		// Array of ptrs to init functions 
+#define ELF_SECTION_TYPE_FINI_ARRAY	  15		// Array of ptrs to finish functions 
+#define ELF_SECTION_TYPE_PREINIT_ARRAY 16		// Array of ptrs to pre-init funcs 
+#define ELF_SECTION_TYPE_GROUP	  17		// Section contains a section group 
+#define ELF_SECTION_TYPE_SYMTAB_SHNDX  18		// Indices for SHN_XINDEX entries 
+#define ELF_SECTION_TYPE_RELR	  19		// RELR relative relocations 
+
+
 typedef struct
 {
     uint32_t pro_type;              // Type of segment 

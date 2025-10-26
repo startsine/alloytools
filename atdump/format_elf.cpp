@@ -42,6 +42,7 @@ private:
     std::vector<Elf64DynEntry> dynEntries64;
     char * dynstr = nullptr;
     uint64_t dynStrSize = 0;
+    char * objstr = nullptr;
 
 private:
 
@@ -1517,16 +1518,74 @@ private:
         showSymbolData(symbols, dynstr);
     }
 
+    void getObjectStringTable() {
+        for (size_t i = 0; i < sectionTable64.size(); i++) {
+            if (ELF_SECTION_TYPE_STRTAB == sectionTable64[i].section_type) {
+                if (sectionTable64[i].section_offset != 0) {
+                    objstr = new char[sectionTable64[i].section_size + 4];
+                    elfSeek(sectionTable64[i].section_offset, SEEK_SET);
+                    fread(objstr, 1, sectionTable64[i].section_size);
+                }
+                break;
+            }
+        }
+        printf("%s\n", &objstr[1]);
+    }
+
+    void dumpObjSymTabSection() {
+        Elf64SectionEntry * pSection = nullptr;
+        for (size_t i = 0; i < sectionTable64.size(); i++) {
+            if (ELF_SECTION_TYPE_SYMTAB == sectionTable64[i].section_type) {
+                pSection = &sectionTable64[i];
+            }
+        }
+        if (pSection == nullptr) {
+            return;
+        }
+        const Elf64SectionEntry & section = *pSection;
+        if (section.section_offset == 0 || section.section_size == 0 || section.section_entsize == 0) {
+            return;
+        }
+        uint64_t symTotal = section.section_size / section.section_entsize;
+        std::vector<Elf64Symbol> symbols;
+        elfSeek(section.section_offset, SEEK_SET);
+        for (uint64_t i = 0; i < symTotal; i++) {
+            Elf64Symbol symbol;
+            symbol.name = read_u32();
+            symbol.info = (uint8_t)fgetc(elf);
+            symbol.other = (uint8_t)fgetc(elf);
+            symbol.shndx = read_u16();
+            symbol.value = read_u64();
+            symbol.size = read_u64();
+            symbols.push_back(symbol);
+        }
+        //
+        printf("\n符号表, 文件偏移: ");
+        if (section.section_offset > 0xffffffff)
+            printf("0x%016llx", section.section_offset);
+        else
+            printf("0x%08x", (uint32_t)section.section_offset);
+        printf(", 符号条目数: %llu", symTotal);
+        putchar('\n');
+        showSymbolData(symbols, objstr);
+    }
 
     void parse2() {
         if (elf == nullptr) return;
         try {
             dumpElfHeader();
             dumpSectionHeader();
-            dumpProgramHeader();
-            dumpDynamicSegment();
-            dumpDynamicReloc();
-            dumpDynamicSymbol();
+            if (elfType == 2 || elfType == 3) {             // exe/so
+                dumpProgramHeader();
+                dumpDynamicSegment();
+                dumpDynamicReloc();
+                dumpDynamicSymbol();
+            }
+            else if (elfType == 1) {                        // .o
+                getObjectStringTable();
+                dumpObjSymTabSection();
+            }
+            
         }
         catch (std::string s) {
 
@@ -1545,6 +1604,8 @@ public:
         shstrtab = nullptr;
         if (dynstr != nullptr) delete[] dynstr;
         dynstr = nullptr;
+        if (objstr != nullptr) delete[] objstr;
+        objstr = nullptr;
     }
 
     void parse() {
