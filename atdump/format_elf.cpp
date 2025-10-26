@@ -1315,9 +1315,145 @@ private:
         }
     }
 
+    const char * symbolBindingsToStr(uint32_t binding) {
+        switch (binding)
+        {
+        case SYMBOL_BINDINGS_LOCAL:
+            return "LOCAL";
+        case SYMBOL_BINDINGS_GLOBAL:
+            return "GLOBAL";
+        case SYMBOL_BINDINGS_WEAK:
+            return "WEAK";
+        case SYMBOL_BINDINGS_GNU_UNIQUE:
+            return "GNU_UNIQUE";
+        default:
+            break;
+        }
+        return "";
+    }
+
+    const char * symbolTypeToStr(uint32_t type) {
+        switch (type)
+        {
+        case SYMBOL_TYPE_NOTYPE:
+            return "NOTYPE";
+        case SYMBOL_TYPE_OBJECT:
+            return "OBJECT";
+        case SYMBOL_TYPE_FUNC:
+            return "FUNC";
+        case SYMBOL_TYPE_SECTION:
+            return "SECTION";
+        case SYMBOL_TYPE_FILE:
+            return "FILE";
+        case SYMBOL_TYPE_COMMON:
+            return "COMMON";
+        case SYMBOL_TYPE_TLS:
+            return "TLS";
+        case SYMBOL_TYPE_RELC:
+            return "RELC";
+        case SYMBOL_TYPE_SRELC:
+            return "SRELC";
+        case SYMBOL_TYPE_GNU_IFUNC:
+            return "GNU_IFUNC";
+        default:
+            break;
+        }
+        return "";
+    }
+
+    const char * symbolVisibilityToStr(uint32_t visibility) {
+        switch (visibility)
+        {
+        case SYMBOL_VISIBILITY_DEFAULT:
+            return "DEFAULT";
+        case SYMBOL_VISIBILITY_INTERNAL:
+            return "INTERNAL";
+        case SYMBOL_VISIBILITY_HIDDEN:
+            return "HIDDEN";
+        case SYMBOL_VISIBILITY_PROTECTED:
+            return "PROTECTED";
+        default:
+            break;
+        }
+        return "";
+    }
+
+    void showSymbolData(const std::vector<Elf64Symbol> & symbols, const char * strtab) {
+        //
+        int maxIdDigits = 0;
+        bool valueUse64 = false;
+        int maxSecIndexDigits = 0;
+        int maxSizeDigits = 0;
+        size_t maxBindingLength = 0;
+        size_t maxTypeLength = 0;
+        size_t maxVisibilityLength = 0;
+        maxIdDigits = get_number_digits(symbols.size());
+        for (size_t i = 0; i < symbols.size(); i++) {
+            const Elf64Symbol & symbol = symbols[i];
+            if (symbol.value > 0xffffffff)
+                valueUse64 = true;
+            int curSecIndexDigits = get_number_digits((uint64_t)symbol.shndx);
+            if (curSecIndexDigits > maxSecIndexDigits)
+                maxSecIndexDigits = curSecIndexDigits;
+            int curSizeDigits = get_number_digits((uint64_t)symbol.size);
+            if (curSizeDigits > maxSizeDigits)
+                maxSizeDigits = curSizeDigits;
+            uint8_t binding = symbol.info >> 4;
+            uint8_t type = symbol.info & 0x0f;
+            uint8_t visibility = symbol.other & 0x0f;
+            if (strlen(symbolBindingsToStr(binding)) > maxBindingLength) {
+                maxBindingLength = strlen(symbolBindingsToStr(binding));
+            }
+            if (strlen(symbolTypeToStr(type)) > maxTypeLength) {
+                maxTypeLength = strlen(symbolTypeToStr(type));
+            }
+            if (strlen(symbolVisibilityToStr(visibility)) > maxVisibilityLength) {
+                maxVisibilityLength = strlen(symbolVisibilityToStr(visibility));
+            }
+        }
+
+        char format[128];
+        for (size_t i = 0; i < symbols.size(); i++) {
+            const Elf64Symbol & symbol = symbols[i];
+            // id
+            snprintf(format, sizeof(format), "%%%dllu: ", maxIdDigits);
+            printf(format, (uint64_t)i);
+            // section index
+            snprintf(format, sizeof(format), "%%%du ", maxSecIndexDigits);
+            printf(format, (uint32_t)symbol.shndx);
+            // size
+            snprintf(format, sizeof(format), "%%%dllu ", maxSizeDigits);
+            printf(format, (uint64_t)symbol.size);
+            // value
+            if (valueUse64) {
+                printf("0x%016llx ", symbol.value);
+            }
+            else {
+                printf("0x%08x ", (uint32_t)symbol.value);
+            }
+            //
+            uint8_t binding = symbol.info >> 4;
+            snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxBindingLength);
+            printf(format, symbolBindingsToStr(binding));
+            //
+            uint8_t type = symbol.info & 0x0f;
+            snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxTypeLength);
+            printf(format, symbolTypeToStr(type));
+            //
+            uint8_t visibility = symbol.other & 0x0f;
+            snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxVisibilityLength);
+            printf(format, symbolVisibilityToStr(visibility));
+            // name 
+            if (symbol.name != 0) {
+                printf(" %s", &strtab[symbol.name]);
+            }
+            putchar('\n');
+        }
+    }
+
     void dumpDynamicSymbol() {
         uint64_t dynSymAddr = 0;
-        uint64_t dynSymSize = 0;        // 好像没有这项 
+        uint64_t dynSymSize = 0;        // 好像没有这项, 需要从 sction 表中找 
         uint64_t dynSymEnt = 0;
 
         for (size_t i = 0; i < dynEntries64.size(); i++) {
@@ -1335,6 +1471,50 @@ private:
         if (dynSymEnt == 0) {
             dynSymEnt = isElf64 ? 24 : 16;
         }
+        if (dynSymAddr == 0 || dynSymEnt == 0) {
+            return;
+        }
+        //
+        bool foundSection = false;
+        for (size_t i = 0; i < sectionTable64.size(); i++) {
+            const Elf64SectionEntry & section = sectionTable64[i];
+            if (dynSymAddr == section.section_addr) {
+                foundSection = true;
+                dynSymSize = section.section_size;
+            }
+        }
+        //
+        if (!foundSection)   return;
+        //
+        uint64_t symbolTabOffset = addrToFileOffset(dynSymAddr);
+        uint64_t symTotal = dynSymSize / dynSymEnt;
+        if (symbolTabOffset == 0)   return;
+        if (symTotal == 0)   return;
+        elfSeek(symbolTabOffset, SEEK_SET);
+        std::vector<Elf64Symbol> symbols;
+        for (size_t i = 0; i < symTotal; i++) {
+            Elf64Symbol symbol;
+            symbol.name = read_u32();
+            symbol.info = (uint8_t) fgetc(elf);
+            symbol.other = (uint8_t) fgetc(elf);
+            symbol.shndx = read_u16();
+            symbol.value = read_u64();
+            symbol.size = read_u64();
+            symbols.push_back(symbol);
+        }
+        printf("\n动态链接符号表, 文件偏移: ");
+        if (symbolTabOffset > 0xffffffff)
+            printf("0x%016llx", symbolTabOffset);
+        else
+            printf("0x%08x", (uint32_t)symbolTabOffset);
+        printf(", 内存地址: ");
+        if (dynSymAddr > 0xffffffff)
+            printf("0x%016llx", dynSymAddr);
+        else
+            printf("0x%08x", (uint32_t)dynSymAddr);
+        printf(", 符号条目数: %llu", symTotal);
+        putchar('\n');
+        showSymbolData(symbols, dynstr);
     }
 
 

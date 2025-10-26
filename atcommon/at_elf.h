@@ -206,6 +206,35 @@ typedef struct
     uint64_t    size;   // Size of object (e.g., common) 
 } Elf64Symbol;
 
+#define SYMBOL_BINDINGS_LOCAL	0		// Symbol not visible outside obj 
+#define SYMBOL_BINDINGS_GLOBAL	1		// Symbol visible outside obj 
+#define SYMBOL_BINDINGS_WEAK	2		// Like globals, lower precedence 
+#define SYMBOL_BINDINGS_LOOS	10		// OS-specific semantics 
+#define SYMBOL_BINDINGS_GNU_UNIQUE	10	// Symbol is unique in namespace 
+#define SYMBOL_BINDINGS_HIOS	12		// OS-specific semantics 
+#define SYMBOL_BINDINGS_LOPROC	13		// Processor-specific semantics 
+#define SYMBOL_BINDINGS_HIPROC	15		// Processor-specific semantics 
+
+#define SYMBOL_TYPE_NOTYPE	0		// Symbol type is unspecified 
+#define SYMBOL_TYPE_OBJECT	1		// Symbol is a data object 
+#define SYMBOL_TYPE_FUNC	2		// Symbol is a code object 
+#define SYMBOL_TYPE_SECTION	3		// Symbol associated with a section 
+#define SYMBOL_TYPE_FILE	4		// Symbol gives a file name 
+#define SYMBOL_TYPE_COMMON	5		// An uninitialised common block 
+#define SYMBOL_TYPE_TLS		6		// Thread local data object 
+#define SYMBOL_TYPE_RELC	8		// Complex relocation expression 
+#define SYMBOL_TYPE_SRELC	9		// Signed Complex relocation expression 
+#define SYMBOL_TYPE_LOOS	10		// OS-specific semantics 
+#define SYMBOL_TYPE_GNU_IFUNC	10		// Symbol is an indirect code object 
+#define SYMBOL_TYPE_HIOS	12		// OS-specific semantics 
+#define SYMBOL_TYPE_LOPROC	13		// Processor-specific semantics 
+#define SYMBOL_TYPE_HIPROC	15		// Processor-specific semantics 
+
+#define SYMBOL_VISIBILITY_DEFAULT	0		// Visibility is specified by binding type 
+#define SYMBOL_VISIBILITY_INTERNAL	1		// OS specific version of STV_HIDDEN 
+#define SYMBOL_VISIBILITY_HIDDEN	2		// Can only be seen inside currect component 
+#define SYMBOL_VISIBILITY_PROTECTED	3		// Treat as STB_LOCAL inside current component 
+
 typedef struct
 {
     uint64_t offset;
