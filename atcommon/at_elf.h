@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <stdint.h>
 
@@ -89,45 +89,47 @@ typedef struct
 } Elf64DynEntry;
 
 #define DYN_TYPE_NULL		    0
-#define DYN_TYPE_NEEDED	        1               // ָ�������Ķ�̬��(���Զ��)
-#define DYN_TYPE_PLTRELSZ	    2               // �������ӱ���PLT����ص��ض�λ��Ŀ���ܴ�С���ֽڣ�
-#define DYN_TYPE_PLTGOT	        3               // ��PLT��ص� ���� GOT ���������ַ, ���ֶεľ��庬��ȡ���ڴ�����
-#define DYN_TYPE_HASH		    4               // ���Ź�ϣ���������ַ(������Ҫʹ�� GNU_HASH����Ϊʹ��gnu_hash�ҷ��Ÿ���)
-#define DYN_TYPE_STRTAB	        5               // �ַ������������ַ(�����˶�̬����������������ַ������繲��������ƺͷ�������)
-#define DYN_TYPE_SYMTAB	        6               // ���ű��������ַ�����а����˶�̬��������������з���
-#define DYN_TYPE_RELA		    7               // �ض�λ���������ַ (RELA��ʽ���ض�λ��)
-#define DYN_TYPE_RELASZ	        8               // �ض�λ���Ĵ�С(�ֽ�)
-#define DYN_TYPE_RELAENT	    9               // �ض�λ��ÿһ��Ĵ�С(�ֽ�)
-#define DYN_TYPE_STRSZ	        10              // �ַ������Ĵ�С(�ֽ�)
-#define DYN_TYPE_SYMENT	        11              // ���ű���ÿһ��Ĵ�С(�ֽ�)
-#define DYN_TYPE_INIT		    12              // ��ʼ�������ĵ�ַ���ú����ڳ�������ʱ������
-#define DYN_TYPE_FINI		    13              // ��ֹ�����ĵ�ַ���ú����ڳ����˳�ʱ������
-#define DYN_TYPE_SONAME	        14              // �����������SONAME����������ļ����ƣ����ַ�����ƫ������
-#define DYN_TYPE_RPATH	        15              // ��������������Ŀ�����·�����ַ�����ƫ������ - ����ʱָ��������·��, ���ȼ�����LD_LIBRARY_PATH (RPATH��RUNPATHͬʱ����ʱ��RPATH��Ч)
-#define DYN_TYPE_SYMBOLIC	    16              // ֵ���ԡ���������������ڸı��˶�̬�������ķ��Ž����㷨��ʹ���ڿ��ڲ��ķ������ôӸÿⱾ����ʼ�����������Ǵӿ�ִ���ļ���ʼ
-#define DYN_TYPE_REL		    17              // �ض�λ���ĵ�ַ (REL��ʽ���ض�λ������������ֵA)
-#define DYN_TYPE_RELSZ	        18              // REL��ʽ�ض�λ�����ܴ�С(�ֽ�)
-#define DYN_TYPE_RELENT	        19              // REL�ض�λ��Ŀÿһ��Ĵ�С(�ֽ�)
-#define DYN_TYPE_PLTREL	        20              // ָ���������ӱ���ʹ�õ��ض�λ��Ŀ���ض�λ���� (����ͬʱ������REL��RELA�����ض�λ��)
-#define DYN_TYPE_DEBUG	        21              // ������Ϣ
-#define DYN_TYPE_TEXTREL	    22              // ֵ���ԡ���־����������, �����ض�λ .text ��, �����������޸� .text ��
-#define DYN_TYPE_JMPREL	        23              // ������ڣ���d_ptr��Ա������������ӱ���ص��ض�λ��Ŀ�ĵ�ַ����Щ�ض�λ��Ŀ�������ӳٰ��ڼ䱻����(��JMPREL���ڣ���ôPLTRELSZҲ�������)
-#define DYN_TYPE_BIND_NOW	    24              // ֵ���ԡ����������ָʾ��̬�������ڽ�����Ȩ��������֮ǰ���������������ض�λ����ͨ��ʹ�õĶ��������أ����ڷ��ű�ʹ��ʱ�ٶԷ��Ž����ض�λ��
-#define DYN_TYPE_INIT_ARRAY	    25              // ��ʼ����������ĵ�ַ���ú����ڳ�������ʱ������
-#define DYN_TYPE_FINI_ARRAY	    26              // ��ֹ����������ĵ�ַ���ú����ڳ����˳�ʱ������
-#define DYN_TYPE_INIT_ARRAYSZ   27              // ��ʼ����������Ĵ�С(�ֽ�)
-#define DYN_TYPE_FINI_ARRAYSZ   28              // ��ֹ����������Ĵ�С(�ֽ�)
-#define DYN_TYPE_RUNPATH	    29              // ָ������ʱ����·�����ַ�����ƫ������(RPATH) - ����ʱָ������·�������ȼ�����LD_LIBRARY_PATH������ϵͳĬ��·������/lib��/usr/lib��
-#define DYN_TYPE_FLAGS	        30              // ���Ʒ��Ž������Եı�־λ
+#define DYN_TYPE_NEEDED	        1               // 指出依赖的动态库(可以多个)
+#define DYN_TYPE_PLTRELSZ	    2               // 程序链接表（PLT）相关的重定位条目的总大小（字节）
+#define DYN_TYPE_PLTGOT	        3               // 与PLT相关的 或者 GOT 表的虚拟地址, 此字段的具体含义取决于处理器
+#define DYN_TYPE_HASH		    4               // 符号哈希表的虚拟地址(现在主要使用 GNU_HASH，因为使用gnu_hash找符号更快)
+#define DYN_TYPE_STRTAB	        5               // 字符串表的虚拟地址(包含了动态链接器所需的所有字符串，如共享库的名称和符号名称)
+#define DYN_TYPE_SYMTAB	        6               // 符号表的虚拟地址，其中包含了动态链接器所需的所有符号
+#define DYN_TYPE_RELA		    7               // 重定位表的虚拟地址 (RELA格式的重定位表) (相当于PE/COFF的.reloc段)
+#define DYN_TYPE_RELASZ	        8               // 重定位表的大小(字节)
+#define DYN_TYPE_RELAENT	    9               // 重定位表每一项的大小(字节)
+#define DYN_TYPE_STRSZ	        10              // 字符串表的大小(字节)
+#define DYN_TYPE_SYMENT	        11              // 符号表中每一项的大小(字节)
+#define DYN_TYPE_INIT		    12              // 初始化函数的地址，该函数在程序启动时被调用
+#define DYN_TYPE_FINI		    13              // 终止函数的地址，该函数在程序退出时被调用
+#define DYN_TYPE_SONAME	        14              // 本共享对象的SONAME（共享对象的简单名称）的字符串表偏移索引
+#define DYN_TYPE_RPATH	        15              // 用于搜索共享库的库搜索路径的字符串表偏移索引 - 编译时指定的搜索路径, 优先级高于LD_LIBRARY_PATH (RPATH与RUNPATH同时存在时，RPATH无效)
+#define DYN_TYPE_SYMBOLIC	    16              // 值忽略。存在这项，代表用于改变了动态链接器的符号解析算法，使得在库内部的符号引用从该库本身开始搜索，而不是从可执行文件开始
+#define DYN_TYPE_REL		    17              // 重定位表的地址 (REL格式的重定位表，不带附加值A)
+#define DYN_TYPE_RELSZ	        18              // REL格式重定位表的总大小(字节)
+#define DYN_TYPE_RELENT	        19              // REL重定位条目每一项的大小(字节)
+#define DYN_TYPE_PLTREL	        20              // 指定程序链接表中使用的重定位条目的重定位类型 (可以同时作用于REL和RELA两种重定位表)
+#define DYN_TYPE_DEBUG	        21              // 调试信息
+#define DYN_TYPE_TEXTREL	    22              // 值忽略。标志，存在这项, 用于重定位 .text 段, 加载器可以修改 .text 段
+#define DYN_TYPE_JMPREL	        23              // PLT跳转表重定位。如果存在，其d_ptr成员包含与程序链接表相关的重定位条目的地址。(相当于PE/COFF的IAT)
+                                                // 这些重定位条目可以在延迟绑定期间被忽略(如JMPREL存在，那么PLTRELSZ和DT_PLTREL也必须存在, PLTREL指定重定位类型为REL还是RELA)
+                                                // 在动态链接阶段，系统通过此表将程序中引用的外部函数地址转换为实际内存中的有效地址，确保程序运行时能够正确调用动态库中的函数
+#define DYN_TYPE_BIND_NOW	    24              // 值忽略。存在这项，它指示动态链接器在将控制权交给程序之前，立即处理所有重定位。（通常使用的都是懒加载，即在符号被使用时再对符号进行重定位）
+#define DYN_TYPE_INIT_ARRAY	    25              // 初始化函数数组的地址，该函数在程序启动时被调用
+#define DYN_TYPE_FINI_ARRAY	    26              // 终止函数的数组的地址，该函数在程序退出时被调用
+#define DYN_TYPE_INIT_ARRAYSZ   27              // 初始化函数数组的大小(字节)
+#define DYN_TYPE_FINI_ARRAYSZ   28              // 终止函数的数组的大小(字节)
+#define DYN_TYPE_RUNPATH	    29              // 指定运行时搜索路径的字符串表偏移索引(RPATH) - 运行时指定搜索路径，优先级低于LD_LIBRARY_PATH但高于系统默认路径（如/lib、/usr/lib）
+#define DYN_TYPE_FLAGS	        30              // 控制符号解析策略的标志位
 
-// ��DYN_TYPE_ENCODING �� DYN_TYPE_LOOS ֮��, ż����ʹ�� d_un.d_ptr��������ʹ�� d_un.d_val
+// 从DYN_TYPE_ENCODING 到 DYN_TYPE_LOOS 之间, 偶数项使用 d_un.d_ptr，奇数项使用 d_un.d_val
 #define DYN_TYPE_ENCODING	        32
-#define DYN_TYPE_PREINIT_ARRAY      32          // ��������ǰ��Ҫִ�еĳ�ʼ����������ĵ�ַ
-#define DYN_TYPE_PREINIT_ARRAYSZ    33          // ��������ǰ��Ҫִ�еĳ�ʼ����������Ĵ�С(�ֽ�)
+#define DYN_TYPE_PREINIT_ARRAY      32          // 程序启动前需要执行的初始化函数数组的地址
+#define DYN_TYPE_PREINIT_ARRAYSZ    33          // 程序启动前需要执行的初始化函数数组的大小(字节)
 #define DYN_TYPE_SYMTAB_SHNDX       34          // 
-#define DYN_TYPE_RELRSZ	            35          // RELR ��ʽ���ض�λ����С(�ֽ�)
-#define DYN_TYPE_RELR		        36          // RELR ��ʽ���ض�λ���ĵ�ַ
-#define DYN_TYPE_RELRENT	        37          // RELR ��ʽ���ض�λ��ÿһ��Ĵ�С(�ֽ�)
+#define DYN_TYPE_RELRSZ	            35          // RELR 格式的重定位表大小(字节)
+#define DYN_TYPE_RELR		        36          // RELR 格式的重定位表的地址
+#define DYN_TYPE_RELRENT	        37          // RELR 格式的重定位表每一项的大小(字节)
 
 #define DYN_TYPE_LOOS		        0x6000000d
 #define DYN_TYPE_HIOS		        0x6ffff000
@@ -166,10 +168,10 @@ typedef struct
 
 #define DYN_TYPE_RELACOUNT	    0x6ffffff9
 #define DYN_TYPE_RELCOUNT	    0x6ffffffa
-#define DYN_TYPE_FLAGS_1	    0x6ffffffb      // FLAGS_1 ��չ��־λ
+#define DYN_TYPE_FLAGS_1	    0x6ffffffb      // FLAGS_1 扩展标志位
 #define DYN_TYPE_VERDEF	        0x6ffffffc
 #define DYN_TYPE_VERDEFNUM	    0x6ffffffd
-#define DYN_TYPE_VERNEED	    0x6ffffffe      // VERNEED ��Ҫ��¼��������İ汾��������Ϣ�����繲����İ汾�Ż������Ҫ��
+#define DYN_TYPE_VERNEED	    0x6ffffffe      // VERNEED 主要记录程序所需的版本化依赖信息，例如共享库的版本号或兼容性要求。
 #define DYN_TYPE_VERNEEDNUM	    0x6fffffff
 
 // This tag is a GNU extension to the Solaris version scheme
@@ -184,5 +186,38 @@ typedef struct
 #define DYN_TYPE_AUXILIARY	0x7ffffffd
 #define DYN_TYPE_USED		0x7ffffffe
 #define DYN_TYPE_FILTER	0x7fffffff
+
+typedef struct {
+    uint32_t    name;
+    uint32_t    value;
+    uint32_t    size;
+    uint8_t     info;
+    uint8_t     other;
+    uint16_t    shndx;
+} Elf32Symbol;
+
+typedef struct
+{
+    uint32_t    name;   // Symbol name 
+    uint8_t     info;   // Type and Binding attributes
+    uint8_t     other;  // Reserved
+    uint16_t    shndx;  // Section table index
+    uint64_t    value;  // Symbol value
+    uint64_t    size;   // Size of object (e.g., common) 
+} Elf64Symbol;
+
+typedef struct
+{
+    uint64_t offset;
+    uint64_t info;
+    int64_t addend;
+} Elf64RelAEntry;
+
+
+
+
+
+
+
 
 

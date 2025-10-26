@@ -16,13 +16,9 @@ int get_number_digits(uint64_t num)
 
 int get_number_digits(int64_t num)
 {
-    int digits = 0;
-    int64_t curr = num;
-    do {
-        curr /= 10;
-        digits++;
-    } while (curr != 0);
-    return digits;
+    char temp[256];
+    snprintf(temp, sizeof(temp), "%lld", num);
+    return (int)(strlen(temp));
 }
 
 

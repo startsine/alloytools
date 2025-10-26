@@ -28,6 +28,7 @@ private:
     const long long elfTotalSize;
     bool isBigEndian;                           
     bool isElf64;
+    int elfType;
     unsigned short stringTableSectionIndex = 0;
     uint64_t sectionTableOffset = 0;
     uint16_t sectionEntryCount = 0;
@@ -347,6 +348,7 @@ private:
             break;
         }
         printf("文件类型:         %s\n", eTypeStr);
+        elfType = e_type;
 
         // CPU类型: e_machine
         unsigned short e_machine = read_u16();
@@ -1059,6 +1061,282 @@ private:
         }
     }
 
+    const char * relTypeDesc(uint32_t relType) {
+        return "R_X86_64_RELATIVE";
+    }
+
+    void showRelData(const std::vector<Elf64RelAEntry> & relList, bool isRelA, uint64_t symbolTabOffset, uint64_t symbolEntrySize, const char * strtab) {
+        bool offsetUse64 = false;
+        int maxIdDigits = 0;                      // id 最大位数
+        int maxSymIndexDigits = 0;                // 符号索引的最大位数
+        int maxAddendDigits = 0;                  // Addend的最大位数
+        size_t maxLengthTypeStr = 0;              // 重定位类型的字符串最大长度
+        //
+        maxIdDigits = get_number_digits((uint64_t) relList.size());
+        for (size_t i = 0; i < relList.size(); i++) {
+            uint32_t symIndex;
+            uint32_t relType;
+            if (relList[i].offset > 0xffffffff) {
+                offsetUse64 = true;
+            }
+            if (isElf64) {
+                symIndex = (uint32_t)(relList[i].info >> 32);
+                relType = (uint32_t)(relList[i].info & 0xffffffff);
+            }
+            else {
+                symIndex = ((uint32_t)relList[i].info) >> 8;
+                relType = ((uint32_t)relList[i].info) & 0xff;
+            }
+            int curSymIndexDigits = get_number_digits((uint64_t)symIndex);
+            if (curSymIndexDigits > maxSymIndexDigits) {
+                maxSymIndexDigits = curSymIndexDigits;
+            }
+            int curAddendDigits = get_number_digits((int64_t)relList[i].addend);
+            if (curAddendDigits > maxAddendDigits) {
+                maxAddendDigits = curAddendDigits;
+            }
+        }
+        //
+        char format[128];
+        for (size_t i = 0; i < relList.size(); i++) {
+            const Elf64RelAEntry & rel = relList[i];
+            uint32_t symIndex;
+            uint32_t relType;
+            if (isElf64) {
+                symIndex = (uint32_t)(relList[i].info >> 32);
+                relType = (uint32_t)(relList[i].info & 0xffffffff);
+            }
+            else {
+                symIndex = ((uint32_t)relList[i].info) >> 8;
+                relType = ((uint32_t)relList[i].info) & 0xff;
+            }
+            // id
+            snprintf(format, sizeof(format), "%%%du: ", maxIdDigits);
+            printf(format, (uint64_t)i);
+            // offset
+            if (offsetUse64) {
+                printf("0x%016llx ", rel.offset);
+            }
+            else {
+                printf("0x%08x ", (uint32_t) rel.offset);
+            }
+            // type name
+            printf(" %s ", relTypeDesc(relType));
+            // addend
+            if (isRelA) {
+                snprintf(format, sizeof(format), " %%%dlld ", maxAddendDigits);
+                printf(format, rel.addend);
+            }
+            // symbol index
+            snprintf(format, sizeof(format), " %%%du ", maxSymIndexDigits);
+            printf(format, symIndex);
+            // symbol name
+            if (symbolTabOffset != 0 && symIndex != 0) {
+                elfSeek(symbolTabOffset + symbolEntrySize * symIndex, SEEK_SET);
+                uint32_t nameOffset = read_u32();
+                if (nameOffset != 0 && strtab != nullptr) {
+                    const char * name = & strtab[nameOffset];
+                    printf(" %s", name);
+                }
+            }
+
+            putchar('\n');
+        }
+    }
+
+    void dumpDynamicReloc() {
+        // 符号表信息
+        uint64_t dynSymAddr = 0;
+        uint64_t dynSymEnt = 0;
+        // RELA
+        uint64_t relAAddr = 0;
+        uint64_t relASize = 0;
+        uint64_t relAEnt = 0;
+        // REL
+        uint64_t relAddr = 0;
+        uint64_t relSize = 0;
+        uint64_t relEnt = 0;
+        // 
+        for (size_t i = 0; i < dynEntries64.size(); i++) {
+            const Elf64DynEntry & dyn = dynEntries64[i];
+            if (dyn.d_tag == DYN_TYPE_RELA) {                   // RELA 地址
+                relAAddr = dyn.d_un.d_ptr;
+            }
+            else if (dyn.d_tag == DYN_TYPE_RELASZ) {            // RELA 大小
+                relASize = dyn.d_un.d_val;
+            }
+            else if (dyn.d_tag == DYN_TYPE_RELAENT) {           // RELA 条目
+                relAEnt = dyn.d_un.d_val;
+            }
+            else if (dyn.d_tag == DYN_TYPE_SYMTAB) {            // 符号表地址
+                dynSymAddr = dyn.d_un.d_ptr;
+            }
+            else if (dyn.d_tag == DYN_TYPE_SYMENT) {            // 符号表项目
+                dynSymEnt = dyn.d_un.d_val;
+            }
+            else if (dyn.d_tag == DYN_TYPE_REL) {
+                relAddr = dyn.d_un.d_ptr;
+            }
+            else if (dyn.d_tag == DYN_TYPE_RELSZ) {
+                relSize = dyn.d_un.d_val;
+            }
+            else if (dyn.d_tag == DYN_TYPE_RELENT) {
+                relEnt = dyn.d_un.d_val;
+            }
+        }
+        if (relAEnt == 0) {
+            relAEnt = isElf64 ? 24 : 12;
+        }
+        if (relEnt == 0) {
+            relEnt = isElf64 ? 16 : 8;
+        }
+        // 如果存在 RELA 则展示
+        if (relAAddr != 0 && relASize != 0) {
+            uint64_t relAOffset = addrToFileOffset(relAAddr);
+            uint64_t dynSymTabOffset = addrToFileOffset(dynSymAddr);
+            if (relAOffset != 0) {
+                uint64_t relAEntryCount = relASize / relAEnt;
+                printf("\n动态链接重定位表, RELA 格式, 文件偏移: ");
+                if (relAOffset > 0xffffffff)
+                    printf("0x%016llx", relAOffset);
+                else 
+                    printf("0x%08x", (uint32_t)relAOffset);
+                printf(", 内存地址: ");
+                if (relAAddr > 0xffffffff)
+                    printf("0x%016llx", relAAddr);
+                else
+                    printf("0x%08x", (uint32_t)relAAddr);
+                printf(", 重定位条目数: %llu", relAEntryCount);
+                putchar('\n');
+                //
+                std::vector<Elf64RelAEntry> relaData;
+                elfSeek(relAOffset, SEEK_SET);
+                for (uint64_t i = 0; i < relAEntryCount; i++) {
+                    Elf64RelAEntry relaUnit;
+                    relaUnit.offset = read_u64();
+                    relaUnit.info = read_u64();
+                    relaUnit.addend = (int64_t) read_u64();
+                    relaData.push_back(relaUnit);
+                }
+                //
+                showRelData(relaData, true, dynSymTabOffset, dynSymEnt, dynstr);
+            }
+        }
+        // 如果存在 REL 则展示
+        if (relAddr != 0 && relSize != 0) {
+            uint64_t relOffset = addrToFileOffset(relAddr);
+            uint64_t dynSymTabOffset = addrToFileOffset(dynSymAddr);
+            if (relOffset != 0) {
+                uint64_t relEntryCount = relSize / relEnt;
+                printf("\n动态链接重定位表, REL 格式, 文件偏移: ");
+                if (relOffset > 0xffffffff)
+                    printf("0x%016llx", relOffset);
+                else
+                    printf("0x%08x", (uint32_t)relOffset);
+                printf(", 内存地址: ");
+                if (relAddr > 0xffffffff)
+                    printf("0x%016llx", relAddr);
+                else
+                    printf("0x%08x", (uint32_t)relAddr);
+                printf(", 重定位条目数: %llu", relEntryCount);
+                putchar('\n');
+                //
+                std::vector<Elf64RelAEntry> relaData;
+                elfSeek(relOffset, SEEK_SET);
+                for (uint64_t i = 0; i < relEntryCount; i++) {
+                    Elf64RelAEntry relaUnit;
+                    relaUnit.offset = read_u64();
+                    relaUnit.info = read_u64();
+                    relaUnit.addend = 0;
+                    relaData.push_back(relaUnit);
+                }
+                //
+                showRelData(relaData, false, dynSymTabOffset, dynSymEnt, dynstr);
+            }
+        }
+        // JMP Rel
+        uint64_t jmpRelTab = 0;
+        uint64_t pltRelSize = 0;
+        uint64_t pltRelType = 0;
+        uint64_t pltRelEnt = 0;
+        bool pltRelUseA = false;
+        for (size_t i = 0; i < dynEntries64.size(); i++) {
+            const Elf64DynEntry & dyn = dynEntries64[i];
+            if (dyn.d_tag == DYN_TYPE_JMPREL) {                 // PLT REL 表
+                jmpRelTab = dyn.d_un.d_ptr;
+            }
+            else if (dyn.d_tag == DYN_TYPE_PLTRELSZ) {          // PLT REL 表大小
+                pltRelSize = dyn.d_un.d_val;
+            }
+            else if (dyn.d_tag == DYN_TYPE_PLTREL) {            // PLT REL 的类型
+                pltRelType = dyn.d_un.d_val;
+                if (pltRelType == DYN_TYPE_RELA) {
+                    pltRelEnt = isElf64 ? 24 : 12;
+                    pltRelUseA = true;
+                }
+                else if (pltRelType == DYN_TYPE_REL) {
+                    pltRelEnt = isElf64 ? 12 : 8;
+                }
+            }
+        }
+        if (jmpRelTab != 0 && pltRelSize != 0 && pltRelEnt != 0) {
+            uint64_t pltRelOffset = addrToFileOffset(jmpRelTab);
+            uint64_t dynSymTabOffset = addrToFileOffset(dynSymAddr);
+            if (pltRelOffset != 0) {
+                uint64_t pltRelEntryCount = pltRelSize / pltRelEnt;
+                printf("\n动态链接 PLT 重定位表, %s 格式, 文件偏移: ", pltRelUseA ? "RELA" : "REL");
+                if (pltRelOffset > 0xffffffff)
+                    printf("0x%016llx", pltRelOffset);
+                else
+                    printf("0x%08x", (uint32_t)pltRelOffset);
+                printf(", 内存地址: ");
+                if (jmpRelTab > 0xffffffff)
+                    printf("0x%016llx", jmpRelTab);
+                else
+                    printf("0x%08x", (uint32_t)jmpRelTab);
+                printf(", 重定位条目数: %llu", pltRelEntryCount);
+                putchar('\n');
+                //
+                std::vector<Elf64RelAEntry> relaData;
+                elfSeek(pltRelOffset, SEEK_SET);
+                for (uint64_t i = 0; i < pltRelEntryCount; i++) {
+                    Elf64RelAEntry relaUnit;
+                    relaUnit.offset = read_u64();
+                    relaUnit.info = read_u64();
+                    if (pltRelUseA)
+                        relaUnit.addend = read_u64();
+                    else
+                        relaUnit.addend = 0;
+                    relaData.push_back(relaUnit);
+                }
+                //
+                showRelData(relaData, pltRelUseA, dynSymTabOffset, dynSymEnt, dynstr);
+            }
+        }
+    }
+
+    void dumpDynamicSymbol() {
+        uint64_t dynSymAddr = 0;
+        uint64_t dynSymSize = 0;        // 好像没有这项 
+        uint64_t dynSymEnt = 0;
+
+        for (size_t i = 0; i < dynEntries64.size(); i++) {
+            const Elf64DynEntry & dyn = dynEntries64[i];
+            if (dyn.d_tag == DYN_TYPE_SYMTAB) {
+                dynSymAddr = dyn.d_un.d_ptr;
+            }
+            //else if (dyn.d_tag == DYN_TYPE_RELASZ) {
+            //    relASize = dyn.d_un.d_val;
+            //}
+            else if (dyn.d_tag == DYN_TYPE_SYMENT) {
+                dynSymEnt = dyn.d_un.d_val;
+            }
+        }
+        if (dynSymEnt == 0) {
+            dynSymEnt = isElf64 ? 24 : 16;
+        }
+    }
+
 
     void parse2() {
         if (elf == nullptr) return;
@@ -1067,6 +1345,8 @@ private:
             dumpSectionHeader();
             dumpProgramHeader();
             dumpDynamicSegment();
+            dumpDynamicReloc();
+            dumpDynamicSymbol();
         }
         catch (std::string s) {
 
