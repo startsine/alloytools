@@ -7,13 +7,34 @@
 
 每一项数据定义如下：
 typedef {
-    Addr  name;       // 符号在字符串表中的偏移
+    Addr  addr;       // 符号在字符串表中的偏移
 	Addr  value;      // 符号的值
 }Elf64_Export;
 
 2. IMPORT 数据
 #define DT_IMPSYM        40
 #define DT_IMPCOUNT      41
+
+typedef {
+    Addr      addr;      // 指向符号(NULL结尾的字符串)的地址
+	uint32_t  hint;      // 该符号最有可能是so中导出的符号的第几个
+    uint16_t  module;    // 从哪个so导入，第几个 DT_NEEDED (从0开始算起)
+	uint8_t   type;      // 1: 函数  2: 数据
+	uint8_t   reserve;
+} Elf64_Import;
+
+3. 导入地址表
+#define DT_IMPADDR        31
+
+导入地址表的条目数量与DT_IMPCOUNT指定相同，与DT_IMPSYM 一一对应。
+加载器会把对用导入的符号的地址填充到对应的位置。
+
+4. 相对重定位
+#define DT_RELR2          42
+
+
+
+
 
 
 
