@@ -1,0 +1,24 @@
+
+动态表增加：
+
+1. EXPORT 数据
+#define DT_EXPSYM        38
+#define DT_EXPCOUNT      39
+
+每一项数据定义如下：
+typedef {
+    Addr  name;       // 符号在字符串表中的偏移
+	Addr  value;      // 符号的值
+}Elf64_Export;
+
+2. IMPORT 数据
+#define DT_IMPSYM        40
+#define DT_IMPCOUNT      41
+
+
+
+
+
+
+
+
