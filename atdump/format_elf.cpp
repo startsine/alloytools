@@ -1445,8 +1445,15 @@ private:
             snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxVisibilityLength);
             printf(format, symbolVisibilityToStr(visibility));
             // name 
-            if (symbol.name != 0) {
-                printf(" %s", &strtab[symbol.name]);
+            if (type == SYMBOL_TYPE_SECTION) {
+                if (symbol.shndx < sectionTable64.size()) {
+                    const const char * symbolName = (shstrtab != nullptr) ? (&shstrtab[sectionTable64[symbol.shndx].section_name]) : "";
+                    printf(" %s", symbolName);
+                }
+            }
+            else {
+                const const char * symbolName = (strtab != nullptr) ? (&strtab[symbol.name]) : "";
+                printf(" %s", symbolName);
             }
             putchar('\n');
         }
@@ -1518,20 +1525,6 @@ private:
         showSymbolData(symbols, dynstr);
     }
 
-    void getObjectStringTable() {
-        for (size_t i = 0; i < sectionTable64.size(); i++) {
-            if (ELF_SECTION_TYPE_STRTAB == sectionTable64[i].section_type) {
-                if (sectionTable64[i].section_offset != 0) {
-                    objstr = new char[sectionTable64[i].section_size + 4];
-                    elfSeek(sectionTable64[i].section_offset, SEEK_SET);
-                    fread(objstr, 1, sectionTable64[i].section_size);
-                }
-                break;
-            }
-        }
-        printf("%s\n", &objstr[1]);
-    }
-
     void dumpObjSymTabSection() {
         Elf64SectionEntry * pSection = nullptr;
         for (size_t i = 0; i < sectionTable64.size(); i++) {
@@ -1547,11 +1540,12 @@ private:
             return;
         }
         uint32_t strTabSectionIdx = section.section_link;
-        if (strTabSectionIdx > sectionTable64.size()) {
-            return;
+        if (strTabSectionIdx < sectionTable64.size() && objstr == nullptr) {
+            const Elf64SectionEntry & strTabSection = sectionTable64[strTabSectionIdx];
+            objstr = new char[strTabSection.section_size + 4];
+            elfSeek(strTabSection.section_offset, SEEK_SET);
+            fread(objstr, 1, strTabSection.section_size);
         }
-
-
 
         uint64_t symTotal = section.section_size / section.section_entsize;
         std::vector<Elf64Symbol> symbols;
