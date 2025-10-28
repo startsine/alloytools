@@ -1546,6 +1546,13 @@ private:
         if (section.section_offset == 0 || section.section_size == 0 || section.section_entsize == 0) {
             return;
         }
+        uint32_t strTabSectionIdx = section.section_link;
+        if (strTabSectionIdx > sectionTable64.size()) {
+            return;
+        }
+
+
+
         uint64_t symTotal = section.section_size / section.section_entsize;
         std::vector<Elf64Symbol> symbols;
         elfSeek(section.section_offset, SEEK_SET);
