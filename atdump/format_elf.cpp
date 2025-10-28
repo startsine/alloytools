@@ -43,6 +43,7 @@ private:
     char * dynstr = nullptr;
     uint64_t dynStrSize = 0;
     char * objstr = nullptr;
+    std::vector<Elf64Symbol> objSymbols;
 
 private:
 
@@ -1135,9 +1136,19 @@ private:
             if (symbolTabOffset != 0 && symIndex != 0) {
                 elfSeek(symbolTabOffset + symbolEntrySize * symIndex, SEEK_SET);
                 uint32_t nameOffset = read_u32();
+                uint8_t symInfo = (uint8_t) fgetc(elf);             // elf32要注意
+                fgetc(elf);
+                uint16_t symSecIdx = read_u16();
                 if (nameOffset != 0 && strtab != nullptr) {
                     const char * name = & strtab[nameOffset];
                     printf(" %s", name);
+                }
+                else if (nameOffset == 0) {
+                    uint8_t symType = symInfo & 0x0f;
+                    if (symType == SYMBOL_TYPE_SECTION) {
+                        const char * name = &shstrtab[sectionTable64[symSecIdx].section_name];
+                        printf(" %s", name);
+                    }
                 }
             }
 
@@ -1525,6 +1536,43 @@ private:
         showSymbolData(symbols, dynstr);
     }
 
+    void dumpObjRelAllTable() {
+        bool isRelA;
+        uint64_t totalCount;
+        uint64_t symTabOffset = 0;
+        uint64_t symTabEntrySize = 0;
+        for (size_t i = 0; i < sectionTable64.size(); i++) {
+            const Elf64SectionEntry & section = sectionTable64[i];
+            if (section.section_type == ELF_SECTION_TYPE_SYMTAB) {
+                symTabOffset = section.section_offset;
+                symTabEntrySize = section.section_entsize;
+                break;
+            }
+        }
+        for (size_t i = 0; i < sectionTable64.size(); i++) {
+            const Elf64SectionEntry & section = sectionTable64[i];
+            if (section.section_type == ELF_SECTION_TYPE_RELA || section.section_type == ELF_SECTION_TYPE_REL) {
+                printf("\n");
+                printf("%s: \n", (shstrtab != nullptr) ? (&shstrtab[section.section_name]) : "");
+                isRelA = (section.section_type == ELF_SECTION_TYPE_RELA);
+                totalCount = section.section_size / section.section_entsize;
+                elfSeek(section.section_offset, SEEK_SET);
+                std::vector<Elf64RelAEntry> relaData;
+                for (uint64_t i = 0; i < totalCount; i++) {
+                    Elf64RelAEntry relaUnit;
+                    relaUnit.offset = read_u64();
+                    relaUnit.info = read_u64();
+                    if (isRelA)
+                        relaUnit.addend = (int64_t)read_u64();
+                    else
+                        relaUnit.addend = 0;
+                    relaData.push_back(relaUnit);
+                }
+                showRelData(relaData, isRelA, symTabOffset, symTabEntrySize, objstr);
+            }
+        }
+    }
+
     void dumpObjSymTabSection() {
         Elf64SectionEntry * pSection = nullptr;
         for (size_t i = 0; i < sectionTable64.size(); i++) {
@@ -1559,6 +1607,8 @@ private:
             symbol.value = read_u64();
             symbol.size = read_u64();
             symbols.push_back(symbol);
+            //  备份
+            objSymbols.push_back(symbol);
         }
         //
         printf("\n符号表, 文件偏移: ");
@@ -1584,6 +1634,7 @@ private:
             }
             else if (elfType == 1) {                        // .o
                 dumpObjSymTabSection();
+                dumpObjRelAllTable();
             }
             
         }
