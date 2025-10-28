@@ -1582,7 +1582,6 @@ private:
                 dumpDynamicSymbol();
             }
             else if (elfType == 1) {                        // .o
-                getObjectStringTable();
                 dumpObjSymTabSection();
             }
             
