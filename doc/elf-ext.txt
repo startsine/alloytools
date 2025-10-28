@@ -2,8 +2,8 @@
 动态表增加：
 
 1. EXPORT 数据
-#define DT_EXPSYM        38
-#define DT_EXPCOUNT      39
+#define DT_EXPSYM        42
+#define DT_EXPCOUNT      43
 
 每一项数据定义如下：
 typedef {
@@ -26,11 +26,12 @@ typedef {
 3. 导入地址表
 #define DT_IMPADDR        31
 
-导入地址表的条目数量与DT_IMPCOUNT指定相同，与DT_IMPSYM 一一对应。
+导入地址表的条目数量与DT_IMPCOUNT指定相同，与 DT_IMPSYM 一一对应。
 加载器会把对用导入的符号的地址填充到对应的位置。
 
 4. 相对重定位
-#define DT_RELR2          42
+#define DT_RELP          38
+#define DT_RELPSZ        39     //记录大小（字节）
 
 数据格式为 “页数据头+重定位数据” 不停重复，直到某个页数据头全0结束
 
