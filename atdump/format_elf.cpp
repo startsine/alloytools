@@ -1097,9 +1097,42 @@ private:
             if (curAddendDigits > maxAddendDigits) {
                 maxAddendDigits = curAddendDigits;
             }
+            size_t curTypeLength = strlen(relTypeDesc(relType));
+            if (curTypeLength > maxLengthTypeStr) {
+                maxLengthTypeStr = curTypeLength;
+            }
         }
-        //
         char format[128];
+        // id
+        for (int i = 0; i < maxIdDigits + 2; i++)
+            putchar(' ');
+        // offset
+        if (offsetUse64)
+            printf("%-19s", "offset");
+        else 
+            printf("%-11s", "offset");
+        // type
+        snprintf(format, sizeof(format), " %%-%ds ", maxLengthTypeStr);
+        printf(format, "type");
+        // addend
+        if (maxAddendDigits < 6) {
+            maxAddendDigits = 6;
+        }
+        if (isRelA) {
+            snprintf(format, sizeof(format), " %%%ds ", maxAddendDigits);
+            printf(format, "addend");
+        }
+        // sym
+        if (maxSymIndexDigits < 3) {
+            maxSymIndexDigits = 3;
+        }
+        snprintf(format, sizeof(format), " %%%ds ", maxSymIndexDigits);
+        printf(format, "sym");
+        //
+        printf(" symbol-name");
+        //
+        putchar('\n');
+        //
         for (size_t i = 0; i < relList.size(); i++) {
             const Elf64RelAEntry & rel = relList[i];
             uint32_t symIndex;
@@ -1123,7 +1156,8 @@ private:
                 printf("0x%08x ", (uint32_t) rel.offset);
             }
             // type name
-            printf(" %s ", relTypeDesc(relType));
+            snprintf(format, sizeof(format), " %%-%ds ", maxLengthTypeStr);
+            printf(format, relTypeDesc(relType));
             // addend
             if (isRelA) {
                 snprintf(format, sizeof(format), " %%%dlld ", maxAddendDigits);
