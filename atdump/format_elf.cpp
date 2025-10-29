@@ -1424,11 +1424,27 @@ private:
         return "";
     }
 
+    const char * sectionIndexToText(uint32_t index) {
+        static char secText[32];
+        if (index == 0)
+            return "UNDEF";
+        if (index < 0xff00) {
+            snprintf(secText, sizeof(secText), "%u", index);
+            return secText;
+        }
+        if (index == 0xFFF1)
+            return "ABS";
+        if (index == 0xFFF2)
+            return "COMMON";
+        snprintf(secText, sizeof(secText), "0x%04x", index);
+        return secText;
+    }
+
     void showSymbolData(const std::vector<Elf64Symbol> & symbols, const char * strtab) {
         //
         int maxIdDigits = 0;
         bool valueUse64 = false;
-        int maxSecIndexDigits = 0;
+        size_t maxSecIndexDigits = 0;
         int maxSizeDigits = 0;
         size_t maxBindingLength = 0;
         size_t maxTypeLength = 0;
@@ -1438,7 +1454,8 @@ private:
             const Elf64Symbol & symbol = symbols[i];
             if (symbol.value > 0xffffffff)
                 valueUse64 = true;
-            int curSecIndexDigits = get_number_digits((uint64_t)symbol.shndx);
+            const char * secIndexDesc = sectionIndexToText((uint32_t)symbol.shndx);
+            size_t curSecIndexDigits = strlen(secIndexDesc);
             if (curSecIndexDigits > maxSecIndexDigits)
                 maxSecIndexDigits = curSecIndexDigits;
             int curSizeDigits = get_number_digits((uint64_t)symbol.size);
@@ -1457,16 +1474,56 @@ private:
                 maxVisibilityLength = strlen(symbolVisibilityToStr(visibility));
             }
         }
-
         char format[128];
+        // id
+        for (int i = 0; i < maxIdDigits + 2; i++)
+            putchar(0x20);
+        // section index
+        if (maxSecIndexDigits < 3)
+            maxSecIndexDigits = 3;
+        snprintf(format, sizeof(format), "%%%us ", (uint32_t)maxSecIndexDigits);
+        printf(format, "sec");
+        // size
+        if (maxSizeDigits < 4)
+            maxSizeDigits = 4;
+        snprintf(format, sizeof(format), "%%%ds ", maxSizeDigits);
+        printf(format, "size");
+        // value
+        if (valueUse64) {
+            printf("%-18s ", "value");
+        }
+        else {
+            printf("%-10s ", "value");
+        }
+        // binding
+        if (maxBindingLength < 4)
+            maxBindingLength = 4;
+        snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxBindingLength);
+        printf(format, "bind");
+        // type
+        if (maxTypeLength < 4)
+            maxTypeLength = 4;
+        snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxTypeLength);
+        printf(format, "type");
+        // visibility
+        if (maxVisibilityLength < 6)
+            maxVisibilityLength = 6;
+        snprintf(format, sizeof(format), "%%-%us ", (uint32_t)maxVisibilityLength);
+        printf(format, "visibi");
+        // name
+        printf(" name");
+        //
+        putchar('\n');
+        //
         for (size_t i = 0; i < symbols.size(); i++) {
             const Elf64Symbol & symbol = symbols[i];
             // id
             snprintf(format, sizeof(format), "%%%dllu: ", maxIdDigits);
             printf(format, (uint64_t)i);
             // section index
-            snprintf(format, sizeof(format), "%%%du ", maxSecIndexDigits);
-            printf(format, (uint32_t)symbol.shndx);
+            const char * secIndexDesc = sectionIndexToText((uint32_t)symbol.shndx);
+            snprintf(format, sizeof(format), "%%%us ", (uint32_t)maxSecIndexDigits);
+            printf(format, secIndexDesc);
             // size
             snprintf(format, sizeof(format), "%%%dllu ", maxSizeDigits);
             printf(format, (uint64_t)symbol.size);
@@ -1587,7 +1644,7 @@ private:
             const Elf64SectionEntry & section = sectionTable64[i];
             if (section.section_type == ELF_SECTION_TYPE_RELA || section.section_type == ELF_SECTION_TYPE_REL) {
                 printf("\n");
-                printf("%s: \n", (shstrtab != nullptr) ? (&shstrtab[section.section_name]) : "");
+                printf("重定位表 %s: \n", (shstrtab != nullptr) ? (&shstrtab[section.section_name]) : "");
                 isRelA = (section.section_type == ELF_SECTION_TYPE_RELA);
                 totalCount = section.section_size / section.section_entsize;
                 elfSeek(section.section_offset, SEEK_SET);
