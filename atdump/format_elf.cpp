@@ -29,6 +29,7 @@ private:
     bool isBigEndian;                           
     bool isElf64;
     int elfType;
+    uint16_t elfCpu;
     unsigned short stringTableSectionIndex = 0;
     uint64_t sectionTableOffset = 0;
     uint16_t sectionEntryCount = 0;
@@ -361,6 +362,7 @@ private:
             break;
         }
         printf("CPU类型:         %s\n", eCpuTypeStr);
+        elfCpu = e_machine;
 
         // 目标文件版本: e_version
         unsigned int e_version = read_u32();
@@ -1064,7 +1066,120 @@ private:
     }
 
     const char * relTypeDesc(uint32_t relType) {
-        return "R_X86_64_RELATIVE";
+        switch (elfCpu)
+        {
+        case CPU_X86_64: {
+            switch (relType)
+            {
+            case REL_X86_64_NONE: 
+                return "X86_64_NONE";
+            case REL_X86_64_64:
+                return "X86_64_64";
+            case REL_X86_64_PC32:
+                return "X86_64_PC32";
+            case REL_X86_64_GOT32:
+                return "X86_64_GOT32";
+            case REL_X86_64_PLT32:
+                return "X86_64_PLT32";
+            case REL_X86_64_COPY:
+                return "X86_64_COPY";
+            case REL_X86_64_GLOB_DAT:
+                return "X86_64_GLOB_DAT";
+            case REL_X86_64_JUMP_SLOT:
+                return "X86_64_JUMP_SLOT";
+            case REL_X86_64_RELATIVE:
+                return "X86_64_RELATIVE";
+            case REL_X86_64_GOTPCREL:
+                return "X86_64_GOTPCREL";
+            case REL_X86_64_32:
+                return "X86_64_32";
+            case REL_X86_64_32S:
+                return "X86_64_32S";
+            case REL_X86_64_16:
+                return "X86_64_16";
+            case REL_X86_64_PC16:
+                return "X86_64_PC16";
+            case REL_X86_64_8:
+                return "X86_64_8";
+            case REL_X86_64_PC8:
+                return "X86_64_PC8";
+            case REL_X86_64_DTPMOD64:
+                return "X86_64_DTPMOD64";
+            case REL_X86_64_DTPOFF64:
+                return "X86_64_DTPOFF64";
+            case REL_X86_64_TPOFF64:
+                return "X86_64_TPOFF64";
+            case REL_X86_64_TLSGD:
+                return "X86_64_TLSGD";
+            case REL_X86_64_TLSLD:
+                return "X86_64_TLSLD";
+            case REL_X86_64_DTPOFF32:
+                return "X86_64_DTPOFF32";
+            case REL_X86_64_GOTTPOFF:
+                return "X86_64_GOTTPOFF";
+            case REL_X86_64_TPOFF32:
+                return "X86_64_TPOFF32";
+            case REL_X86_64_PC64:
+                return "X86_64_PC64";
+            case REL_X86_64_GOTOFF64:
+                return "X86_64_GOTOFF64";
+            case REL_X86_64_GOTPC32:
+                return "X86_64_GOTPC32";
+            case REL_X86_64_SIZE32:
+                return "X86_64_SIZE32";
+            case REL_X86_64_SIZE64:
+                return "X86_64_SIZE64";
+            case REL_X86_64_GOTPC32_TLSDESC:
+                return "X86_64_GOTPC32_TLSDESC";
+            case REL_X86_64_TLSDESC_CALL:
+                return "X86_64_TLSDESC_CALL";
+            case REL_X86_64_TLSDESC:
+                return "X86_64_TLSDESC";
+            case REL_X86_64_IRELATIVE:
+                return "X86_64_IRELATIVE";
+            case REL_X86_64_RELATIVE64:
+                return "X86_64_RELATIVE64";
+            case REL_X86_64_PC32_BND:
+                return "X86_64_PC32_BND";
+            case REL_X86_64_PLT32_BND:
+                return "X86_64_PLT32_BND";
+            case REL_X86_64_GOTPCRELX:
+                return "X86_64_GOTPCRELX";
+            case REL_X86_64_REX_GOTPCRELX:
+                return "X86_64_REX_GOTPCRELX";
+            case REL_X86_64_CODE_4_GOTPCRELX:
+                return "X86_64_CODE_4_GOTPCRELX";
+            case REL_X86_64_CODE_4_GOTTPOFF:
+                return "X86_64_CODE_4_GOTTPOFF";
+            case REL_X86_64_CODE_4_GOTPC32_TLSDESC:
+                return "X86_64_CODE_4_GOTPC32_TLSDESC";
+            case REL_X86_64_CODE_5_GOTPCRELX:
+                return "X86_64_CODE_5_GOTPCRELX";
+            case REL_X86_64_CODE_5_GOTTPOFF:
+                return "X86_64_CODE_5_GOTTPOFF";
+            case REL_X86_64_CODE_5_GOTPC32_TLSDESC:
+                return "X86_64_CODE_5_GOTPC32_TLSDESC";
+            case REL_X86_64_CODE_6_GOTPCRELX:
+                return "X86_64_CODE_6_GOTPCRELX";
+            case REL_X86_64_CODE_6_GOTTPOFF:
+                return "X86_64_CODE_6_GOTTPOFF";
+            case REL_X86_64_CODE_6_GOTPC32_TLSDESC:
+                return "X86_64_CODE_6_GOTPC32_TLSDESC";
+            case REL_X86_64_GNU_VTINHERIT:
+                return "X86_64_GNU_VTINHERIT";
+            case REL_X86_64_GNU_VTENTRY:
+                return "X86_64_GNU_VTENTRY";
+            default:
+                break;
+            }
+        }
+            break;
+        default:
+            break;
+        }
+        static char desc[32];
+        snprintf(desc, sizeof(desc), "0x%04x", relType);
+        return desc;
     }
 
     void showRelData(const std::vector<Elf64RelAEntry> & relList, bool isRelA, uint64_t symbolTabOffset, uint64_t symbolEntrySize, const char * strtab) {
