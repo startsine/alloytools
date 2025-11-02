@@ -1,9 +1,9 @@
-﻿
-
-#include <stdio.h>
+﻿#include <stdio.h>
+#include <memory>
 #ifdef _WIN32
 #include <Windows.h>
 #endif
+#include "FileInfo.h"
 
 static int atlink_main(int argc, char ** argv)
 {
@@ -15,6 +15,7 @@ static int atlink_main(int argc, char ** argv)
         //    //
         //}
     }
+    // printf("size = %d", sizeof(std::shared_ptr<FileInfo>));
     return 0;
 }
 

@@ -164,6 +164,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="atlink.cpp" />
+    <ClCompile Include="FileInfo.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="FileInfo.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
