@@ -5,6 +5,12 @@
 #endif
 #include "FileInfo.h"
 
+class Linker 
+{
+public:
+    InputList       inputList;
+};
+
 static int atlink_main(int argc, char ** argv)
 {
     if (argc > 1) {
@@ -16,6 +22,12 @@ static int atlink_main(int argc, char ** argv)
         //}
     }
     // printf("size = %d", sizeof(std::shared_ptr<FileInfo>));
+    Linker linker;
+    linker.inputList.addObject("F:\\mywork\\alloytools\\x64\\Debug\\win1.o");
+    linker.inputList.addLibrary("F:\\mywork\\alloytools\\x64\\Debug\\kernel32.dll.sym");
+    linker.inputList.addLibrary("F:\\mywork\\alloytools\\x64\\Debug\\user32.dll.sym");
+
+
     return 0;
 }
 

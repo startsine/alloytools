@@ -24,6 +24,17 @@ public:
     FileInfo(std::string name, bool libraryFlag);
 };
 
+class ObjectFile : public FileInfo 
+{
+
+};
+
+class LibraryFile : public FileInfo
+{
+
+};
+
+
 class InputList
 {
 private:
@@ -31,6 +42,8 @@ private:
 public:
     InputList();
     ~InputList();
+    int addObject(const char * name);
+    int addLibrary(const char * name);
 };
 
 

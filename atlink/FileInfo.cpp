@@ -22,7 +22,16 @@ InputList::~InputList() {
             }
         }
     }
+
+}
+
+int InputList::addObject(const char * name) {
+
+    return 0;
 }
 
 
+int InputList::addLibrary(const char * name) {
+    return 0;
+}
 
