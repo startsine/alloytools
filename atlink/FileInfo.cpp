@@ -5,7 +5,7 @@
 #include "FileInfo.h"
 
 // libraryFlag 标志表示命令行加了 -l 
-FileInfo::FileInfo(std::string name, bool libraryFlag) {
+FileInfo::FileInfo(const std::string & name, bool libraryFlag) {
 
 }
 
@@ -25,13 +25,28 @@ InputList::~InputList() {
 
 }
 
-int InputList::addObject(const char * name) {
+ObjectFile::ObjectFile(const std::string & name) :
+    FileInfo(name, false)
+{
+}
 
+LibraryFile::LibraryFile(const std::string & name) :
+    FileInfo(name, true)
+{
+
+}
+
+int InputList::addObject(const char * name) 
+{
+    ObjectFile * obj = new ObjectFile(name);
+    fileList.push_back(obj);
     return 0;
 }
 
 
 int InputList::addLibrary(const char * name) {
+    LibraryFile * lib = new LibraryFile(name);
+    fileList.push_back(lib);
     return 0;
 }
 

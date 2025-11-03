@@ -21,17 +21,19 @@ public:
     std::string inputName;                  // 以参数输入时，它的文件名路径
     std::string fullPathName;               // 文件名全路径
     FileType fileType;
-    FileInfo(std::string name, bool libraryFlag);
+    FileInfo(const std::string & name, bool libraryFlag);
 };
 
 class ObjectFile : public FileInfo 
 {
-
+public:
+    ObjectFile(const std::string & name);
 };
 
 class LibraryFile : public FileInfo
 {
-
+public:
+    LibraryFile(const std::string & name);
 };
 
 
