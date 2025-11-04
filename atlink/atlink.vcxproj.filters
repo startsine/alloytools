@@ -21,9 +21,27 @@
     <ClCompile Include="FileInfo.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Section.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Symbol.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Rel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileInfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Section.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Symbol.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Rel.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

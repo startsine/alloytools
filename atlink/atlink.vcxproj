@@ -165,9 +165,15 @@
   <ItemGroup>
     <ClCompile Include="atlink.cpp" />
     <ClCompile Include="FileInfo.cpp" />
+    <ClCompile Include="Rel.cpp" />
+    <ClCompile Include="Section.cpp" />
+    <ClCompile Include="Symbol.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileInfo.h" />
+    <ClInclude Include="Rel.h" />
+    <ClInclude Include="Section.h" />
+    <ClInclude Include="Symbol.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

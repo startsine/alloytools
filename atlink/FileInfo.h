@@ -39,7 +39,7 @@ public:
 
 class InputList
 {
-private:
+public:
     std::vector<FileInfo*>          fileList;
 public:
     InputList();
