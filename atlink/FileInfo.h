@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <stdio.h>
 #include <string.h>
@@ -8,29 +8,43 @@
 
 enum class FileType
 {
-    ELF_OBJECT,             // .o ÎÄ¼ş
-    STATIC_LIB,             // .a ÎÄ¼ş
-    ELF_DSO,                // .so ÎÄ¼ş
-    PE_DLL,                 // .dll ÎÄ¼ş
-    SYM_DEF,                // .dsosym ÎÄ¼ş
+    ELF_OBJECT,             // .o æ–‡ä»¶
+    STATIC_LIB,             // .a æ–‡ä»¶
+    ELF_DSO,                // .so æ–‡ä»¶
+    PE_DLL,                 // .dll æ–‡ä»¶
+    SYM_DEF,                // .dsosym æ–‡ä»¶
 };
 
-class FileInfo
+class SrcFile
 {
+private:
+    FILE        * fp = nullptr;
+    long long   fileStartOffset = 0;
+    long long   fileTotalSize = 0;
+    bool        isBigEndian = false;
 public:
-    std::string inputName;                  // ÒÔ²ÎÊıÊäÈëÊ±£¬ËüµÄÎÄ¼şÃûÂ·¾¶
-    std::string fullPathName;               // ÎÄ¼şÃûÈ«Â·¾¶
+    std::string inputName;                  // ä»¥å‚æ•°è¾“å…¥æ—¶ï¼Œå®ƒçš„æ–‡ä»¶åè·¯å¾„
+    std::string fullPathName;               // æ–‡ä»¶åå…¨è·¯å¾„
     FileType fileType;
-    FileInfo(const std::string & name, bool libraryFlag);
+    SrcFile(const std::string & name, bool libraryFlag);
+
+    void open();
+    void close();
+    int seek(long long offset, int origin);
+    size_t fread(void* buffer, size_t eSize, size_t eCount);
+    uint8_t read_u8();
+    uint16_t read_u16();
+    uint32_t read_u32();
+    uint64_t read_u64();
 };
 
-class ObjectFile : public FileInfo 
+class ObjectFile : public SrcFile
 {
 public:
     ObjectFile(const std::string & name);
 };
 
-class LibraryFile : public FileInfo
+class LibraryFile : public SrcFile
 {
 public:
     LibraryFile(const std::string & name);
@@ -40,7 +54,7 @@ public:
 class InputList
 {
 public:
-    std::vector<FileInfo*>          fileList;
+    std::vector<SrcFile*>          fileList;
 public:
     InputList();
     ~InputList();

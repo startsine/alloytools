@@ -1,9 +1,12 @@
 #include <stdint.h>
 #include <string>
+#include <vector>
+#include <unordered_map>
 #include "Symbol.h"
 
 SymbolList::SymbolList()
 {
+    globalFinder.reserve(10000);
 }
 
 SymbolList::~SymbolList()

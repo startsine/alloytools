@@ -1,12 +1,108 @@
-#include <stdio.h>
+ï»¿#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <string>
 #include "FileInfo.h"
+#include "at_io.h"
 
-// libraryFlag ±êÖ¾±íÊ¾ÃüÁîÐÐ¼ÓÁË -l 
-FileInfo::FileInfo(const std::string & name, bool libraryFlag) {
+// libraryFlag æ ‡å¿—è¡¨ç¤ºå‘½ä»¤è¡ŒåŠ äº† -l 
+SrcFile::SrcFile(const std::string & name, bool libraryFlag) {
+    inputName = name;
+}
 
+void SrcFile::open()
+{
+    if (fp == nullptr) {
+        fp = fopen_utf8(inputName.c_str(), "rb");
+    }
+}
+
+void SrcFile::close()
+{
+    if (fp != nullptr) {
+        fclose(fp);
+        fp = nullptr;
+    }
+}
+
+int SrcFile::seek(long long offset, int origin)
+{
+    int v = fseek_long(fp, offset, origin);
+    if (feof(fp)) {
+        throw(std::string("out of file"));
+    }
+    long long curr = get_file_curr_pointer(fp);
+    if (curr > fileStartOffset + fileTotalSize) {
+        throw(std::string("out of file"));
+    }
+    return v;
+}
+
+size_t SrcFile::fread(void* buffer, size_t eSize, size_t eCount)
+{
+    long long curr = get_file_curr_pointer(fp);
+    if (curr + eSize * eCount > fileStartOffset + fileTotalSize) {
+        throw(std::string("out of file"));
+    }
+    size_t n = ::fread(buffer, eSize, eCount, fp);
+    return n;
+}
+
+uint8_t SrcFile::read_u8()
+{
+    long long curr = get_file_curr_pointer(fp);
+    if (curr + 1 > fileStartOffset + fileTotalSize) {
+        throw(std::string("out of file"));
+    }
+    unsigned int a0 = fgetc(fp);
+    return (uint8_t) a0;
+}
+
+uint16_t SrcFile::read_u16()
+{
+    long long curr = get_file_curr_pointer(fp);
+    if (curr + 2 > fileStartOffset + fileTotalSize) {
+        throw(std::string("out of file"));
+    }
+    unsigned int a0 = fgetc(fp);
+    unsigned int a1 = fgetc(fp);
+    if (isBigEndian)
+        return static_cast<unsigned short>((a0 << 8) | a1);
+    return static_cast<unsigned short>((a1 << 8) | a0);
+}
+
+uint32_t SrcFile::read_u32()
+{
+    long long curr = get_file_curr_pointer(fp);
+    if (curr + 4 > fileStartOffset + fileTotalSize) {
+        throw(std::string("out of file"));
+    }
+    unsigned int a0 = fgetc(fp);
+    unsigned int a1 = fgetc(fp);
+    unsigned int a2 = fgetc(fp);
+    unsigned int a3 = fgetc(fp);
+    if (isBigEndian)
+        return ((a0 << 24) | (a1 << 16) | (a2 << 8) | a3);
+    return ((a3 << 24) | (a2 << 16) | (a1 << 8) | a0);
+}
+
+uint64_t SrcFile::read_u64()
+{
+    long long curr = get_file_curr_pointer(fp);
+    if (curr + 8 > fileStartOffset + fileTotalSize) {
+        throw(std::string("out of file"));
+    }
+    unsigned long long a0 = fgetc(fp);
+    unsigned long long a1 = fgetc(fp);
+    unsigned long long a2 = fgetc(fp);
+    unsigned long long a3 = fgetc(fp);
+    unsigned long long a4 = fgetc(fp);
+    unsigned long long a5 = fgetc(fp);
+    unsigned long long a6 = fgetc(fp);
+    unsigned long long a7 = fgetc(fp);
+    if (isBigEndian)
+        return ((a0 << 56) | (a1 << 48) | (a2 << 40) | (a3 << 32) | (a4 << 24) | (a5 << 16) | (a6 << 8) | a7);
+    return ((a7 << 56) | (a6 << 48) | (a5 << 40) | (a4 << 32) | (a3 << 24) | (a2 << 16) | (a1 << 8) | a0);
 }
 
 InputList::InputList() {
@@ -26,12 +122,12 @@ InputList::~InputList() {
 }
 
 ObjectFile::ObjectFile(const std::string & name) :
-    FileInfo(name, false)
+    SrcFile(name, false)
 {
 }
 
 LibraryFile::LibraryFile(const std::string & name) :
-    FileInfo(name, true)
+    SrcFile(name, true)
 {
 
 }
@@ -39,6 +135,7 @@ LibraryFile::LibraryFile(const std::string & name) :
 int InputList::addObject(const char * name) 
 {
     ObjectFile * obj = new ObjectFile(name);
+    obj->fileType = FileType::ELF_OBJECT;
     fileList.push_back(obj);
     return 0;
 }
@@ -46,6 +143,7 @@ int InputList::addObject(const char * name)
 
 int InputList::addLibrary(const char * name) {
     LibraryFile * lib = new LibraryFile(name);
+    lib->fileType = FileType::SYM_DEF;
     fileList.push_back(lib);
     return 0;
 }

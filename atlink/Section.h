@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <stdint.h>
 #include <string>
@@ -18,8 +18,8 @@ public:
     uint32_t    flags = 0;
     uint32_t    type = 0;
     //
-    int64_t     fileIndex = -1;             // section ËùÔÚµÄÎÄ¼şÔÚ InputList ÖĞµÄË÷Òı
-    int64_t     localIndex = -1;            // section ÔÚ object ÎÄ¼şÖĞµÄÔ­Ê¼Ë÷Òı
+    int64_t     fileIndex = -1;             // section æ‰€åœ¨çš„æ–‡ä»¶åœ¨ InputList ä¸­çš„ç´¢å¼•
+    int64_t     localIndex = -1;            // section åœ¨ object æ–‡ä»¶ä¸­çš„åŸå§‹ç´¢å¼•
 };
 
 class SectionList

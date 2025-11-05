@@ -9,7 +9,24 @@ class Linker
 {
 public:
     InputList       inputList;
+
+    void scanInputObjects();
+    void scanObject(SrcFile & fileInfo);
 };
+
+void Linker::scanInputObjects()
+{
+    for (size_t i = 0; i < inputList.fileList.size(); i++) {
+        if (inputList.fileList[i]->fileType == FileType::ELF_OBJECT) {
+            scanObject(*inputList.fileList[i]);
+        }
+    }
+}
+
+void Linker::scanObject(SrcFile & fileInfo)
+{
+
+}
 
 static int atlink_main(int argc, char ** argv)
 {
@@ -27,6 +44,8 @@ static int atlink_main(int argc, char ** argv)
     linker.inputList.addLibrary("F:\\mywork\\alloytools\\x64\\Debug\\kernel32.dll.sym");
     linker.inputList.addLibrary("F:\\mywork\\alloytools\\x64\\Debug\\user32.dll.sym");
 
+    linker.scanInputObjects();
+    
 
     return 0;
 }

@@ -1,7 +1,8 @@
-#pragma once
+ï»¿#pragma once
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 class ElfSymbol
 {
@@ -13,14 +14,15 @@ public:
     uint8_t             info;
     uint8_t             other;
     //
-    int64_t             fileIndex = -1;             // symbol ËùÔÚµÄÎÄ¼şÔÚ InputList ÖĞµÄË÷Òı
-    int64_t             bigSecTableIndex = -1;      // symbol ÔÚÕûÌå sections ±í(´ó±í)ÖĞµÄË÷Òı
+    int64_t             fileIndex = -1;             // symbol æ‰€åœ¨çš„æ–‡ä»¶åœ¨ InputList ä¸­çš„ç´¢å¼•
+    int64_t             bigSecTableIndex = -1;      // symbol åœ¨æ•´ä½“ sections è¡¨(å¤§è¡¨)ä¸­çš„ç´¢å¼•
 };
 
 class SymbolList
 {
 public:
     std::vector<ElfSymbol*>        symbols;
+    std::unordered_map<std::string, std::vector<uint64_t> > globalFinder;         // å…¨å±€ç¬¦å·æŸ¥æ‰¾hash-table
 public:
     SymbolList();
     ~SymbolList();
