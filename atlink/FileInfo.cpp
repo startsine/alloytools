@@ -13,6 +13,9 @@ SrcFile::SrcFile(const std::string & name, bool libraryFlag) {
 void SrcFile::open()
 {
     if (fp == nullptr) {
+        long long fileSize = get_file_size(inputName.c_str());
+        fileStartOffset = 0;
+        fileTotalSize = fileSize;
         fp = fopen_utf8(inputName.c_str(), "rb");
     }
 }

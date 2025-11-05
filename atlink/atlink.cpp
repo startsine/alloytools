@@ -23,8 +23,10 @@ void Linker::scanInputObjects()
     }
 }
 
-void Linker::scanObject(SrcFile & fileInfo)
+void Linker::scanObject(SrcFile & objectFile)
 {
+    objectFile.open();
+
 
 }
 

@@ -28,7 +28,7 @@ public:
     FileType fileType;
     SrcFile(const std::string & name, bool libraryFlag);
 
-    void open();
+    virtual void open();
     void close();
     int seek(long long offset, int origin);
     size_t fread(void* buffer, size_t eSize, size_t eCount);
