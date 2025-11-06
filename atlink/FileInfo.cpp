@@ -2,7 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <string>
+#include <memory>
 #include "FileInfo.h"
+#include "linker.h"
 #include "at_io.h"
 
 class Elf64_Section
@@ -145,7 +147,7 @@ ObjectFile::ObjectFile(const std::string & name) :
 {
 }
 
-void ObjectFile::scanObject()
+void ObjectFile::scanObject(Linker & linker)
 {
     char magic[4];
     uint8_t elfClass, elfData;
@@ -221,6 +223,24 @@ void ObjectFile::scanObject()
             sections.push_back(section);
         }
     }
+    std::shared_ptr<char> shstr = nullptr;
+    // 读取节名字符串表 
+    if (shstrndx != 0 && shstrndx < sections.size()) {
+        Elf64_Section & shstrsec = sections[shstrndx];
+        std::shared_ptr<char> contents(new char[shstrsec.sh_size + 4], std::default_delete<char[]>());
+        seek(shstrsec.sh_offset, SEEK_SET);
+        if (shstrsec.sh_size != 0) {
+            fread(contents.get(), 1, shstrsec.sh_size);
+        }
+        shstr = contents;
+    }
+    auto getSectionNameByOffset = [& shstr](size_t offset) -> const char * {
+        if (shstr == nullptr)
+            return "";
+        return & ((shstr.get())[offset]);
+    };
+    //
+
 }
 
 LibraryFile::LibraryFile(const std::string & name) :

@@ -183,6 +183,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileInfo.h" />
+    <ClInclude Include="linker.h" />
     <ClInclude Include="Rel.h" />
     <ClInclude Include="Section.h" />
     <ClInclude Include="Symbol.h" />

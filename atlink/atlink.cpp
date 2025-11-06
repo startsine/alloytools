@@ -4,15 +4,8 @@
 #include <Windows.h>
 #endif
 #include "FileInfo.h"
+#include "linker.h"
 
-class Linker 
-{
-public:
-    InputList       inputList;
-
-    void scanInputObjects();
-    void scanObject(ObjectFile & fileInfo);
-};
 
 void Linker::scanInputObjects()
 {
@@ -26,7 +19,7 @@ void Linker::scanInputObjects()
 
 void Linker::scanObject(ObjectFile & obj)
 {
-    obj.scanObject();
+    obj.scanObject(*this);
     
 
 }

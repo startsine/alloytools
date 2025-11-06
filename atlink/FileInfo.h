@@ -15,6 +15,8 @@ enum class FileType
     SYM_DEF,                // .dsosym 文件
 };
 
+class Linker;
+
 class SrcFile
 {
     friend class Linker;
@@ -59,7 +61,7 @@ private:
     uint16_t shnum;   // Number of section header entries 
     uint16_t shstrndx;// Section name string table index 
 
-    void scanObject();
+    void scanObject(Linker & linker);
 public:
     ObjectFile(const std::string & name);
 };
