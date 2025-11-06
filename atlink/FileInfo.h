@@ -17,6 +17,7 @@ enum class FileType
 
 class SrcFile
 {
+    friend class Linker;
 private:
     FILE        * fp = nullptr;
     long long   fileStartOffset = 0;
@@ -36,7 +37,6 @@ public:
     uint16_t read_u16();
     uint32_t read_u32();
     uint64_t read_u64();
-    void setBigEndian(bool flag);
 };
 
 class ObjectFile : public SrcFile

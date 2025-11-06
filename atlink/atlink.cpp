@@ -32,9 +32,7 @@ void Linker::scanObject(SrcFile & obj)
     obj.fread(magic, 1, 4);
     elfClass = obj.read_u8();
     elfData = obj.read_u8();
-    if (elfData == 2) {
-        obj.setBigEndian(true);
-    }
+    obj.isBigEndian = (elfData == 2);
 
 
 }
