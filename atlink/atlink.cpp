@@ -23,9 +23,18 @@ void Linker::scanInputObjects()
     }
 }
 
-void Linker::scanObject(SrcFile & objectFile)
+void Linker::scanObject(SrcFile & obj)
 {
-    objectFile.open();
+    char magic[4];
+    uint8_t elfClass, elfData;
+    obj.open();
+    obj.seek(0, SEEK_SET);
+    obj.fread(magic, 1, 4);
+    elfClass = obj.read_u8();
+    elfData = obj.read_u8();
+    if (elfData == 2) {
+        obj.setBigEndian(true);
+    }
 
 
 }

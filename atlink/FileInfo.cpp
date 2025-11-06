@@ -108,6 +108,10 @@ uint64_t SrcFile::read_u64()
     return ((a7 << 56) | (a6 << 48) | (a5 << 40) | (a4 << 32) | (a3 << 24) | (a2 << 16) | (a1 << 8) | a0);
 }
 
+void SrcFile::setBigEndian(bool flag) {
+    isBigEndian = flag;
+}
+
 InputList::InputList() {
 
 }
