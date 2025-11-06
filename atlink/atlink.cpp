@@ -11,29 +11,23 @@ public:
     InputList       inputList;
 
     void scanInputObjects();
-    void scanObject(SrcFile & fileInfo);
+    void scanObject(ObjectFile & fileInfo);
 };
 
 void Linker::scanInputObjects()
 {
     for (size_t i = 0; i < inputList.fileList.size(); i++) {
         if (inputList.fileList[i]->fileType == FileType::ELF_OBJECT) {
-            scanObject(*inputList.fileList[i]);
+            ObjectFile * pObj = (ObjectFile*) inputList.fileList[i];
+            scanObject(*pObj);
         }
     }
 }
 
-void Linker::scanObject(SrcFile & obj)
+void Linker::scanObject(ObjectFile & obj)
 {
-    char magic[4];
-    uint8_t elfClass, elfData;
-    obj.open();
-    obj.seek(0, SEEK_SET);
-    obj.fread(magic, 1, 4);
-    elfClass = obj.read_u8();
-    elfData = obj.read_u8();
-    obj.isBigEndian = (elfData == 2);
-
+    obj.scanObject();
+    
 
 }
 

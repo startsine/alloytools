@@ -108,9 +108,6 @@ uint64_t SrcFile::read_u64()
     return ((a7 << 56) | (a6 << 48) | (a5 << 40) | (a4 << 32) | (a3 << 24) | (a2 << 16) | (a1 << 8) | a0);
 }
 
-void SrcFile::setBigEndian(bool flag) {
-    isBigEndian = flag;
-}
 
 InputList::InputList() {
 
@@ -131,6 +128,50 @@ InputList::~InputList() {
 ObjectFile::ObjectFile(const std::string & name) :
     SrcFile(name, false)
 {
+}
+
+void ObjectFile::scanObject()
+{
+    char magic[4];
+    uint8_t elfClass, elfData;
+    open();
+    seek(0, SEEK_SET);
+    fread(magic, 1, 4);
+    elfClass = read_u8();
+    isElf64 = (elfClass == 2);
+    elfData = read_u8();
+    isBigEndian = (elfData == 2);
+    seek(16, SEEK_SET);
+    if (isElf64) {
+        type = read_u16();
+        machine = read_u16();
+        version = read_u32();
+        entry = read_u64();
+        phoff = read_u64();
+        shoff = read_u64();
+        flags = read_u32();
+        ehsize = read_u16();
+        phentsize = read_u16();
+        phnum = read_u16();
+        shentsize = read_u16();
+        shnum = read_u16();
+        shstrndx = read_u16();
+    }
+    else {
+        type = read_u16();
+        machine = read_u16();
+        version = read_u32();
+        entry = read_u32();
+        phoff = read_u32();
+        shoff = read_u32();
+        flags = read_u32();
+        ehsize = read_u16();
+        phentsize = read_u16();
+        phnum = read_u16();
+        shentsize = read_u16();
+        shnum = read_u16();
+        shstrndx = read_u16();
+    }
 }
 
 LibraryFile::LibraryFile(const std::string & name) :

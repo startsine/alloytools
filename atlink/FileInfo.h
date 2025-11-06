@@ -22,11 +22,13 @@ private:
     FILE        * fp = nullptr;
     long long   fileStartOffset = 0;
     long long   fileTotalSize = 0;
-    bool        isBigEndian = false;
+    
 public:
     std::string inputName;                  // 以参数输入时，它的文件名路径
     std::string fullPathName;               // 文件名全路径
     FileType fileType;
+    bool        isBigEndian = false;
+    bool        isElf64 = false;
     SrcFile(const std::string & name, bool libraryFlag);
 
     virtual void open();
@@ -41,6 +43,23 @@ public:
 
 class ObjectFile : public SrcFile
 {
+    friend class Linker;
+private:
+    uint16_t type;    // Object file type 
+    uint16_t machine; // Machine type 
+    uint32_t version; // Object file version 
+    uint64_t entry;   // Entry point address 
+    uint64_t phoff;   // Program header offset 
+    uint64_t shoff;   // Section header offset 
+    uint32_t flags;   // Processor-specific flags 
+    uint16_t ehsize;  // ELF header size 
+    uint16_t phentsize; // Size of program header entry 
+    uint16_t phnum;   // Number of program header entries 
+    uint16_t shentsize; // Size of section header entry 
+    uint16_t shnum;   // Number of section header entries 
+    uint16_t shstrndx;// Section name string table index 
+
+    void scanObject();
 public:
     ObjectFile(const std::string & name);
 };
