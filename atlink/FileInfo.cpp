@@ -5,6 +5,21 @@
 #include "FileInfo.h"
 #include "at_io.h"
 
+class Elf64_Section
+{
+public:
+    uint32_t sh_name;       // Section name 
+    uint32_t sh_type;       // Section type 
+    uint64_t sh_flags;      // Section attributes 
+    uint64_t sh_addr;       // Virtual address in memory 
+    uint64_t sh_offset;     // Offset in file 
+    uint64_t sh_size;       // Size of section
+    uint32_t sh_link;       // Link to other section 
+    uint32_t sh_info;       // Miscellaneous information 
+    uint64_t sh_addralign;  // Address alignment boundary 
+    uint64_t sh_entsize;    // Size of entries, if section has table 
+};
+
 // libraryFlag 标志表示命令行加了 -l 
 SrcFile::SrcFile(const std::string & name, bool libraryFlag) {
     inputName = name;
@@ -171,6 +186,40 @@ void ObjectFile::scanObject()
         shentsize = read_u16();
         shnum = read_u16();
         shstrndx = read_u16();
+    }
+    std::vector<Elf64_Section> sections;
+    seek(shoff, SEEK_SET);
+    if (isElf64) {
+        for (uint32_t i = 0; i < shnum; i++) {
+            Elf64_Section section;
+            section.sh_name = read_u32();
+            section.sh_type = read_u32();
+            section.sh_flags = read_u64();
+            section.sh_addr = read_u64();
+            section.sh_offset = read_u64();
+            section.sh_size = read_u64();
+            section.sh_link = read_u32();
+            section.sh_info = read_u32();
+            section.sh_addralign = read_u64();
+            section.sh_entsize = read_u64();
+            sections.push_back(section);
+        }
+    }
+    else {
+        for (uint32_t i = 0; i < shnum; i++) {
+            Elf64_Section section;
+            section.sh_name = read_u32();
+            section.sh_type = read_u32();
+            section.sh_flags = read_u32();
+            section.sh_addr = read_u32();
+            section.sh_offset = read_u32();
+            section.sh_size = read_u32();
+            section.sh_link = read_u32();
+            section.sh_info = read_u32();
+            section.sh_addralign = read_u32();
+            section.sh_entsize = read_u32();
+            sections.push_back(section);
+        }
     }
 }
 
