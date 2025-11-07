@@ -4,7 +4,17 @@
 #include <vector>
 #include <unordered_map>
 
-class ElfSymbol
+class Elf64OriSymbol
+{
+    std::string     name;   // Symbol name 
+    uint8_t         info;   // Type and Binding attributes
+    uint8_t         other;  // Reserved
+    uint16_t        shndx;  // Section table index
+    uint64_t        value;  // Symbol value
+    uint64_t        size;   // Size of object (e.g., common) 
+};
+
+class ElfGlobalSymbol
 {
 public:
     std::string         name;
@@ -21,7 +31,7 @@ public:
 class SymbolList
 {
 public:
-    std::vector<ElfSymbol*>        symbols;
+    std::vector<ElfGlobalSymbol*>        symbols;
     std::unordered_map<std::string, std::vector<uint64_t> > globalFinder;         // 全局符号查找hash-table
 public:
     SymbolList();

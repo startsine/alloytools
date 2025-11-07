@@ -273,6 +273,37 @@ void ObjectFile::scanObject(Linker & linker)
     }
     if (symbolTableIndex >= 0) {
         Elf64_Section & symSection = sections[symbolTableIndex];
+        uint64_t stringTableSecIndex = symSection.sh_link;
+        std::shared_ptr<char> symstr = nullptr;                         // 符号用的字符串表 
+        if (stringTableSecIndex < sections.size()) {
+            Elf64_Section & strTabSection = sections[stringTableSecIndex];
+            std::shared_ptr<char> symStrTab(new char[strTabSection.sh_size + 4], std::default_delete<char[]>());
+            seek(strTabSection.sh_offset, SEEK_SET);
+            if (strTabSection.sh_size != 0) {
+                fread(symStrTab.get(), 1, strTabSection.sh_size);
+            }
+            symstr = symStrTab;
+        }
+        //
+        auto getSymbolNameByOffset = [&symstr](size_t offset) -> const char * {
+            if (symstr == nullptr)
+                return "";
+            return &((symstr.get())[offset]);
+        };
+        //
+        seek(symSection.sh_offset, SEEK_SET);
+        uint64_t symTotal = symSection.sh_size / symSection.sh_entsize;
+        if (isElf64) {
+            for (uint64_t i = 0; i < symTotal; i++) {
+
+            }
+        }
+        else {
+            for (uint64_t i = 0; i < symTotal; i++) {
+
+            }
+        }
+        
 
     }
 }
