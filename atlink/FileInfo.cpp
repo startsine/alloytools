@@ -258,6 +258,7 @@ void ObjectFile::scanObject(Linker & linker)
         //
         p->fileIndex = this->myIndex;           // 文件列表索引 
         p->localIndex = (int64_t) i;
+        p->flatindex = (int64_t) (startIndexOfFlatSections + i);
         //
         linker.flatSections.add(p);
     }

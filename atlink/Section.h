@@ -20,6 +20,7 @@ public:
     //
     int64_t     fileIndex = -1;             // section 所在的文件在 InputList 中的索引
     int64_t     localIndex = -1;            // section 在 object 文件中的原始索引
+    int64_t     flatindex = -1;             // section 在 flat-sections 表中的索引
 };
 
 class SectionList
