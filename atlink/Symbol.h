@@ -4,7 +4,7 @@
 #include <vector>
 #include <unordered_map>
 
-class Elf64OriSymbol
+class Elf64ObjectSymbol
 {
     std::string     name;   // Symbol name 
     uint8_t         info;   // Type and Binding attributes
@@ -12,6 +12,16 @@ class Elf64OriSymbol
     uint16_t        shndx;  // Section table index
     uint64_t        value;  // Symbol value
     uint64_t        size;   // Size of object (e.g., common) 
+};
+
+class ObjectSymbolList
+{
+public:
+    std::vector<Elf64ObjectSymbol>  symbols;
+    std::unordered_map<std::string, std::vector<size_t> > finder;         // 符号查找hash-table
+    //
+    ObjectSymbolList();
+    ~ObjectSymbolList();
 };
 
 class ElfGlobalSymbol
@@ -28,14 +38,14 @@ public:
     int64_t             bigSecTableIndex = -1;      // symbol 在整体 sections 表(大表)中的索引
 };
 
-class SymbolList
+class GlobalSymbolList
 {
 public:
     std::vector<ElfGlobalSymbol*>        symbols;
-    std::unordered_map<std::string, std::vector<uint64_t> > globalFinder;         // 全局符号查找hash-table
+    std::unordered_map<std::string, std::vector<uint64_t> > finder;         // 全局符号查找hash-table
 public:
-    SymbolList();
-    ~SymbolList();
+    GlobalSymbolList();
+    ~GlobalSymbolList();
 };
 
 

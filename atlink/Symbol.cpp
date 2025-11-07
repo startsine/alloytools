@@ -4,12 +4,20 @@
 #include <unordered_map>
 #include "Symbol.h"
 
-SymbolList::SymbolList()
+ObjectSymbolList::ObjectSymbolList()
 {
-    globalFinder.reserve(10000);
 }
 
-SymbolList::~SymbolList()
+ObjectSymbolList::~ObjectSymbolList()
+{
+}
+
+GlobalSymbolList::GlobalSymbolList()
+{
+    finder.reserve(10000);
+}
+
+GlobalSymbolList::~GlobalSymbolList()
 {
     if (symbols.size() != 0) {
         for (size_t i = 0; i < symbols.size(); i++) {
