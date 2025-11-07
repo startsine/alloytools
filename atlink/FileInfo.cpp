@@ -6,6 +6,7 @@
 #include "FileInfo.h"
 #include "linker.h"
 #include "at_io.h"
+#include "at_elf.h"
 
 class Elf64_Section
 {
@@ -261,6 +262,18 @@ void ObjectFile::scanObject(Linker & linker)
         p->flatindex = (int64_t) (startIndexOfFlatSections + i);
         //
         linker.flatSections.add(p);
+    }
+    // 加载符号表
+    int64_t symbolTableIndex = -1;
+    for (uint32_t i = 0; i < sections.size(); i++) {
+        Elf64_Section & origin = sections[i];
+        if (origin.sh_type == ELF_SECTION_TYPE_SYMTAB) {
+            symbolTableIndex = (int64_t) i;
+        }
+    }
+    if (symbolTableIndex >= 0) {
+        Elf64_Section & symSection = sections[symbolTableIndex];
+
     }
 }
 
