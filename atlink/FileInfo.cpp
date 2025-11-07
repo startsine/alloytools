@@ -239,8 +239,28 @@ void ObjectFile::scanObject(Linker & linker)
             return "";
         return & ((shstr.get())[offset]);
     };
-    //
-
+    // 放入全局 flat-section 表
+    startIndexOfFlatSections = linker.flatSections.getSize();       // 设置本文件的 sections 在全局 flat-sections 表的起始位置
+    for (size_t i = 0; i < sections.size(); i++) {
+        Elf64_Section & origin = sections[i];
+        ElfSection * p = new ElfSection();
+        //
+        p->name = getSectionNameByOffset(origin.sh_name);
+        p->offset = origin.sh_offset;
+        p->size = origin.sh_size;
+        p->addr = origin.sh_addr;
+        p->entsize = origin.sh_entsize;
+        p->addralign = origin.sh_addralign;
+        p->link = origin.sh_link;
+        p->info = origin.sh_info;
+        p->flags = (uint32_t) origin.sh_flags;
+        p->type = origin.sh_type;
+        //
+        p->fileIndex = this->myIndex;           // 文件列表索引 
+        p->localIndex = (int64_t) i;
+        //
+        linker.flatSections.add(p);
+    }
 }
 
 LibraryFile::LibraryFile(const std::string & name) :
@@ -253,6 +273,7 @@ int InputList::addObject(const char * name)
 {
     ObjectFile * obj = new ObjectFile(name);
     obj->fileType = FileType::ELF_OBJECT;
+    obj->myIndex = (int64_t) fileList.size();
     fileList.push_back(obj);
     return 0;
 }
@@ -261,6 +282,7 @@ int InputList::addObject(const char * name)
 int InputList::addLibrary(const char * name) {
     LibraryFile * lib = new LibraryFile(name);
     lib->fileType = FileType::SYM_DEF;
+    lib->myIndex = (int64_t)fileList.size();
     fileList.push_back(lib);
     return 0;
 }

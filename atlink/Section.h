@@ -29,6 +29,8 @@ public:
 public :
     SectionList();
     ~SectionList();
+    size_t getSize();
+    void add(ElfSection*);
 };
 
 

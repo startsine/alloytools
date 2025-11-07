@@ -31,6 +31,7 @@ public:
     FileType fileType;
     bool        isBigEndian = false;
     bool        isElf64 = false;
+    int64_t     myIndex = -1;               // 我自身在文件列表中的索引 
     SrcFile(const std::string & name, bool libraryFlag);
 
     virtual void open();
@@ -60,7 +61,9 @@ private:
     uint16_t shentsize; // Size of section header entry 
     uint16_t shnum;   // Number of section header entries 
     uint16_t shstrndx;// Section name string table index 
-
+    //
+    size_t   startIndexOfFlatSections;       // 本文件的section表在flatSection表中的起始位置
+    //
     void scanObject(Linker & linker);
 public:
     ObjectFile(const std::string & name);

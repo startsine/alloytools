@@ -20,7 +20,13 @@ SectionList::~SectionList()
 }
 
 
+size_t SectionList::getSize()
+{
+    return sections.size();
+}
 
-
-
+void SectionList::add(ElfSection* pSection)
+{
+    sections.push_back(pSection);
+}
 
