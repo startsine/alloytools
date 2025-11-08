@@ -48,7 +48,7 @@ public:
 class ObjectFile : public SrcFile
 {
     friend class Linker;
-private:
+public:
     uint16_t type;    // Object file type 
     uint16_t machine; // Machine type 
     uint32_t version; // Object file version 

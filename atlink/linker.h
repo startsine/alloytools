@@ -9,8 +9,9 @@
 class Linker
 {
 public:
-    InputList       inputList;
-    SectionList     flatSections;
+    InputList           inputList;
+    SectionList         flatSections;
+    GlobalSymbolList    flatSymbols;
 
     void scanInputObjects();
     void scanObject(ObjectFile & obj);

@@ -295,9 +295,13 @@ void ObjectFile::scanObject(Linker & linker)
         seek(symSection.sh_offset, SEEK_SET);
         uint64_t symTotal = symSection.sh_size / symSection.sh_entsize;
         uint32_t nameOffset;
-        auto addSymbol = [this](Elf64ObjectSymbol & symbol) -> void {
+        auto addSymbol = [this, &linker](Elf64ObjectSymbol & symbol) -> bool {
             objSymbols.symbols.push_back(symbol);
-
+            uint8_t bindings = symbol.info >> 4;
+            if (bindings == SYMBOL_BINDINGS_GLOBAL || bindings == SYMBOL_BINDINGS_WEAK) {
+                return linker.flatSymbols.addSymbol(symbol, this);
+            }
+            return true;
         };
         if (isElf64) {
             for (uint64_t i = 0; i < symTotal; i++) {
