@@ -295,6 +295,10 @@ void ObjectFile::scanObject(Linker & linker)
         seek(symSection.sh_offset, SEEK_SET);
         uint64_t symTotal = symSection.sh_size / symSection.sh_entsize;
         uint32_t nameOffset;
+        auto addSymbol = [this](Elf64ObjectSymbol & symbol) -> void {
+            objSymbols.symbols.push_back(symbol);
+
+        };
         if (isElf64) {
             for (uint64_t i = 0; i < symTotal; i++) {
                 Elf64ObjectSymbol   symbol;
@@ -304,6 +308,9 @@ void ObjectFile::scanObject(Linker & linker)
                 symbol.shndx = read_u16();
                 symbol.value = read_u64();
                 symbol.size = read_u64();
+                symbol.name = getSymbolNameByOffset(nameOffset);
+                symbol.myIndex = (int64_t) i;
+                addSymbol(symbol);
             }
         }
         else {
@@ -315,6 +322,9 @@ void ObjectFile::scanObject(Linker & linker)
                 symbol.info = read_u8();
                 symbol.other = read_u8();
                 symbol.shndx = read_u16();
+                symbol.name = getSymbolNameByOffset(nameOffset);
+                symbol.myIndex = (int64_t)i;
+                addSymbol(symbol);
             }
         }
     }
