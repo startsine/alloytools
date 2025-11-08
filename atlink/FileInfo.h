@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#include "Symbol.h"
 
 enum class FileType
 {
@@ -63,6 +64,7 @@ private:
     uint16_t shstrndx;// Section name string table index 
     //
     size_t   startIndexOfFlatSections;       // 本文件的section表在flatSection表中的起始位置
+    ObjectSymbolList objSymbols;             // 本文件中的符号表(所有)
     //
     void scanObject(Linker & linker);
 public:

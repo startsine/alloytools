@@ -291,20 +291,32 @@ void ObjectFile::scanObject(Linker & linker)
             return &((symstr.get())[offset]);
         };
         //
+        ObjectSymbolList objSymbolList;
         seek(symSection.sh_offset, SEEK_SET);
         uint64_t symTotal = symSection.sh_size / symSection.sh_entsize;
+        uint32_t nameOffset;
         if (isElf64) {
             for (uint64_t i = 0; i < symTotal; i++) {
-
+                Elf64ObjectSymbol   symbol;
+                nameOffset = read_u32();
+                symbol.info = read_u8();
+                symbol.other = read_u8();
+                symbol.shndx = read_u16();
+                symbol.value = read_u64();
+                symbol.size = read_u64();
             }
         }
         else {
             for (uint64_t i = 0; i < symTotal; i++) {
-
+                Elf64ObjectSymbol   symbol;
+                nameOffset = read_u32();
+                symbol.value = read_u32();
+                symbol.size = read_u32();
+                symbol.info = read_u8();
+                symbol.other = read_u8();
+                symbol.shndx = read_u16();
             }
         }
-        
-
     }
 }
 

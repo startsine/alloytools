@@ -6,12 +6,13 @@
 
 class Elf64ObjectSymbol
 {
+public:
     std::string     name;   // Symbol name 
-    uint8_t         info;   // Type and Binding attributes
-    uint8_t         other;  // Reserved
-    uint16_t        shndx;  // Section table index
+    uint64_t        shndx;  // Section table index (本来应该uint16_t的)
     uint64_t        value;  // Symbol value
     uint64_t        size;   // Size of object (e.g., common) 
+    uint8_t         info;   // Type and Binding attributes
+    uint8_t         other;  // Reserved
 };
 
 class ObjectSymbolList
