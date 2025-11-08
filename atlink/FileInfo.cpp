@@ -298,7 +298,8 @@ void ObjectFile::scanObject(Linker & linker)
         auto addSymbol = [this, &linker](Elf64ObjectSymbol & symbol) -> bool {
             objSymbols.symbols.push_back(symbol);
             uint8_t bindings = symbol.info >> 4;
-            if (bindings == SYMBOL_BINDINGS_GLOBAL || bindings == SYMBOL_BINDINGS_WEAK) {
+            if ((bindings == SYMBOL_BINDINGS_GLOBAL || bindings == SYMBOL_BINDINGS_WEAK) && symbol.shndx != 0) {
+                // symbol.shndx 为0时表示本object依赖的外部符号，需要避开 
                 return linker.flatSymbols.addSymbol(symbol, this);
             }
             return true;
