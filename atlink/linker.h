@@ -15,6 +15,6 @@ public:
 
     void scanInputObjects();
     void scanObject(ObjectFile & obj);
-
+    void scanDef(DynamicModuleFile & def);
 };
 

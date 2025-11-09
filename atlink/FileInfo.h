@@ -14,6 +14,7 @@ enum class FileType
     ELF_DSO,                // .so 文件
     PE_DLL,                 // .dll 文件
     SYM_DEF,                // .dsosym 文件
+    SYM_DEF_LIB,
 };
 
 class Linker;
@@ -77,6 +78,15 @@ public:
     LibraryFile(const std::string & name);
 };
 
+
+class DynamicModuleFile : public SrcFile
+{
+public:
+    std::string moduleName;
+public:
+    DynamicModuleFile(const std::string & name);
+    void scanDefTextFile(Linker & linker);
+};
 
 class InputList
 {

@@ -295,10 +295,11 @@ void ObjectFile::scanObject(Linker & linker)
         seek(symSection.sh_offset, SEEK_SET);
         uint64_t symTotal = symSection.sh_size / symSection.sh_entsize;
         uint32_t nameOffset;
+        uint8_t info, other;
         auto addSymbol = [this, &linker](Elf64ObjectSymbol & symbol) -> bool {
             objSymbols.symbols.push_back(symbol);
-            uint8_t bindings = symbol.info >> 4;
-            if ((bindings == SYMBOL_BINDINGS_GLOBAL || bindings == SYMBOL_BINDINGS_WEAK) && symbol.shndx != 0) {
+            uint8_t binding = symbol.binding;
+            if ((binding == SYMBOL_BINDINGS_GLOBAL || binding == SYMBOL_BINDINGS_WEAK) && symbol.shndx != 0) {
                 // symbol.shndx 为0时表示本object依赖的外部符号，需要避开 
                 return linker.flatSymbols.addSymbol(symbol, this);
             }
@@ -308,13 +309,16 @@ void ObjectFile::scanObject(Linker & linker)
             for (uint64_t i = 0; i < symTotal; i++) {
                 Elf64ObjectSymbol   symbol;
                 nameOffset = read_u32();
-                symbol.info = read_u8();
-                symbol.other = read_u8();
+                info = read_u8();
+                other = read_u8();
                 symbol.shndx = read_u16();
                 symbol.value = read_u64();
                 symbol.size = read_u64();
                 symbol.name = getSymbolNameByOffset(nameOffset);
                 symbol.myIndex = (int64_t) i;
+                symbol.binding = info >> 4;
+                symbol.type = info & 0x0f;
+                symbol.visibility = other;
                 addSymbol(symbol);
             }
         }
@@ -324,11 +328,14 @@ void ObjectFile::scanObject(Linker & linker)
                 nameOffset = read_u32();
                 symbol.value = read_u32();
                 symbol.size = read_u32();
-                symbol.info = read_u8();
-                symbol.other = read_u8();
+                info = read_u8();
+                other = read_u8();
                 symbol.shndx = read_u16();
                 symbol.name = getSymbolNameByOffset(nameOffset);
                 symbol.myIndex = (int64_t)i;
+                symbol.binding = info >> 4;
+                symbol.type = info & 0x0f;
+                symbol.visibility = other;
                 addSymbol(symbol);
             }
         }
@@ -340,6 +347,69 @@ LibraryFile::LibraryFile(const std::string & name) :
 {
 
 }
+
+DynamicModuleFile::DynamicModuleFile(const std::string & name) :
+    SrcFile(name, false)
+{
+
+}
+
+void DynamicModuleFile::scanDefTextFile(Linker & linker)
+{
+    const int MAX_LENGTH = 65000;
+    std::shared_ptr<char> strContent(new char[MAX_LENGTH], std::default_delete<char[]>());
+    FILE * fp = fopen_utf8(inputName.c_str(), "rb");
+    if (fp == nullptr) {
+        return;
+    }
+    uint64_t fileSize = get_stdio_file_size(fp);
+    std::shared_ptr<char> fileContent(new char[fileSize + 4], std::default_delete<char[]>());
+    char * content = fileContent.get();
+    if (fileSize > 0) {
+        ::fread(content, 1, fileSize, fp);
+    }
+    fclose(fp);
+    //
+    auto addSymbol = [this, &linker](const std::string & name) -> bool {
+        if (name == "") return true;
+        return linker.flatSymbols.addExternalModuleSymbol(name, this);
+    };
+    //
+    char * str = strContent.get();
+    str[0] = 0;
+    int i = 0;
+    int j = 0;
+    char ch, next, next2;
+    while (true) {
+        if (j >= fileSize) {
+            break;
+        }
+        ch = content[j++];
+        if (ch == '\n' || ch == '\r') {
+            if (str[0] != 0) {
+                std::string name(str);
+                addSymbol(name);
+            }
+            str[0] = 0;
+            i = 0;
+        }
+        else {
+            str[i++] = ch;
+            str[i] = 0;
+            if (i >= MAX_LENGTH - 1) {
+                std::string name(str);
+                addSymbol(name);
+                str[0] = 0;
+                i = 0;
+            }
+        }
+    }
+    if (str[0] != 0) {
+        std::string name(str);
+        addSymbol(name);
+    }
+}
+
 
 int InputList::addObject(const char * name) 
 {
@@ -353,9 +423,31 @@ int InputList::addObject(const char * name)
 
 int InputList::addLibrary(const char * name) {
     LibraryFile * lib = new LibraryFile(name);
-    lib->fileType = FileType::SYM_DEF;
+    lib->fileType = FileType::SYM_DEF_LIB;
     lib->myIndex = (int64_t)fileList.size();
     fileList.push_back(lib);
+    // 本来应该在库中寻找符号，再添加动态模块的，下面直接添加
+    DynamicModuleFile * dynModule = new DynamicModuleFile(name);
+    dynModule->fileType = FileType::SYM_DEF;
+    dynModule->myIndex = (int64_t)fileList.size();
+    std::string fullname = name;
+    std::string filename, basename;
+    size_t pos = fullname.find_last_of("/\\");
+    if (pos == std::string::npos) {
+        filename = fullname; // 如果没有找到'/'或'\'，则整个字符串即为文件名
+    }
+    else {
+        filename = fullname.substr(pos + 1); // 返回最后一个'/'或'\'之后的部分
+    }
+    pos = filename.find_last_of(".");
+    if (pos == std::string::npos) {
+        // 报错
+        return 0;
+    }
+    basename = filename.substr(0, pos);
+    dynModule->moduleName = basename;
+    fileList.push_back(dynModule);
+
     return 0;
 }
 

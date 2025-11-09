@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include "Symbol.h"
 #include "FileInfo.h"
+#include "at_elf.h"
 
 ObjectSymbolList::ObjectSymbolList()
 {
@@ -41,8 +42,10 @@ bool GlobalSymbolList::addSymbol(Elf64ObjectSymbol & srcSym, SrcFile * srcFile)
     pGlobal->value = srcSym.value;
     pGlobal->size = srcSym.size;
     pGlobal->secIndex = (int64_t) srcSym.shndx;
-    pGlobal->info = srcSym.info;
-    pGlobal->other = srcSym.other;
+    pGlobal->binding = srcSym.binding;
+    pGlobal->type = srcSym.type;
+    pGlobal->visibility = srcSym.visibility;
+    pGlobal->external = srcSym.external;
     //
     pGlobal->fileIndex = srcFile->myIndex;
     pGlobal->symIndexInFile = srcSym.myIndex;
@@ -71,6 +74,23 @@ bool GlobalSymbolList::addSymbol(Elf64ObjectSymbol & srcSym, SrcFile * srcFile)
     */
     return true;
 }
+
+bool GlobalSymbolList::addExternalModuleSymbol(const std::string & str, SrcFile * srcFile)
+{
+    bool ret1, ret2;
+    Elf64ObjectSymbol sym1;
+    sym1.name = str;
+    sym1.binding = SYMBOL_BINDINGS_GLOBAL;
+    sym1.external = 1;
+    ret1 = addSymbol(sym1, srcFile);
+    Elf64ObjectSymbol sym2;
+    sym2.name = std::string("__imp_") + str;
+    sym2.binding = SYMBOL_BINDINGS_GLOBAL;
+    sym2.external = 2;
+    ret2 = addSymbol(sym2, srcFile);
+    return ret1 && ret2;
+}
+
 
 
 

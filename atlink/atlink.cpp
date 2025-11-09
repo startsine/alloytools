@@ -14,14 +14,21 @@ void Linker::scanInputObjects()
             ObjectFile * pObj = (ObjectFile*) inputList.fileList[i];
             scanObject(*pObj);
         }
+        else if (inputList.fileList[i]->fileType == FileType::SYM_DEF) {
+            DynamicModuleFile * pDef = dynamic_cast<DynamicModuleFile*>(inputList.fileList[i]);
+            scanDef(*pDef);
+        }
     }
 }
 
 void Linker::scanObject(ObjectFile & obj)
 {
     obj.scanObject(*this);
-    
+}
 
+void Linker::scanDef(DynamicModuleFile & def)
+{
+    def.scanDefTextFile(*this);
 }
 
 static int atlink_main(int argc, char ** argv)
