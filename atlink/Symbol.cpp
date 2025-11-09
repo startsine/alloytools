@@ -62,16 +62,15 @@ bool GlobalSymbolList::addSymbol(Elf64ObjectSymbol & srcSym, SrcFile * srcFile)
     //
     auto it = finder.find(srcSym.name);
     if (it == finder.end()) {
-
+        std::vector<uint64_t> indexList;
+        indexList.push_back(flatSymbolIndex);
+        finder[srcSym.name] = indexList;
     }
     else {
-        auto a = it->first;
-        auto b = it->second;
+        it->second.push_back(flatSymbolIndex);
+        //// TO-DO
+        //// 这里要加入判断存在多个global同名强符号的操作，存在要返回false，报告错误
     }
-    /*
-    //
-    int64_t             flatIndex = -1;             // symbol 在整体 sections 表(大表)中的索引
-    */
     return true;
 }
 
