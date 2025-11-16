@@ -176,12 +176,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="atlink.cpp" />
+    <ClCompile Include="Dependence.cpp" />
     <ClCompile Include="FileInfo.cpp" />
     <ClCompile Include="Rel.cpp" />
     <ClCompile Include="Section.cpp" />
     <ClCompile Include="Symbol.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Dependence.h" />
     <ClInclude Include="FileInfo.h" />
     <ClInclude Include="linker.h" />
     <ClInclude Include="Rel.h" />

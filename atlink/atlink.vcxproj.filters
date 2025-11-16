@@ -30,6 +30,9 @@
     <ClCompile Include="Rel.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Dependence.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileInfo.h">
@@ -45,6 +48,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="linker.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependence.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
