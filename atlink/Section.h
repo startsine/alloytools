@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <list>
+#include <memory>
+#include "Rel.h"
 
 class ElfSection
 {
@@ -21,6 +24,8 @@ public:
     int64_t     fileIndex = -1;             // section 所在的文件在 InputList 中的索引
     int64_t     localIndex = -1;            // section 在 object 文件中的原始索引
     int64_t     flatindex = -1;             // section 在 flat-sections 表中的索引
+    bool        used = false;               // 该 section 是否被引用，会被链接成可执行文件 
+    std::shared_ptr<std::list<ElfRel> > relocs = nullptr;       // 指向该section的重定位表信息
 };
 
 class SectionList

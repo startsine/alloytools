@@ -5,7 +5,7 @@
 #endif
 #include "FileInfo.h"
 #include "linker.h"
-
+#include "at_elf.h"
 
 void Linker::scanInputObjects()
 {
@@ -31,6 +31,67 @@ void Linker::scanDef(DynamicModuleFile & def)
     def.scanDefTextFile(*this);
 }
 
+void Linker::resolveDependences()
+{
+    bool dependSymbolsIsEmpty;
+    while (true)
+    {
+        std::string depSymbolName = symbolDepend.getSymbol(dependSymbolsIsEmpty);
+        if (depSymbolName != "") {
+            resolveSymbol(depSymbolName);
+        }
+        if (dependSymbolsIsEmpty) {
+            break;
+        }
+    }
+}
+
+void Linker::resolveSymbol(const std::string & symName)
+{
+    auto symIndicesInfo = flatSymbols.finder.find(symName);
+    if (symIndicesInfo != flatSymbols.finder.end()) {
+        //// TO-DO 
+        //  这个要加入多个同名符号，优先取其中的强符号
+        auto symList = symIndicesInfo->second;
+        uint64_t idx = symList[0];
+        auto sym = flatSymbols.flatGlobalSymbols[idx];
+        auto flatSectionIndex = sym->flatSectionIndex;
+        auto pSection = flatSections.sections[flatSectionIndex];
+        if (!pSection->used) {
+
+        }
+    }
+    else {
+        //// TO-DO  报错
+    }
+}
+
+void Linker::resolveSection(ElfSection * pSection)
+{
+    pSection->used = true;
+    auto fileIndex = pSection->fileIndex;       // section 所在的文件在 InputList 中的索引
+    auto localIndex = pSection->localIndex;     // section 在 object 文件中的原始索引
+    auto file = inputList.fileList[fileIndex];
+    if (file->fileType == FileType::ELF_OBJECT) {
+        auto obj = dynamic_cast<ObjectFile*>(file);
+        auto startIndex = obj->startIndexOfFlatSections;
+        auto totalSectionNum = obj->shnum;
+        // 找出该 section 对应的 重定位信息 
+        for (size_t idx = startIndex; idx < (startIndex + totalSectionNum); idx++) {
+            auto sec = flatSections.sections[idx];
+            if (sec->info == localIndex && (sec->type == ELF_SECTION_TYPE_RELA || sec->type == ELF_SECTION_TYPE_REL)) {
+                pSection->relocs = std::make_shared<std::list<ElfRel> > ();
+                obj->loadRelocTable(*sec, pSection->relocs.get());
+                break;
+            }
+        }
+    }
+    
+
+}
+
+
+
 static int atlink_main(int argc, char ** argv)
 {
     if (argc > 1) {
@@ -48,6 +109,9 @@ static int atlink_main(int argc, char ** argv)
     linker.inputList.addLibrary("F:\\mywork\\alloytools\\x64\\Debug\\user32.dll.sym");
 
     linker.scanInputObjects();
+    //
+    linker.symbolDepend.addSymbol("mystart");
+    linker.resolveDependences();
     
 
     return 0;

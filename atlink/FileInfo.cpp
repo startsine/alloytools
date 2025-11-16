@@ -340,6 +340,12 @@ void ObjectFile::scanObject(Linker & linker)
             }
         }
     }
+    close();
+}
+
+void ObjectFile::loadRelocTable(int64_t sectionIndex, std::list<ElfRel> * pRelocTable)
+{
+
 }
 
 LibraryFile::LibraryFile(const std::string & name) :

@@ -5,7 +5,10 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#include <list>
+#include <memory>
 #include "Symbol.h"
+#include "Rel.h"
 
 enum class FileType
 {
@@ -68,6 +71,7 @@ public:
     ObjectSymbolList objSymbols;             // 本文件中的符号表(所有)
     //
     void scanObject(Linker & linker);
+    void loadRelocTable(const ElfSection & relSection, std::list<ElfRel> * pRelocTable);
 public:
     ObjectFile(const std::string & name);
 };
