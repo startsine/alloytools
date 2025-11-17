@@ -8,6 +8,7 @@
 #include <list>
 #include <memory>
 #include "Symbol.h"
+#include "Section.h"
 #include "Rel.h"
 
 enum class FileType

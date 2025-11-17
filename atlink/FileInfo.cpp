@@ -343,7 +343,7 @@ void ObjectFile::scanObject(Linker & linker)
     close();
 }
 
-void ObjectFile::loadRelocTable(int64_t sectionIndex, std::list<ElfRel> * pRelocTable)
+void ObjectFile::loadRelocTable(const ElfSection & relSection, std::list<ElfRel> * pRelocTable)
 {
 
 }
