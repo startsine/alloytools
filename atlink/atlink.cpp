@@ -33,14 +33,13 @@ void Linker::scanDef(DynamicModuleFile & def)
 
 void Linker::resolveDependences()
 {
-    bool dependSymbolsIsEmpty;
     while (true)
     {
-        std::string depSymbolName = symbolDepend.getSymbol(dependSymbolsIsEmpty);
+        std::string depSymbolName = symbolDepend.getSymbol();
         if (depSymbolName != "") {
             resolveSymbol(depSymbolName);
         }
-        if (dependSymbolsIsEmpty) {
+        if (symbolDepend.isEmpty()) {
             break;
         }
     }
@@ -58,7 +57,7 @@ void Linker::resolveSymbol(const std::string & symName)
         auto flatSectionIndex = sym->flatSectionIndex;
         auto pSection = flatSections.sections[flatSectionIndex];
         if (!pSection->used) {
-
+            resolveSection(pSection);
         }
     }
     else {
@@ -72,6 +71,9 @@ void Linker::resolveSection(ElfSection * pSection)
     auto fileIndex = pSection->fileIndex;       // section 所在的文件在 InputList 中的索引
     auto localIndex = pSection->localIndex;     // section 在 object 文件中的原始索引
     auto file = inputList.fileList[fileIndex];
+    // 把重定位信息挂载到 section 中
+    pSection->relocs = std::make_shared<std::list<ElfRel> >();
+    // 读取该section相关的全部重定位信息
     if (file->fileType == FileType::ELF_OBJECT) {
         auto obj = dynamic_cast<ObjectFile*>(file);
         auto startIndex = obj->startIndexOfFlatSections;
@@ -80,12 +82,23 @@ void Linker::resolveSection(ElfSection * pSection)
         for (size_t idx = startIndex; idx < (startIndex + totalSectionNum); idx++) {
             auto sec = flatSections.sections[idx];
             if (sec->info == localIndex && (sec->type == ELF_SECTION_TYPE_RELA || sec->type == ELF_SECTION_TYPE_REL)) {
-                pSection->relocs = std::make_shared<std::list<ElfRel> > ();
+                // 加载该 section 的重定位信息 
                 obj->loadRelocTable(*sec, pSection->relocs.get());
-                break;
+                //break;  // 注释掉break;可以加载多个重定位表(一般是只有一个)
+            }
+        }
+        // 将该section的重定位表中的依赖的外部符号全部加入
+        for (auto it = pSection->relocs->begin(); it != pSection->relocs->end(); it++) {
+            uint32_t symbolIndex = it->symbolIndex;
+            if (symbolIndex < obj->objSymbols.symbols.size()) {
+                auto & sym = obj->objSymbols.symbols[symbolIndex];
+                if (sym.shndx == 0) {       // 节索引为0表示需要引用外部符号 
+                    symbolDepend.addSymbol(sym.name);       // 添加到符号依赖
+                }
             }
         }
     }
+    
     
 
 }

@@ -13,7 +13,8 @@ private:
     //std::mutex                  mutex;
 public:
     size_t addSymbol(const std::string & str);
-    std::string getSymbol(bool & isEmpty);
+    std::string getSymbol();
+    bool isEmpty();
 };
 
 

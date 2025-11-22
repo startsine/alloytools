@@ -12,17 +12,21 @@ size_t SymbolDepend::addSymbol(const std::string & str)
     return dependList.size();
 }
 
-std::string SymbolDepend::getSymbol(bool & isEmpty)
+std::string SymbolDepend::getSymbol()
 {
     if (dependList.empty()) {
-        isEmpty = true;
         return "";
     }
     //
     std::string ret = dependList.front();
     dependList.pop();
-    isEmpty = dependList.empty();
     return ret;
 }
+
+bool SymbolDepend::isEmpty()
+{
+    return dependList.empty();
+}
+
 
 

@@ -355,7 +355,7 @@ void ObjectFile::loadRelocTable(const ElfSection & relSection, std::list<ElfRel>
                 ElfRel rel;
                 rel.offset = read_u64();
                 info = read_u64();
-                rel.addend = read_u64();
+                rel.addend = (int64_t)read_u64();
                 rel.symbolIndex = (uint32_t)(info >> 32);
                 rel.type = (uint32_t)(info & 0xffffffff);
                 pRelocTable->push_back(rel);
@@ -366,7 +366,7 @@ void ObjectFile::loadRelocTable(const ElfSection & relSection, std::list<ElfRel>
                 ElfRel rel;
                 rel.offset = read_u32();
                 info = read_u32();
-                rel.addend = read_u32();
+                rel.addend = (int64_t)read_u32();
                 rel.symbolIndex = (uint32_t)(info >> 8);
                 rel.type = (uint32_t)(info & 0xff);
                 pRelocTable->push_back(rel);
