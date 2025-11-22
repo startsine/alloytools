@@ -28,5 +28,25 @@ bool SymbolDepend::isEmpty()
     return dependList.empty();
 }
 
+size_t FoundExternSymbolList::addSymbol(const std::string & str)
+{
+    auto it = symbols.find(str);
+    if (it == symbols.end()) {
+        symbols.insert(str);
+    }
+    return symbols.size();
+}
+
+
+bool FoundExternSymbolList::inList(const std::string & str)
+{
+    auto it = symbols.find(str);
+    return it != symbols.end();
+}
+
+
+
+
+
 
 

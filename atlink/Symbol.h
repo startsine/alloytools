@@ -24,7 +24,6 @@ class ObjectSymbolList
 {
 public:
     std::vector<Elf64ObjectSymbol>  symbols;
-    //std::unordered_map<std::string, std::vector<size_t> > finder;         // 符号查找hash-table
     //
     ObjectSymbolList();
     ~ObjectSymbolList();

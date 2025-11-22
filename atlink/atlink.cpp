@@ -54,15 +54,41 @@ void Linker::resolveSymbol(const std::string & symName)
         auto symList = symIndicesInfo->second;
         uint64_t idx = symList[0];
         auto sym = flatSymbols.flatGlobalSymbols[idx];
-        auto flatSectionIndex = sym->flatSectionIndex;
-        auto pSection = flatSections.sections[flatSectionIndex];
-        if (!pSection->used) {
-            resolveSection(pSection);
+        if (sym->external == 0) {
+            // external 为 0 表示本执行模块内需要解决的符号
+            auto flatSectionIndex = sym->flatSectionIndex;
+            auto pSection = flatSections.sections[flatSectionIndex];
+            if (!pSection->used) {
+                resolveSection(pSection);
+            }
         }
+        else {
+            // 这里处理依赖本执行模块外的符号 （在其它dll/so）
+            resolveDynamicSymbol(symName, idx);
+        }
+        foundExternSymbols.addSymbol(symName);      // 添加已找到的外部符号列表 
     }
     else {
         //// TO-DO  报错
     }
+}
+
+void Linker::resolveDynamicSymbol(const std::string & symName, uint64_t index)
+{
+    linkedDynamicSymbolIndies.push_back(index);
+    // 
+    std::string extName;
+    std::string extNameImpStub;
+    if (0 == strncmp(symName.c_str(), "__imp_", 6)) {
+        extNameImpStub = symName;
+        extName = symName.substr(6);
+    }
+    else {
+        extName = symName;
+        extNameImpStub = std::string("__imp_") + symName;
+    }
+    foundExternSymbols.addSymbol(extName);
+    foundExternSymbols.addSymbol(extNameImpStub);
 }
 
 void Linker::resolveSection(ElfSection * pSection)
@@ -93,7 +119,9 @@ void Linker::resolveSection(ElfSection * pSection)
             if (symbolIndex < obj->objSymbols.symbols.size()) {
                 auto & sym = obj->objSymbols.symbols[symbolIndex];
                 if (sym.shndx == 0) {       // 节索引为0表示需要引用外部符号 
-                    symbolDepend.addSymbol(sym.name);       // 添加到符号依赖
+                    if (!foundExternSymbols.inList(sym.name)) {
+                        symbolDepend.addSymbol(sym.name);       // 添加到符号依赖
+                    }
                 }
             }
         }
