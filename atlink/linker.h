@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,8 +14,8 @@ public:
     SectionList         flatSections;
     GlobalSymbolList    flatSymbols;
     SymbolDepend        symbolDepend;
-    FoundExternSymbolList foundExternSymbols;           // ÒÑÕÒµ½µÄÍâ²¿·ûºÅÁĞ±í
-    std::vector<uint64_t> linkedDynamicSymbolIndies;    // ĞèÒªÁ´½ÓµÄÍâ²¿¶¯Ì¬¿âµÄ·ûºÅ£¬ÔÚÈ«¾Ö·ûºÅ±íÖĞµÄË÷Òı 
+    FoundExternSymbolList foundExternSymbols;           // å·²æ‰¾åˆ°çš„å¤–éƒ¨ç¬¦å·åˆ—è¡¨
+    std::vector<uint64_t> linkedDynamicSymbolIndies;    // éœ€è¦é“¾æ¥çš„å¤–éƒ¨åŠ¨æ€åº“çš„ç¬¦å·ï¼Œåœ¨å…¨å±€ç¬¦å·è¡¨ä¸­çš„ç´¢å¼• 
 
     void scanInputObjects();
     void scanObject(ObjectFile & obj);

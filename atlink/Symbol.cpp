@@ -1,4 +1,4 @@
-#include <stdint.h>
+ï»¿#include <stdint.h>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -69,7 +69,7 @@ bool GlobalSymbolList::addSymbol(Elf64ObjectSymbol & srcSym, SrcFile * srcFile)
     else {
         it->second.push_back(flatSymbolIndex);
         //// TO-DO
-        //// ÕâÀïÒª¼ÓÈëÅĞ¶Ï´æÔÚ¶à¸öglobalÍ¬ÃûÇ¿·ûºÅµÄ²Ù×÷£¬´æÔÚÒª·µ»Øfalse£¬±¨¸æ´íÎó
+        //// è¿™é‡Œè¦åŠ å…¥åˆ¤æ–­å­˜åœ¨å¤šä¸ªglobalåŒåå¼ºç¬¦å·çš„æ“ä½œï¼Œå­˜åœ¨è¦è¿”å›falseï¼ŒæŠ¥å‘Šé”™è¯¯
     }
     return true;
 }

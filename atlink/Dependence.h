@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -7,7 +7,7 @@
 #include <mutex>
 #include <unordered_set>
 
-// Íâ²¿·ûºÅÒÀÀµ¶ÓÁĞ
+// å¤–éƒ¨ç¬¦å·ä¾èµ–é˜Ÿåˆ—
 class SymbolDepend
 {
 private:
@@ -19,7 +19,7 @@ public:
     bool isEmpty();
 };
 
-// ÒÑ¾­½â¾öµÄÍâ²¿ÒÀÀµ·ûºÅÁĞ±í
+// å·²ç»è§£å†³çš„å¤–éƒ¨ä¾èµ–ç¬¦å·åˆ—è¡¨
 class FoundExternSymbolList
 {
 private:
