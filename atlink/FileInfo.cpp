@@ -345,7 +345,59 @@ void ObjectFile::scanObject(Linker & linker)
 
 void ObjectFile::loadRelocTable(const ElfSection & relSection, std::list<ElfRel> * pRelocTable)
 {
-
+    open();
+    seek(relSection.offset, SEEK_SET);
+    uint64_t totalCount = relSection.size / relSection.entsize;
+    uint64_t info = 0;
+    if (relSection.type == ELF_SECTION_TYPE_RELA) {
+        if (isElf64) {
+            for (uint64_t i = 0; i < totalCount; i++) {
+                ElfRel rel;
+                rel.offset = read_u64();
+                info = read_u64();
+                rel.addend = read_u64();
+                rel.symbolIndex = (uint32_t)(info >> 32);
+                rel.type = (uint32_t)(info & 0xffffffff);
+                pRelocTable->push_back(rel);
+            }
+        }
+        else {
+            for (uint64_t i = 0; i < totalCount; i++) {
+                ElfRel rel;
+                rel.offset = read_u32();
+                info = read_u32();
+                rel.addend = read_u32();
+                rel.symbolIndex = (uint32_t)(info >> 8);
+                rel.type = (uint32_t)(info & 0xff);
+                pRelocTable->push_back(rel);
+            }
+        }
+    }
+    else if (relSection.type == ELF_SECTION_TYPE_REL) {
+        if (isElf64) {
+            for (uint64_t i = 0; i < totalCount; i++) {
+                ElfRel rel;
+                rel.offset = read_u64();
+                info = read_u64();
+                rel.addend = 0;
+                rel.symbolIndex = (uint32_t)(info >> 32);
+                rel.type = (uint32_t)(info & 0xffffffff);
+                pRelocTable->push_back(rel);
+            }
+        }
+        else {
+            for (uint64_t i = 0; i < totalCount; i++) {
+                ElfRel rel;
+                rel.offset = read_u32();
+                info = read_u32();
+                rel.addend = 0;
+                rel.symbolIndex = (uint32_t)(info >> 8);
+                rel.type = (uint32_t)(info & 0xff);
+                pRelocTable->push_back(rel);
+            }
+        }
+    }
+    close();
 }
 
 LibraryFile::LibraryFile(const std::string & name) :
