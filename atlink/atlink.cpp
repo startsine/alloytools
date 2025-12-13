@@ -93,6 +93,9 @@ void Linker::resolveDynamicSymbol(const std::string & symName, uint64_t index)
 
 void Linker::resolveSection(ElfSection * pSection)
 {
+    if (pSection->used) {
+        return;
+    }
     pSection->used = true;
     auto fileIndex = pSection->fileIndex;       // section 所在的文件在 InputList 中的索引
     auto localIndex = pSection->localIndex;     // section 在 object 文件中的原始索引
@@ -114,6 +117,7 @@ void Linker::resolveSection(ElfSection * pSection)
             }
         }
         // 将该section的重定位表中的依赖的外部符号全部加入
+        std::vector<uint32_t> needInnerSectionIndices;          // 本section依赖obj文件内部的section的索引列表
         for (auto it = pSection->relocs->begin(); it != pSection->relocs->end(); it++) {
             uint32_t symbolIndex = it->symbolIndex;
             if (symbolIndex < obj->objSymbols.symbols.size()) {
@@ -123,15 +127,36 @@ void Linker::resolveSection(ElfSection * pSection)
                         symbolDepend.addSymbol(sym.name);       // 添加到符号依赖
                     }
                 }
+                else {                      // 节索引不为0表示需要引用本obj内的符号 
+                    needInnerSectionIndices.push_back(sym.shndx);
+                }
+            }
+        }
+        // 如果需要依赖本obj的其他section，则这里添加依赖
+        if (needInnerSectionIndices.size() != 0) {
+            for (size_t j = 0; j < needInnerSectionIndices.size(); j++) {
+                uint32_t localIdx = needInnerSectionIndices[j];
+                auto startIndexOfFlatSections = obj->startIndexOfFlatSections;
+                auto flatSectionIndex = startIndexOfFlatSections + localIdx;
+                auto pDepSection = flatSections.sections[flatSectionIndex];
+                if (!pDepSection->used) {
+                    resolveSection(pDepSection);
+                }
             }
         }
     }
-    
-    
-
+    return;
 }
 
-
+void Linker::initNeedLinkedSections()
+{
+    for (size_t i = 0; i < flatSections.sections.size(); i++) {
+        ElfSection * sec = flatSections.sections[i];
+        if (sec->used) {
+            needLinkedSections.push_back(sec);
+        }
+    }
+}
 
 static int atlink_main(int argc, char ** argv)
 {
@@ -150,10 +175,21 @@ static int atlink_main(int argc, char ** argv)
     linker.inputList.addLibrary("F:\\mywork\\alloytools\\x64\\Debug\\user32.dll.sym");
 
     linker.scanInputObjects();
-    //
+    // 解决符号
     linker.symbolDepend.addSymbol("mystart");
     linker.resolveDependences();
-    
+    // 
+    // 核心思想
+    // 先把所有的需要依赖的section拿出来排列
+    // 配列顺序:
+    //   1. 带 EXEC 标志的 (带 EXEC 标志的不能带W标志，带有的会自动去掉)
+    //   2. 带 WRITE 标志的数据段(PROGBITS 类型 - 已初始化数据)
+    //   3. 带 WRITE 标志的数据段(NOBITS 类型 - 未初始化数据)
+    //   4. 不带 WRITE 标志的数据段(PROGBITS 类型 - 已初始化数据-只读)
+    //   5. 自己组织 .idata
+    //   6. 自己组织 .reloc
+    linker.initNeedLinkedSections();
+   
 
     return 0;
 }
