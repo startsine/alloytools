@@ -1,5 +1,6 @@
 ﻿#include <stdio.h>
 #include <memory>
+#include <algorithm>
 #ifdef _WIN32
 #include <Windows.h>
 #endif
@@ -158,6 +159,146 @@ void Linker::initNeedLinkedSections()
     }
 }
 
+void Linker::sortNeedLinkedSections()
+{
+    // 配列顺序:
+    //   1. 带 EXEC 标志的 (带 EXEC 标志的不能带W标志，带有的会自动去掉)
+    //   2. 不带 WRITE 标志的数据段(PROGBITS 类型 - 已初始化数据-只读)
+    //   3. 不带 WRITE 标志的数据段(NOBITS 类型 - 未初始化数据-只读)
+    //   4. 带 WRITE 标志的数据段(PROGBITS 类型 - 已初始化数据)
+    //   5. 带 WRITE 标志的数据段(NOBITS 类型 - 未初始化数据)
+    auto cmp = [](ElfSection* a, ElfSection* b) -> bool {
+        int aValue = 0;
+        int bValue = 0;
+        // 可执行优先
+        if (a->flags & ELF_SECTION_FLAG_EXEC) {
+            aValue += 1000000;
+        }
+        if (b->flags & ELF_SECTION_FLAG_EXEC) {
+            bValue += 1000000;
+        }
+        // 只读数据次级优先
+        if (!(a->flags & ELF_SECTION_FLAG_WRITE)) {
+            aValue += 10000;
+        }
+        if (!(b->flags & ELF_SECTION_FLAG_WRITE)) {
+            bValue += 10000;
+        }
+        // 已初始化数据次次级优先 (PROGBITS 比 NOBITS 优先)
+        if (a->type == ELF_SECTION_TYPE_PROGBITS) {
+            aValue += 100;
+        }
+        if (b->type == ELF_SECTION_TYPE_PROGBITS) {
+            bValue += 100;
+        }
+        // 自定义段属性
+        //// TO-DO 这里检测如果是命令行参数列表自定义的段名,其value直接设置为负数(自定义段排最后)
+        // 
+        return (aValue > bValue);
+    };
+    std::sort(needLinkedSections.begin(), needLinkedSections.end(), cmp);
+    //
+    //for (size_t i = 0; i < needLinkedSections.size(); i++) {
+    //    printf("haha: %s\n", needLinkedSections[i]->name.c_str());
+    //}
+}
+
+void Linker::buildSegmentList()
+{
+    bool hasTextSegment = false;                // 是否存在 .text
+    bool hasRDataSegment = false;               // 是否存在 .rdata
+    bool hasDataSegment = false;                // 是否存在 .data
+    //
+    bool hasInsertIData = false;                // 是否已经插入 .idata
+    // lambada函数, 检测是否有.idata，有的话添加到.rdata中去
+    auto checkAndInsertIData = [&]() {
+        if (!hasInsertIData && linkedDynamicSymbolIndies.size() != 0) {
+            hasInsertIData = true;
+            if (hasRDataSegment) {
+                ImageSegmentData imageData;
+                imageData.useSectionData = false;
+                imageData.dataType = IMAGE_SEGMENT_DATA_TYPE_IDATA;
+                imageSegments[rdataSegmentIndex].dataInfoList.push_back(imageData);
+            }
+            else {
+                ImageSegment rdataSegment;
+                rdataSegment.segmentName = ".rdata";
+                ImageSegmentData imageData;
+                imageData.useSectionData = false;
+                imageData.dataType = IMAGE_SEGMENT_DATA_TYPE_IDATA;
+                rdataSegment.dataInfoList.push_back(imageData);
+                rdataSegmentIndex = imageSegments.size();
+                imageSegments.push_back(rdataSegment);
+                hasRDataSegment = true;
+            }
+        }
+    };
+    //
+    for (size_t i = 0; i < needLinkedSections.size(); i++) {
+        ElfSection * sec = needLinkedSections[i];
+        uint64_t index = (uint64_t) i;
+        if (sec->flags & ELF_SECTION_FLAG_EXEC) {
+            if (hasTextSegment) {
+                ImageSegmentData imageData;
+                imageData.needSectionIndex = index;
+                imageSegments[textSegmentIndex].dataInfoList.push_back(imageData);
+            }
+            else {
+                ImageSegment textSegment;
+                textSegment.segmentName = ".text";
+                ImageSegmentData imageData;
+                imageData.needSectionIndex = index;
+                textSegment.dataInfoList.push_back(imageData);
+                textSegmentIndex = imageSegments.size();
+                imageSegments.push_back(textSegment);
+                hasTextSegment = true;
+            }
+            continue;
+        }
+        // 只读
+        if (!(sec->flags & ELF_SECTION_FLAG_WRITE)) {
+            if (hasRDataSegment) {
+                ImageSegmentData imageData;
+                imageData.needSectionIndex = index;
+                imageSegments[rdataSegmentIndex].dataInfoList.push_back(imageData);
+            }
+            else {
+                ImageSegment rdataSegment;
+                rdataSegment.segmentName = ".rdata";
+                ImageSegmentData imageData;
+                imageData.needSectionIndex = index;
+                rdataSegment.dataInfoList.push_back(imageData);
+                rdataSegmentIndex = imageSegments.size();
+                imageSegments.push_back(rdataSegment);
+                hasRDataSegment = true;
+            }
+            continue;
+        }
+        // 如果到这里还没有出现 .rdata 的话，检测是否有 .idata 和 .edata，放入 .rdata 中
+        checkAndInsertIData();
+
+        //数据段
+        if (hasDataSegment) {
+            ImageSegmentData imageData;
+            imageData.needSectionIndex = index;
+            imageSegments[dataSegmentIndex].dataInfoList.push_back(imageData);
+        }
+        else {
+            ImageSegment dataSegment;
+            dataSegment.segmentName = ".data";
+            ImageSegmentData imageData;
+            imageData.needSectionIndex = index;
+            dataSegment.dataInfoList.push_back(imageData);
+            dataSegmentIndex = imageSegments.size();
+            imageSegments.push_back(dataSegment);
+            hasDataSegment = true;
+        }
+    }
+    // 再次检查 .idata
+    checkAndInsertIData();
+
+}
+
 static int atlink_main(int argc, char ** argv)
 {
     if (argc > 1) {
@@ -183,13 +324,16 @@ static int atlink_main(int argc, char ** argv)
     // 先把所有的需要依赖的section拿出来排列
     // 配列顺序:
     //   1. 带 EXEC 标志的 (带 EXEC 标志的不能带W标志，带有的会自动去掉)
-    //   2. 带 WRITE 标志的数据段(PROGBITS 类型 - 已初始化数据)
-    //   3. 带 WRITE 标志的数据段(NOBITS 类型 - 未初始化数据)
-    //   4. 不带 WRITE 标志的数据段(PROGBITS 类型 - 已初始化数据-只读)
-    //   5. 自己组织 .idata
-    //   6. 自己组织 .reloc
-    linker.initNeedLinkedSections();
-   
+    //   2. 不带 WRITE 标志的数据段(PROGBITS 类型 - 已初始化数据-只读)
+    //   3. 不带 WRITE 标志的数据段(NOBITS 类型 - 未初始化数据-只读)
+    //   4. 带 WRITE 标志的数据段(PROGBITS 类型 - 已初始化数据)
+    //   5. 带 WRITE 标志的数据段(NOBITS 类型 - 未初始化数据)
+    //
+    //   a. 自己组织 .idata 嵌入到 .rdata
+    //   b. 自己组织 .reloc
+    linker.initNeedLinkedSections();                // 把需要链接进映像文件的section集合在一起
+    linker.sortNeedLinkedSections();
+    linker.buildSegmentList();
 
     return 0;
 }
