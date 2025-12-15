@@ -299,6 +299,204 @@ void Linker::buildSegmentList()
 
 }
 
+void Linker::buildPEImportTable(uint64_t idataRva)
+{
+    struct ImportNameItem {
+        std::string     funcName;
+        uint32_t        hint = 0;
+        uint32_t        offsetInStrTab;
+    };
+    struct ImportTableItem {
+        std::string                 moduleName;
+        std::vector<ImportNameItem> importSymbol;
+        uint32_t                    offsetInStrTab;
+    };
+    std::vector<ImportTableItem> importData;
+    std::unordered_map<std::string, uint64_t> importFinder;         // module finder
+
+    for (size_t i = 0; i < linkedDynamicSymbolIndies.size(); i++) {
+        uint64_t symIndex = linkedDynamicSymbolIndies[i];
+        auto pSym = flatSymbols.flatGlobalSymbols[symIndex];
+        auto fileIdx = pSym->fileIndex;
+        auto pFile = inputList.fileList[fileIdx];
+        auto fileType = pFile->fileType;
+        if (fileType == FileType::SYM_DEF) {
+            DynamicModuleFile * modFile = (DynamicModuleFile*) pFile;
+            std::string & moduleName = modFile->moduleName;
+            auto itImp = importFinder.find(moduleName);
+            ImportTableItem * currModule;
+            if (itImp == importFinder.end()) {
+                ImportTableItem newImportItem;
+                newImportItem.moduleName = moduleName;
+                uint64_t newIdx = importData.size();
+                importData.push_back(newImportItem);
+                importFinder[moduleName] = newIdx;
+                currModule = & importData[importData.size() - 1];
+            }
+            else {
+                currModule = &importData[itImp->second];
+            }
+            //
+            ImportNameItem newNameItem;
+            if (0 == strncmp(pSym->name.c_str(), "__imp_", 6)) {
+                const char * str = pSym->name.c_str();
+                newNameItem.funcName = & str[6];
+            }
+            else {
+                newNameItem.funcName = pSym->name;
+            }
+            newNameItem.hint = pSym->hint;
+            currModule->importSymbol.push_back(newNameItem);
+        }
+    }
+    // 计算字符串总大小
+    uint32_t stringTotalSize = 0;
+    for (size_t i = 0; i < importData.size(); i++) {
+        ImportTableItem & tabItem = importData[i];
+        stringTotalSize += (tabItem.moduleName.length() + 1);
+        for (size_t j = 0; j < tabItem.importSymbol.size(); j++) {
+            ImportNameItem & nameItem = tabItem.importSymbol[j];
+            stringTotalSize += (nameItem.funcName.length() + 1);
+        }
+    }
+    // 分配字符串表的空间
+    std::shared_ptr<char> psStrTab(new char[stringTotalSize + 4], std::default_delete<char[]>());
+    // 生成字符串表
+    char * strtab = psStrTab.get();
+    uint32_t strCounter = 0;
+    for (size_t i = 0; i < importData.size(); i++) {
+        ImportTableItem & tabItem = importData[i];
+        tabItem.offsetInStrTab = strCounter;
+        memcpy(&strtab[strCounter], tabItem.moduleName.c_str(), tabItem.moduleName.length() + 1);
+        strCounter += tabItem.moduleName.length() + 1;
+        for (size_t j = 0; j < tabItem.importSymbol.size(); j++) {
+            ImportNameItem & nameItem = tabItem.importSymbol[j];
+            nameItem.offsetInStrTab = strCounter;
+            memcpy(&strtab[strCounter], nameItem.funcName.c_str(), nameItem.funcName.length() + 1);
+            stringTotalSize += (nameItem.funcName.length() + 1);
+        }
+    }
+    // 计算import表头的大小
+    // PE64的导入目录表的每一项一共20字节，每导入一个dll为一项，最后一项全0结尾
+    // PE64的导入查找表的每一项一共8字节，每导入一个函数为一项，最后一项全0结尾 (因为目录表项是20字节,所以,导入查找表要注意开始要8字节对齐)
+    uint64_t idataTotalSize = 0;                            // idata总大小
+    uint64_t dirTableSize = 20 * (importData.size() + 1);   // 导入目录表的大小
+    uint64_t strTabOffset = dirTableSize;                   // 字符串表在 .idata 的中偏移
+    idataTotalSize += dirTableSize;                         // idata总大小 加上导入目录表的大小
+    idataTotalSize += stringTotalSize;                      // idata总大小 加上字符串表的大小
+    if (idataTotalSize % 8 != 0) {
+        idataTotalSize += (8 - (idataTotalSize % 8));       // 查找表要8字节对齐, 所以 idata总大小对齐一下
+    }
+    uint64_t findTableEntryTotal = 0;
+    for (size_t i = 0; i < importData.size(); i++) {        // 计算导入查找表总项数
+        findTableEntryTotal += (importData[i].importSymbol.size() + 1);
+    }
+    uint64_t lookupTableOffset = idataTotalSize;            // 查找表在.idata的中偏移
+    idataTotalSize += (8 * findTableEntryTotal);            // idata总大小 加上导入查找表的总大小
+    uint64_t iatOffset = idataTotalSize;                    // iat 在 .idata 的中偏移
+    idataTotalSize += (8 * findTableEntryTotal);            // idata总大小 加上 IAT 的总大小
+
+    // 分配整个 .idata 的数据
+    std::shared_ptr<uint8_t> spIData(new uint8_t[idataTotalSize + 4], std::default_delete<uint8_t[]>());
+    uint8_t * idata = spIData.get();
+    memset(idata, 0, idataTotalSize);
+
+    // .idata 中数据的排列顺序这里是: (1) 导入目录表 (2) 字符串表 (3) 8字节对齐 (4) 导入查找表 (5) IAT
+    //
+    // 以下生成 .idata 数据
+    // 1. 复制字符串表
+    memcpy(idata + strTabOffset, strtab, stringTotalSize);
+    // 2. 遍历填入各 dll 数据
+    uint64_t functionCounter = 0;
+    for (size_t i = 0; i < importData.size(); i++) {
+        ImportTableItem & importItem = importData[i];
+        uint8_t * pDirItem = idata + 20 * i;
+        // 1. 导入查找表的RVA
+        uint32_t * pLookUpTableRVA = (uint32_t*)(pDirItem + 0);
+        *pLookUpTableRVA = idataRva + lookupTableOffset + functionCounter * 8;
+        // 2. IAT 的 RVA
+        uint32_t * pIatRVA = (uint32_t*)(pDirItem + 16);
+        *pIatRVA = idataRva + iatOffset + functionCounter * 8;
+        // 3. DLL名称的 RVA
+        uint32_t * pDllNameRVA = (uint32_t*)(pDirItem + 12);
+        *pDllNameRVA = idataRva + strTabOffset + importItem.offsetInStrTab;
+        // 4. 写“导入查找表” 和 IAT
+        for (size_t j = 0; j < importItem.importSymbol.size(); j++) {
+            ImportNameItem & nameItem = importItem.importSymbol[j];
+
+        }
+    }
+
+
+
+    //uint64_t  idataAddress = 0;
+    //uint64_t  idataSize = 0;
+    //std::shared_ptr<uint8_t> idataRawData = nullptr;
+}
+
+void Linker::loadSegmentData()
+{
+    uint64_t addressCounter = firstSegmentStartRva;                 // RVA地址计数器
+    
+    for (size_t i = 0; i < imageSegments.size(); i++) {
+        ImageSegment & segment = imageSegments[i];
+        uint64_t offsetInSegment = 0;
+
+        if (addressCounter % segmentMemAlign != 0) {
+            uint64_t paddingBytes = (uint64_t)(segmentMemAlign - (addressCounter % segmentMemAlign));
+            addressCounter += paddingBytes;
+        }
+
+        for (size_t j = 0; j < segment.dataInfoList.size(); j++) {
+            ImageSegmentData & segBlockData = segment.dataInfoList[j];
+            if (segBlockData.useSectionData) {
+                uint64_t needSectionIndex = segBlockData.needSectionIndex;
+                ElfSection * pSection = needLinkedSections[needSectionIndex];
+                uint64_t addralign = pSection->addralign;
+                // 对齐
+                if (offsetInSegment % addralign != 0) {
+                    uint64_t paddingBytes = (uint64_t) (addralign - (offsetInSegment % addralign));
+                    offsetInSegment += paddingBytes;
+                    addressCounter += paddingBytes;
+                }
+                // 
+                segBlockData.dataStartRVA = addressCounter;
+                if (pSection->type != ELF_SECTION_TYPE_NOBITS) {
+                    segBlockData.dataFileSize = pSection->size;
+                    segBlockData.dataMemSize = pSection->size;
+                }
+                else {
+                    segBlockData.dataFileSize = 0;
+                    segBlockData.dataMemSize = pSection->size;
+                }
+                segBlockData.offsetInSegment = offsetInSegment;
+                //
+                pSection->startImageAddress = addressCounter;
+                pSection->offsetInSegment = offsetInSegment;
+                //
+                addressCounter += pSection->size;
+                offsetInSegment += pSection->size;
+            }
+            else {
+                uint64_t addralign = 0;
+                if (segBlockData.dataType == IMAGE_SEGMENT_DATA_TYPE_IDATA) {
+                    addralign = 8;
+                }
+                // 对齐
+                if (offsetInSegment % addralign != 0) {
+                    uint64_t paddingBytes = (uint64_t)(addralign - (offsetInSegment % addralign));
+                    offsetInSegment += paddingBytes;
+                    addressCounter += paddingBytes;
+                }
+                // 
+                if (segBlockData.dataType == IMAGE_SEGMENT_DATA_TYPE_IDATA) {
+                    buildPEImportTable(addressCounter);
+                }
+            }
+        }
+    }
+}
+
 static int atlink_main(int argc, char ** argv)
 {
     if (argc > 1) {
@@ -334,6 +532,7 @@ static int atlink_main(int argc, char ** argv)
     linker.initNeedLinkedSections();                // 把需要链接进映像文件的section集合在一起
     linker.sortNeedLinkedSections();
     linker.buildSegmentList();
+    linker.loadSegmentData();
 
     return 0;
 }

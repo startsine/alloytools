@@ -45,6 +45,7 @@ public:
     int64_t             symIndexInFile;             // symbol 在其obj文件中的符号表中的索引 (obj文件中的第几个符号)
     int64_t             flatSymbolIndex = -1;       // symbol 在整体全局的 flat-symbol 表(大表)中的索引
     int64_t             flatSectionIndex = -1;      // symbol 在整体 sections 表(大表)中的索引
+    uint32_t            hint = 0;                   // 外部模块符号的hint
 };
 
 class GlobalSymbolList

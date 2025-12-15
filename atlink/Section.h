@@ -26,6 +26,9 @@ public:
     int64_t     flatindex = -1;             // section 在 flat-sections 表中的索引
     bool        used = false;               // 该 section 是否被引用，会被链接成可执行文件 
     std::shared_ptr<std::list<ElfRel> > relocs = nullptr;       // 指向该section的重定位表信息
+    // 链接时
+    uint64_t    startImageAddress = 0;      // 该section在映像文件中的RVA地址(对齐后)
+    uint64_t    offsetInSegment = 0;        // 该section在segment中的偏移(对齐后)
 };
 
 class SectionList

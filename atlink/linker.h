@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <memory.h>
 #include "FileInfo.h"
 #include "Section.h"
 #include "Symbol.h"
@@ -16,6 +17,10 @@ public:
     bool        useSectionData = true;
     int         dataType;                               // 
     uint64_t    needSectionIndex;                       // 在 needLinkedSections 中的索引
+    uint64_t    dataStartRVA = 0;                       // 数据的起始RVA
+    uint64_t    dataFileSize = 0;                       // 数据占用文件空间大小
+    uint64_t    dataMemSize = 0;                        // 数据占用内存空间大小
+    uint64_t    offsetInSegment = 0;                    // 该数据在segment中的偏移
 };
 
 class ImageSegment
@@ -23,6 +28,10 @@ class ImageSegment
 public:
     std::vector<ImageSegmentData>   dataInfoList;
     std::string                     segmentName;
+    uint64_t                        startRVA = 0;
+    uint64_t                        segmentFileSize = 0;
+    uint64_t                        segmentMemSize = 0;
+    std::shared_ptr<uint8_t>        pData = nullptr;
 };
 
 class Linker
@@ -39,6 +48,13 @@ public:
     size_t textSegmentIndex = 0;
     size_t rdataSegmentIndex = 0;
     size_t dataSegmentIndex = 0;
+    uint32_t  segmentFileAlign = 512;
+    uint32_t  segmentMemAlign = 4096;
+    uint32_t  firstSegmentStartRva = 0x1000;
+    uint64_t  idataAddress = 0;
+    uint64_t  idataSize = 0;
+    uint64_t  iatAddress = 0;
+    std::shared_ptr<uint8_t> idataRawData = nullptr;
 
     void scanInputObjects();
     void scanObject(ObjectFile & obj);
@@ -53,5 +69,9 @@ public:
     void sortNeedLinkedSections();
     // 组合成segment
     void buildSegmentList();
+    // 加载segment数据
+    void loadSegmentData();
+    // 
+    void buildPEImportTable(uint64_t addr);
 };
 
