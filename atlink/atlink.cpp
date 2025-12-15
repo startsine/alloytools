@@ -7,6 +7,7 @@
 #include "FileInfo.h"
 #include "linker.h"
 #include "at_elf.h"
+#include "at_io.h"
 
 void Linker::scanInputObjects()
 {
@@ -423,11 +424,21 @@ void Linker::buildPEImportTable(uint64_t idataRva)
         // 4. 写“导入查找表” 和 IAT
         for (size_t j = 0; j < importItem.importSymbol.size(); j++) {
             ImportNameItem & nameItem = importItem.importSymbol[j];
-
+            uint32_t * pLookUp = (uint32_t*) (idata + lookupTableOffset + functionCounter * 8);
+            *pLookUp = idataRva + strTabOffset + nameItem.offsetInStrTab;
+            uint32_t * pIatItem = (uint32_t*)(idata + iatOffset + functionCounter * 8);
+            *pIatItem = idataRva + strTabOffset + nameItem.offsetInStrTab;
+            // 将IAT项的地址更新全局符号表中的value
+            // TO-DO
+            //
+            functionCounter++;
         }
+        functionCounter++;              // 以全NULL结尾,所以增加一个
     }
 
-
+    FILE * fpTest = fopen_utf8(".idata.bin", "wb");
+    fwrite(idata, 1, idataTotalSize, fpTest);
+    fclose(fpTest);
 
     //uint64_t  idataAddress = 0;
     //uint64_t  idataSize = 0;
