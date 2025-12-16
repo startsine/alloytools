@@ -8,8 +8,9 @@
 #include "Symbol.h"
 #include "Dependence.h"
 
-#define IMAGE_SEGMENT_DATA_TYPE_IDATA                   1
-#define IMAGE_SEGMENT_DATA_TYPE_EDATA                   2
+#define IMAGE_SEGMENT_DATA_TYPE_EDATA                   1
+#define IMAGE_SEGMENT_DATA_TYPE_IDATA                   2
+#define IMAGE_SEGMENT_DATA_TYPE_JMPSLOT                 3    // 导入调用的插桩
 
 class ImageSegmentData
 {
@@ -55,7 +56,11 @@ public:
     uint64_t  idataSize = 0;                            // .idata的大小
     uint64_t  iatAddress = 0;                           // IAT 的地址(RVA)
     uint64_t  iatSize = 0;                              // IAT 的大小
-    std::shared_ptr<uint8_t> idataRawData = nullptr;
+    std::shared_ptr<uint8_t> idataRawData = nullptr;    // .idata的数据
+    uint64_t  jmpSlotAddress = 0;                       // jmpSlot的地址(RVA)
+    uint64_t  jmpSlotByteSize = 0;                      // jmpSlot的大小(字节)
+    uint64_t  jmpSlotItemCount = 0;                     // jmpSlot的项数
+    std::shared_ptr<uint8_t> jmpSlotRawData = nullptr;  // jmpSlot的数据
 
     void scanInputObjects();
     void scanObject(ObjectFile & obj);

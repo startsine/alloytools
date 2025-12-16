@@ -211,6 +211,7 @@ void Linker::buildSegmentList()
     bool hasDataSegment = false;                // 是否存在 .data
     //
     bool hasInsertIData = false;                // 是否已经插入 .idata
+    bool hasJmpSlot = false;                    // 是否已经加入了 jmpSlot
     // lambada函数, 检测是否有.idata，有的话添加到.rdata中去
     auto checkAndInsertIData = [&]() {
         if (!hasInsertIData && linkedDynamicSymbolIndies.size() != 0) {
@@ -231,6 +232,35 @@ void Linker::buildSegmentList()
                 rdataSegmentIndex = imageSegments.size();
                 imageSegments.push_back(rdataSegment);
                 hasRDataSegment = true;
+            }
+        }
+    };
+    // lambada函数, 检测是否应该有jmpslot，有的话添加到.text中去
+    auto checkAndInsertJmpSlot = [&]() {
+        if (!hasJmpSlot && linkedDynamicSymbolIndies.size() != 0) {
+            hasJmpSlot = true;
+            jmpSlotItemCount = linkedDynamicSymbolIndies.size();
+            jmpSlotByteSize = jmpSlotItemCount * 6;             // x86-64 一个slot占 6 字节
+            std::shared_ptr<uint8_t> psJmpSlotData(new uint8_t[this->jmpSlotByteSize + 8], std::default_delete<uint8_t[]>());
+            memset(psJmpSlotData.get(), 0x90, this->jmpSlotByteSize);       // NOP指令码0x90
+            jmpSlotRawData = psJmpSlotData;
+            //
+            if (hasTextSegment) {
+                ImageSegmentData imageData;
+                imageData.useSectionData = false;
+                imageData.dataType = IMAGE_SEGMENT_DATA_TYPE_JMPSLOT;
+                imageSegments[textSegmentIndex].dataInfoList.push_back(imageData);
+            }
+            else {
+                ImageSegment textSegment;
+                textSegment.segmentName = ".text";
+                ImageSegmentData imageData;
+                imageData.useSectionData = false;
+                imageData.dataType = IMAGE_SEGMENT_DATA_TYPE_JMPSLOT;
+                textSegment.dataInfoList.push_back(imageData);
+                textSegmentIndex = imageSegments.size();
+                imageSegments.push_back(textSegment);
+                hasTextSegment = true;
             }
         }
     };
@@ -256,6 +286,8 @@ void Linker::buildSegmentList()
             }
             continue;
         }
+        // 检测是否应该有jmpSlot，有的话添加到.text中去
+        checkAndInsertJmpSlot();
         // 只读
         if (!(sec->flags & ELF_SECTION_FLAG_WRITE)) {
             if (hasRDataSegment) {
@@ -446,9 +478,10 @@ void Linker::buildPEImportTable(uint64_t idataRva)
         functionCounter++;              // 以全NULL结尾,所以增加一个
     }
 
-    FILE * fpTest = fopen_utf8(".idata.bin", "wb");
-    fwrite(idata, 1, idataTotalSize, fpTest);
-    fclose(fpTest);
+    // for test
+    //FILE * fpTest = fopen_utf8(".idata.bin", "wb");
+    //fwrite(idata, 1, idataTotalSize, fpTest);
+    //fclose(fpTest);
 
     this->idataAddress = idataRva;
     this->idataSize = idataTotalSize;
