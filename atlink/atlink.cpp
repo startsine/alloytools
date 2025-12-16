@@ -512,11 +512,15 @@ void Linker::buildPEImportTable(uint64_t idataRva)
 
 void Linker::updateExternModuleSymbolValue(const std::string symbolName, uint64_t value) 
 {
-    auto symIndicesInfo1 = flatSymbols.finder.find(nameItem.funcName);
+    auto symIndicesInfo1 = flatSymbols.finder.find(symbolName);
     if (symIndicesInfo1 != flatSymbols.finder.end()) {
         auto idxList = symIndicesInfo1->second;
         for (int k = 0; k < idxList.size(); k++) {
-
+            uint64_t idx = idxList[k];
+            ElfGlobalSymbol* sym = flatSymbols.flatGlobalSymbols[idx];
+            if (sym->external) {
+                sym->value = value;
+            }
         }
     }
     else {
