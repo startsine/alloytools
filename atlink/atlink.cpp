@@ -450,9 +450,11 @@ void Linker::buildPEImportTable(uint64_t idataRva)
     fwrite(idata, 1, idataTotalSize, fpTest);
     fclose(fpTest);
 
-    //uint64_t  idataAddress = 0;
-    //uint64_t  idataSize = 0;
-    //std::shared_ptr<uint8_t> idataRawData = nullptr;
+    this->idataAddress = idataRva;
+    this->idataSize = idataTotalSize;
+    this->iatAddress = idataRva + iatOffset;
+    this->iatSize = 8 * findTableEntryTotal;
+    this->idataRawData = spIData;
 }
 
 void Linker::loadSegmentData()

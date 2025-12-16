@@ -51,9 +51,10 @@ public:
     uint32_t  segmentFileAlign = 512;
     uint32_t  segmentMemAlign = 4096;
     uint32_t  firstSegmentStartRva = 0x1000;
-    uint64_t  idataAddress = 0;
-    uint64_t  idataSize = 0;
-    uint64_t  iatAddress = 0;
+    uint64_t  idataAddress = 0;                         // .idata的地址(RVA)
+    uint64_t  idataSize = 0;                            // .idata的大小
+    uint64_t  iatAddress = 0;                           // IAT 的地址(RVA)
+    uint64_t  iatSize = 0;                              // IAT 的大小
     std::shared_ptr<uint8_t> idataRawData = nullptr;
 
     void scanInputObjects();
