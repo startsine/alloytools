@@ -572,7 +572,7 @@ void Linker::buildSegmentDataMap()
                 offsetInSegment += pSection->size;
             }
             else {
-                uint64_t addralign = 0;
+                uint64_t addralign = 1;
                 if (segBlockData.dataType == IMAGE_SEGMENT_DATA_TYPE_IDATA) {
                     addralign = 8;
                 }
@@ -588,9 +588,17 @@ void Linker::buildSegmentDataMap()
                 // 
                 if (segBlockData.dataType == IMAGE_SEGMENT_DATA_TYPE_IDATA) {
                     buildPEImportTable(addressCounter);
+                    segBlockData.dataStartRVA = addressCounter;
+                    segBlockData.dataFileSize = idataSize;
+                    segBlockData.dataMemSize = idataSize;
+                    segBlockData.offsetInSegment = offsetInSegment;
                 }
                 else if (segBlockData.dataType == IMAGE_SEGMENT_DATA_TYPE_JMPSLOT) {
                     jmpSlotAddress = addressCounter;        // 记下 jmpslot 的 RVA, 其数据留在 buildPEImportTable() 方法中填充  
+                    segBlockData.dataStartRVA = addressCounter;
+                    segBlockData.dataFileSize = jmpSlotByteSize;
+                    segBlockData.dataMemSize = jmpSlotByteSize;
+                    segBlockData.offsetInSegment = offsetInSegment;
                 }
             }
         }
@@ -608,16 +616,16 @@ void Linker::buildAndFixupSegmentFullData()
 
         // 首先获取 segment 占文件的真实空间大小(不带NOBITS的部分)
         for (blockIndex = 0; blockIndex < segment.dataInfoList.size(); blockIndex++) {
-            ImageSegmentData & secData = segment.dataInfoList[blockIndex];
+            ImageSegmentData & segBlockData = segment.dataInfoList[blockIndex];
             // 从首个 section 获取 起始RVA
             if (blockIndex == 0) {
-                segmentStartRVA = secData.dataStartRVA;
+                segmentStartRVA = segBlockData.dataStartRVA;
             }
-            if (secData.dataFileSize != 0) {
-                segmentFileSize = (secData.dataStartRVA - segmentStartRVA) + secData.dataFileSize;
+            if (segBlockData.dataFileSize != 0) {
+                segmentFileSize = (segBlockData.dataStartRVA - segmentStartRVA) + segBlockData.dataFileSize;
             }
-            if (secData.dataMemSize != 0) {
-                segmentMemSize = (secData.dataStartRVA - segmentStartRVA) + secData.dataMemSize;
+            if (segBlockData.dataMemSize != 0) {
+                segmentMemSize = (segBlockData.dataStartRVA - segmentStartRVA) + segBlockData.dataMemSize;
             }
         }
         segment.segmentStartRVA = segmentStartRVA;
