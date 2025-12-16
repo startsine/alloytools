@@ -79,5 +79,6 @@ public:
     void loadSegmentData();
     // 
     void buildPEImportTable(uint64_t addr);
+    void updateExternModuleSymbolValue(const std::string symbolName, uint64_t value);
 };
 

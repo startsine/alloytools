@@ -451,6 +451,8 @@ void Linker::buildPEImportTable(uint64_t idataRva)
     memcpy(idata + strTabOffset, strtab, stringRealTotalSize);
     // 2. 遍历填入各 dll 数据
     uint64_t functionCounter = 0;
+    uint8_t * jmpSlotStart = jmpSlotRawData.get();
+    uint64_t slotCounter = 0;
     for (size_t i = 0; i < importData.size(); i++) {
         ImportTableItem & importItem = importData[i];
         uint8_t * pDirItem = idata + 20 * i;
@@ -470,24 +472,56 @@ void Linker::buildPEImportTable(uint64_t idataRva)
             *pLookUp = idataRva + strTabOffset + nameItem.offsetInStrTab;
             uint32_t * pIatItem = (uint32_t*)(idata + iatOffset + functionCounter * 8);
             *pIatItem = idataRva + strTabOffset + nameItem.offsetInStrTab;
-            // 将IAT项的地址更新全局符号表中的value
-            // TO-DO
-            //
+            // 填写 JMP_SLOT, 并将IAT项的地址和jmpSlot 更新到符号表的值
+            uint8_t * currSlot = jmpSlotStart + slotCounter * 6;
+            uint64_t currInsRva = jmpSlotAddress + slotCounter * 6;         // 当前slot的指令的 RVA
+            uint64_t nextInsRva = currInsRva + 6;                           // 下一条指令的 RVA
+            uint64_t iatItemRva = (idataRva + iatOffset + functionCounter * 8); // IAT条目的 RVA
+            int disp32 = (int)(iatItemRva - nextInsRva);
+            *(currSlot + 0) = 0xff;
+            *(currSlot + 1) = 0x25;
+            *(currSlot + 2) = (uint8_t)(((uint32_t)disp32) & 0xff);
+            *(currSlot + 3) = (uint8_t)((((uint32_t)disp32) >> 8) & 0xff);
+            *(currSlot + 4) = (uint8_t)((((uint32_t)disp32) >> 16) & 0xff);
+            *(currSlot + 5) = (uint8_t)((((uint32_t)disp32) >> 24) & 0xff);
+            updateExternModuleSymbolValue(nameItem.funcName, currInsRva);
+            updateExternModuleSymbolValue("__imp_" + nameItem.funcName, iatItemRva);
+            // 计数器自增
             functionCounter++;
+            slotCounter++;
         }
         functionCounter++;              // 以全NULL结尾,所以增加一个
     }
 
-    // for test
+    // for test 1
     //FILE * fpTest = fopen_utf8(".idata.bin", "wb");
     //fwrite(idata, 1, idataTotalSize, fpTest);
     //fclose(fpTest);
+
+    // for test 2
+    FILE * fpTest = fopen_utf8(".jmpslot.bin", "wb");
+    fwrite(jmpSlotRawData.get(), 1, jmpSlotByteSize, fpTest);
+    fclose(fpTest);
 
     this->idataAddress = idataRva;
     this->idataSize = idataTotalSize;
     this->iatAddress = idataRva + iatOffset;
     this->iatSize = 8 * findTableEntryTotal;
     this->idataRawData = spIData;
+}
+
+void Linker::updateExternModuleSymbolValue(const std::string symbolName, uint64_t value) 
+{
+    auto symIndicesInfo1 = flatSymbols.finder.find(nameItem.funcName);
+    if (symIndicesInfo1 != flatSymbols.finder.end()) {
+        auto idxList = symIndicesInfo1->second;
+        for (int k = 0; k < idxList.size(); k++) {
+
+        }
+    }
+    else {
+        // TO-DO 报错
+    }
 }
 
 void Linker::loadSegmentData()
@@ -538,6 +572,9 @@ void Linker::loadSegmentData()
                 if (segBlockData.dataType == IMAGE_SEGMENT_DATA_TYPE_IDATA) {
                     addralign = 8;
                 }
+                else if (segBlockData.dataType == IMAGE_SEGMENT_DATA_TYPE_JMPSLOT) {
+                    addralign = 4;
+                }
                 // 对齐
                 if (offsetInSegment % addralign != 0) {
                     uint64_t paddingBytes = (uint64_t)(addralign - (offsetInSegment % addralign));
@@ -547,6 +584,9 @@ void Linker::loadSegmentData()
                 // 
                 if (segBlockData.dataType == IMAGE_SEGMENT_DATA_TYPE_IDATA) {
                     buildPEImportTable(addressCounter);
+                }
+                else if (segBlockData.dataType == IMAGE_SEGMENT_DATA_TYPE_JMPSLOT) {
+                    jmpSlotAddress = addressCounter;        // 记下 jmpslot 的 RVA, 其数据留在 buildPEImportTable() 方法中填充  
                 }
             }
         }
