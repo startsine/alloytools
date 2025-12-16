@@ -528,7 +528,7 @@ void Linker::updateExternModuleSymbolValue(const std::string symbolName, uint64_
     }
 }
 
-void Linker::loadSegmentData()
+void Linker::buildSegmentDataMap()
 {
     uint64_t addressCounter = firstSegmentStartRva;                 // RVA地址计数器
     
@@ -597,6 +597,35 @@ void Linker::loadSegmentData()
     }
 }
 
+void Linker::buildAndFixupSegmentFullData()
+{
+    for (size_t segmentIndex = 0; segmentIndex < imageSegments.size(); segmentIndex++) {
+        size_t blockIndex;
+        uint64_t segmentStartRVA = 0;
+        uint64_t segmentFileSize = 0;
+        uint64_t segmentMemSize = 0;
+        ImageSegment & segment = imageSegments[segmentIndex];
+
+        // 首先获取 segment 占文件的真实空间大小(不带NOBITS的部分)
+        for (blockIndex = 0; blockIndex < segment.dataInfoList.size(); blockIndex++) {
+            ImageSegmentData & secData = segment.dataInfoList[blockIndex];
+            // 从首个 section 获取 起始RVA
+            if (blockIndex == 0) {
+                segmentStartRVA = secData.dataStartRVA;
+            }
+            if (secData.dataFileSize != 0) {
+                segmentFileSize = (secData.dataStartRVA - segmentStartRVA) + secData.dataFileSize;
+            }
+            if (secData.dataMemSize != 0) {
+                segmentMemSize = (secData.dataStartRVA - segmentStartRVA) + secData.dataMemSize;
+            }
+        }
+        segment.segmentStartRVA = segmentStartRVA;
+        segment.segmentFileSize = segmentFileSize;
+        segment.segmentMemSize = segmentMemSize;
+    }
+}
+
 static int atlink_main(int argc, char ** argv)
 {
     if (argc > 1) {
@@ -632,7 +661,8 @@ static int atlink_main(int argc, char ** argv)
     linker.initNeedLinkedSections();                // 把需要链接进映像文件的section集合在一起
     linker.sortNeedLinkedSections();
     linker.buildSegmentList();
-    linker.loadSegmentData();
+    linker.buildSegmentDataMap();
+    linker.buildAndFixupSegmentFullData();
 
     return 0;
 }

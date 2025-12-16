@@ -29,10 +29,10 @@ class ImageSegment
 public:
     std::vector<ImageSegmentData>   dataInfoList;
     std::string                     segmentName;
-    uint64_t                        startRVA = 0;
+    uint64_t                        segmentStartRVA = 0;
     uint64_t                        segmentFileSize = 0;
     uint64_t                        segmentMemSize = 0;
-    std::shared_ptr<uint8_t>        pData = nullptr;
+//    std::shared_ptr<uint8_t>        pData = nullptr;
 };
 
 class Linker
@@ -75,8 +75,10 @@ public:
     void sortNeedLinkedSections();
     // 组合成segment
     void buildSegmentList();
-    // 加载segment数据
-    void loadSegmentData();
+    // 加载合成segment数据MAP
+    void buildSegmentDataMap();
+    // 构建segmnet的完整数据
+    void buildAndFixupSegmentFullData();
     // 
     void buildPEImportTable(uint64_t addr);
     void updateExternModuleSymbolValue(const std::string symbolName, uint64_t value);
