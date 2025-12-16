@@ -351,32 +351,42 @@ void Linker::buildPEImportTable(uint64_t idataRva)
         }
     }
     // 计算字符串总大小
-    uint32_t stringTotalSize = 0;
+    uint32_t stringTabMaxSize = 0;
     for (size_t i = 0; i < importData.size(); i++) {
         ImportTableItem & tabItem = importData[i];
-        stringTotalSize += (tabItem.moduleName.length() + 1);
+        stringTabMaxSize += (tabItem.moduleName.length() + 4);
         for (size_t j = 0; j < tabItem.importSymbol.size(); j++) {
             ImportNameItem & nameItem = tabItem.importSymbol[j];
-            stringTotalSize += (nameItem.funcName.length() + 1);
+            stringTabMaxSize += (nameItem.funcName.length() + 4);
         }
     }
     // 分配字符串表的空间
-    std::shared_ptr<char> psStrTab(new char[stringTotalSize + 4], std::default_delete<char[]>());
-    // 生成字符串表
+    std::shared_ptr<char> psStrTab(new char[stringTabMaxSize + 4], std::default_delete<char[]>());
     char * strtab = psStrTab.get();
+    memset(strtab, 0, stringTabMaxSize);
+    // 生成字符串表
     uint32_t strCounter = 0;
     for (size_t i = 0; i < importData.size(); i++) {
         ImportTableItem & tabItem = importData[i];
         tabItem.offsetInStrTab = strCounter;
         memcpy(&strtab[strCounter], tabItem.moduleName.c_str(), tabItem.moduleName.length() + 1);
         strCounter += tabItem.moduleName.length() + 1;
+    }
+    for (size_t i = 0; i < importData.size(); i++) {
+        ImportTableItem & tabItem = importData[i];
         for (size_t j = 0; j < tabItem.importSymbol.size(); j++) {
             ImportNameItem & nameItem = tabItem.importSymbol[j];
+            if (strCounter % 2 != 0) {
+                strCounter++;
+            }
             nameItem.offsetInStrTab = strCounter;
-            memcpy(&strtab[strCounter], nameItem.funcName.c_str(), nameItem.funcName.length() + 1);
-            stringTotalSize += (nameItem.funcName.length() + 1);
+            strtab[strCounter + 0] = (char)(nameItem.hint & 0xff);
+            strtab[strCounter + 1] = (char)((nameItem.hint >> 8) & 0xff);
+            memcpy(&strtab[strCounter + 2], nameItem.funcName.c_str(), nameItem.funcName.length() + 1);
+            strCounter += (nameItem.funcName.length() + 3);
         }
     }
+    uint32_t stringRealTotalSize = strCounter;              // 字符串表的真实大小
     // 计算import表头的大小
     // PE64的导入目录表的每一项一共20字节，每导入一个dll为一项，最后一项全0结尾
     // PE64的导入查找表的每一项一共8字节，每导入一个函数为一项，最后一项全0结尾 (因为目录表项是20字节,所以,导入查找表要注意开始要8字节对齐)
@@ -384,7 +394,7 @@ void Linker::buildPEImportTable(uint64_t idataRva)
     uint64_t dirTableSize = 20 * (importData.size() + 1);   // 导入目录表的大小
     uint64_t strTabOffset = dirTableSize;                   // 字符串表在 .idata 的中偏移
     idataTotalSize += dirTableSize;                         // idata总大小 加上导入目录表的大小
-    idataTotalSize += stringTotalSize;                      // idata总大小 加上字符串表的大小
+    idataTotalSize += stringRealTotalSize;                  // idata总大小 加上字符串表的真实大小
     if (idataTotalSize % 8 != 0) {
         idataTotalSize += (8 - (idataTotalSize % 8));       // 查找表要8字节对齐, 所以 idata总大小对齐一下
     }
@@ -406,7 +416,7 @@ void Linker::buildPEImportTable(uint64_t idataRva)
     //
     // 以下生成 .idata 数据
     // 1. 复制字符串表
-    memcpy(idata + strTabOffset, strtab, stringTotalSize);
+    memcpy(idata + strTabOffset, strtab, stringRealTotalSize);
     // 2. 遍历填入各 dll 数据
     uint64_t functionCounter = 0;
     for (size_t i = 0; i < importData.size(); i++) {
