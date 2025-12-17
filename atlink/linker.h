@@ -61,6 +61,10 @@ public:
     uint64_t  jmpSlotByteSize = 0;                      // jmpSlot的大小(字节)
     uint64_t  jmpSlotItemCount = 0;                     // jmpSlot的项数
     std::shared_ptr<uint8_t> jmpSlotRawData = nullptr;  // jmpSlot的数据
+    //
+    COFFFileHeader coffHeader;
+    OptionalHeaderPlus pe32plusOptHeader;
+
 
     void scanInputObjects();
     void scanObject(ObjectFile & obj);
@@ -80,6 +84,8 @@ public:
     // 构建segmnet的完整数据
     void buildAndFixupSegmentFullData();
     // 
+    void buildImageFile();
+
     void buildPEImportTable(uint64_t addr);
     void updateExternModuleSymbolValue(const std::string symbolName, uint64_t value);
 };

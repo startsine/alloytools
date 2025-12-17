@@ -1,4 +1,5 @@
 ﻿#include <stdio.h>
+#include <time.h>
 #include <memory>
 #include <algorithm>
 #ifdef _WIN32
@@ -8,6 +9,7 @@
 #include "linker.h"
 #include "at_elf.h"
 #include "at_io.h"
+#include "pebase.h"
 
 unsigned char dosStubData[96] = {
     0x4D, 0x5A, 0x60, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x10, 0x00, 0xFF, 0xFF, 0x00, 0x00,
@@ -708,6 +710,39 @@ void Linker::buildAndFixupSegmentFullData()
     }
 }
 
+void Linker::buildImageFile()
+{
+    const uint32_t DATA_DIR_COUNT = 16;
+    uint32_t dosStubDataSize = sizeof(dosStubData);
+    uint16_t optHeaderSize = sizeof(OptionalHeaderPlus) + DATA_DIR_COUNT * 8;   // 可选头包括数据目录
+    uint16_t characteristics = 0;
+    //
+    FILE * exe = fopen_utf8("output.exe", "wb");
+    // DOS 插桩
+    fwrite(dosStubData, 1, dosStubDataSize, exe);
+    // COFFFileHeader 头
+    memset(&coffHeader, 0, sizeof(coffHeader));
+    coffHeader.signature[0] = 'P';
+    coffHeader.signature[1] = 'E';
+    coffHeader.signature[2] = 0;
+    coffHeader.signature[3] = 0;
+    coffHeader.machine = to_le16(0x8664);           // x86-64
+    coffHeader.numberOfSections = to_le16((uint16_t) imageSegments.size());
+    coffHeader.timeDateStamp = to_le32((uint32_t) time(nullptr) );
+    coffHeader.sizeOfOptionalHeader = to_le16(optHeaderSize);
+    characteristics |= PE_FILE_RELOCS_STRIPPED;
+    characteristics |= PE_FILE_EXECUTABLE_IMAGE;
+    characteristics |= PE_FILE_LARGE_ADDRESS_AWARE;
+    coffHeader.characteristics = to_le16(characteristics);
+    fwrite(&coffHeader, 1, sizeof(coffHeader), exe);
+    // 可选头（不带数据目录的部分）
+    memset(&pe32plusOptHeader, 0, sizeof(pe32plusOptHeader));
+
+    fwrite(&pe32plusOptHeader, 1, sizeof(pe32plusOptHeader), exe);
+
+    fclose(exe);
+}
+
 static int atlink_main(int argc, char ** argv)
 {
     if (argc > 1) {
@@ -745,9 +780,11 @@ static int atlink_main(int argc, char ** argv)
     linker.buildSegmentList();
     linker.buildSegmentDataMap();
     linker.buildAndFixupSegmentFullData();
+    linker.buildImageFile();
 
     return 0;
 }
+
 
 
 

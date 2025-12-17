@@ -53,5 +53,8 @@
     <ClInclude Include="Dependence.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="pebase.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

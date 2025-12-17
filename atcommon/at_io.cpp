@@ -54,7 +54,51 @@ long long get_file_curr_pointer(FILE * fp)
 #endif
 }
 
+static uint32_t testValue = 0x12345678;
 
+uint16_t to_le16(uint16_t a)
+{
+    uint32_t * p32 = &testValue;
+    uint8_t * p8 = (uint8_t*) p32;
+    if (*p8 == 0x78) {
+        return a;
+    }
+    uint16_t a0 = a & 0xff;
+    uint16_t a1 = a >> 8;
+    return (a0 << 8) | a1;
+}
+
+uint32_t to_le32(uint32_t a)
+{
+    uint32_t * p32 = &testValue;
+    uint8_t * p8 = (uint8_t*)p32;
+    if (*p8 == 0x78) {
+        return a;
+    }
+    uint32_t a0 = a & 0xff;
+    uint32_t a1 = (a >> 8) & 0xff;
+    uint32_t a2 = (a >> 16) & 0xff;
+    uint32_t a3 = (a >> 24) & 0xff;
+    return (a0 << 24) | (a1 << 16) | (a2 << 8) | a3;
+}
+
+uint64_t to_le64(uint64_t a)
+{
+    uint32_t * p32 = &testValue;
+    uint8_t * p8 = (uint8_t*)p32;
+    if (*p8 == 0x78) {
+        return a;
+    }
+    uint64_t a0 = a & 0xff;
+    uint64_t a1 = (a >> 8) & 0xff;
+    uint64_t a2 = (a >> 16) & 0xff;
+    uint64_t a3 = (a >> 24) & 0xff;
+    uint64_t a4 = (a >> 32) & 0xff;
+    uint64_t a5 = (a >> 40) & 0xff;
+    uint64_t a6 = (a >> 48) & 0xff;
+    uint64_t a7 = (a >> 56) & 0xff;
+    return (a0 << 56) | (a1 << 48) | (a2 << 40) | (a3 << 32) | (a4 << 24) | (a5 << 16) | (a6 << 8) | a7;
+}
 
 
 
