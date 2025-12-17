@@ -62,8 +62,10 @@ public:
     uint64_t  jmpSlotItemCount = 0;                     // jmpSlot的项数
     std::shared_ptr<uint8_t> jmpSlotRawData = nullptr;  // jmpSlot的数据
     //
+    const uint32_t DATA_DIR_COUNT = 16;
     COFFFileHeader coffHeader;
     OptionalHeaderPlus pe32plusOptHeader;
+    PEDataDirectoryItem dataDir[DATA_DIR_COUNT];
 
 
     void scanInputObjects();

@@ -712,7 +712,6 @@ void Linker::buildAndFixupSegmentFullData()
 
 void Linker::buildImageFile()
 {
-    const uint32_t DATA_DIR_COUNT = 16;
     uint32_t dosStubDataSize = sizeof(dosStubData);
     uint16_t optHeaderSize = sizeof(OptionalHeaderPlus) + DATA_DIR_COUNT * 8;   // 可选头包括数据目录
     uint16_t characteristics = 0;
@@ -739,6 +738,8 @@ void Linker::buildImageFile()
     memset(&pe32plusOptHeader, 0, sizeof(pe32plusOptHeader));
 
     fwrite(&pe32plusOptHeader, 1, sizeof(pe32plusOptHeader), exe);
+    // 数据目录
+
 
     fclose(exe);
 }
