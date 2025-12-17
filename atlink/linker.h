@@ -32,7 +32,7 @@ public:
     uint64_t                        segmentStartRVA = 0;
     uint64_t                        segmentFileSize = 0;
     uint64_t                        segmentMemSize = 0;
-//    std::shared_ptr<uint8_t>        pData = nullptr;
+    std::shared_ptr<uint8_t>        segmentData = nullptr;
 };
 
 class Linker

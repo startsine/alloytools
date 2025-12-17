@@ -13,9 +13,9 @@ unsigned char dosStubData[96] = {
     0x4D, 0x5A, 0x60, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x10, 0x00, 0xFF, 0xFF, 0x00, 0x00,
     0xFE, 0x00, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x69, 0x73, 0x20, 0x6E, 0x6F, 0x74, 0x20, 0x44, 0x4F, 0x53, 0x20, 0x61, 0x70, 0x70, 0x20, 0x20,
-    0x20, 0x24, 0x16, 0x1F, 0x33, 0xD2, 0xB4, 0x09, 0xCD, 0x21, 0xB8, 0x01, 0x4C, 0xCD, 0x21, 0x00
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0x00, 0x00, 0x00,
+    0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x63, 0x72, 0x61, 0x7A, 0x79, 0x20, 0x77, 0x6F, 0x72, 0x6C,
+    0x64, 0x24, 0x16, 0x1F, 0x33, 0xD2, 0xB4, 0x09, 0xCD, 0x21, 0xB8, 0x01, 0x4C, 0xCD, 0x21, 0x00
 };
 
 void Linker::scanInputObjects()
@@ -622,8 +622,10 @@ void Linker::buildSegmentDataMap()
 
 void Linker::buildAndFixupSegmentFullData()
 {
-    for (size_t segmentIndex = 0; segmentIndex < imageSegments.size(); segmentIndex++) {
-        size_t blockIndex;
+    size_t segmentIndex;
+    size_t blockIndex;
+
+    for (segmentIndex = 0; segmentIndex < imageSegments.size(); segmentIndex++) {
         uint64_t segmentStartRVA = 0;
         uint64_t segmentFileSize = 0;
         uint64_t segmentMemSize = 0;
@@ -646,6 +648,63 @@ void Linker::buildAndFixupSegmentFullData()
         segment.segmentStartRVA = segmentStartRVA;
         segment.segmentFileSize = segmentFileSize;
         segment.segmentMemSize = segmentMemSize;
+        if (segment.segmentFileSize % segmentFileAlign != 0) {      // 文件大小需要对齐
+            segment.segmentFileSize += (segmentFileAlign - segment.segmentFileSize % segmentFileAlign);
+        }
+        std::shared_ptr<uint8_t> psSegmentRawData(new uint8_t[segment.segmentFileSize], std::default_delete<uint8_t[]>());
+        memset(psSegmentRawData.get(), 0, segment.segmentFileSize);
+        segment.segmentData = psSegmentRawData;
+    }
+
+    // 加载原始数据
+    for (segmentIndex = 0; segmentIndex < imageSegments.size(); segmentIndex++) {
+        ImageSegment & segment = imageSegments[segmentIndex];
+        uint8_t * pData = segment.segmentData.get();
+
+        for (blockIndex = 0; blockIndex < segment.dataInfoList.size(); blockIndex++) {
+            ImageSegmentData & segBlockData = segment.dataInfoList[blockIndex];
+            if (segBlockData.useSectionData) {
+                uint64_t needSectionIndex = segBlockData.needSectionIndex;
+                ElfSection * pSection = needLinkedSections[needSectionIndex];
+                if (pSection->type != ELF_SECTION_TYPE_NOBITS) {
+                    SrcFile* srcfile = inputList.fileList[pSection->fileIndex];
+                    if (srcfile->fileType == FileType::ELF_OBJECT) {
+                        ObjectFile * objFile = (ObjectFile *) srcfile;
+                        objFile->open();
+                        objFile->seek(pSection->offset, SEEK_SET);
+                        objFile->fread(&pData[pSection->offsetInSegment], 1, pSection->size);
+                        objFile->close();
+                    }
+                }
+            }
+            else {
+                if (segBlockData.dataType == IMAGE_SEGMENT_DATA_TYPE_IDATA) {
+                    memcpy(&pData[segBlockData.offsetInSegment], idataRawData.get(), idataSize);
+                }
+                else if (segBlockData.dataType == IMAGE_SEGMENT_DATA_TYPE_JMPSLOT) {
+                    memcpy(&pData[segBlockData.offsetInSegment], jmpSlotRawData.get(), jmpSlotByteSize);
+                }
+            }
+        }
+    }
+    // 重定位
+    for (segmentIndex = 0; segmentIndex < imageSegments.size(); segmentIndex++) {
+        ImageSegment & segment = imageSegments[segmentIndex];
+        uint8_t * pData = segment.segmentData.get();
+
+        for (blockIndex = 0; blockIndex < segment.dataInfoList.size(); blockIndex++) {
+            ImageSegmentData & segBlockData = segment.dataInfoList[blockIndex];
+            if (segBlockData.useSectionData) {
+                uint64_t needSectionIndex = segBlockData.needSectionIndex;
+                ElfSection * pSection = needLinkedSections[needSectionIndex];
+                if (pSection->type != ELF_SECTION_TYPE_NOBITS) {
+                    uint8_t * data = &pData[pSection->offsetInSegment];
+
+                }
+            }
+            else {
+            }
+        }
     }
 }
 
