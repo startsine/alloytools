@@ -494,14 +494,14 @@ void Linker::buildPEImportTable(uint64_t idataRva)
     }
 
     // for test 1
-    //FILE * fpTest = fopen_utf8(".idata.bin", "wb");
-    //fwrite(idata, 1, idataTotalSize, fpTest);
-    //fclose(fpTest);
+    FILE * fpTest1 = fopen_utf8(".idata.bin", "wb");
+    fwrite(idata, 1, idataTotalSize, fpTest1);
+    fclose(fpTest1);
 
     // for test 2
-    FILE * fpTest = fopen_utf8(".jmpslot.bin", "wb");
-    fwrite(jmpSlotRawData.get(), 1, jmpSlotByteSize, fpTest);
-    fclose(fpTest);
+    FILE * fpTest2 = fopen_utf8(".jmpslot.bin", "wb");
+    fwrite(jmpSlotRawData.get(), 1, jmpSlotByteSize, fpTest2);
+    fclose(fpTest2);
 
     this->idataAddress = idataRva;
     this->idataSize = idataTotalSize;
@@ -592,6 +592,9 @@ void Linker::buildSegmentDataMap()
                     segBlockData.dataFileSize = idataSize;
                     segBlockData.dataMemSize = idataSize;
                     segBlockData.offsetInSegment = offsetInSegment;
+                    //
+                    addressCounter += idataSize;
+                    offsetInSegment += idataSize;
                 }
                 else if (segBlockData.dataType == IMAGE_SEGMENT_DATA_TYPE_JMPSLOT) {
                     jmpSlotAddress = addressCounter;        // 记下 jmpslot 的 RVA, 其数据留在 buildPEImportTable() 方法中填充  
@@ -599,6 +602,9 @@ void Linker::buildSegmentDataMap()
                     segBlockData.dataFileSize = jmpSlotByteSize;
                     segBlockData.dataMemSize = jmpSlotByteSize;
                     segBlockData.offsetInSegment = offsetInSegment;
+                    //
+                    addressCounter += jmpSlotByteSize;
+                    offsetInSegment += jmpSlotByteSize;
                 }
             }
         }
