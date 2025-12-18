@@ -810,6 +810,14 @@ void Linker::buildImageFile()
     pe64OptHeader.sizeOfHeapReserve = to_le64(1024 * 1024);
     pe64OptHeader.sizeOfHeapCommit = to_le64(4 * 1024);
     pe64OptHeader.numberOfRvaAndSizes = to_le32(PE_NUMBEROF_DIRECTORY_ENTRIES);
+    if (idataAddress != 0 && idataSize != 0) {
+        pe64OptHeader.dataDirectory[PE_DIRECTORY_ENTRY_IMPORT].virtualAddress = to_le32((uint32_t)idataAddress);
+        pe64OptHeader.dataDirectory[PE_DIRECTORY_ENTRY_IMPORT].size = to_le32((uint32_t)idataSize);
+    }
+    if (iatAddress != 0 && iatSize != 0) {
+        pe64OptHeader.dataDirectory[PE_DIRECTORY_ENTRY_IAT].virtualAddress = to_le32((uint32_t)iatAddress);
+        pe64OptHeader.dataDirectory[PE_DIRECTORY_ENTRY_IAT].size = to_le32((uint32_t)iatSize);
+    }
     fseek(exe, peOptHeaderFilePos, SEEK_SET);
     fwrite(&pe64OptHeader, 1, sizeof(pe64OptHeader), exe);
     
