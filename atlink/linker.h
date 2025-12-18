@@ -33,6 +33,7 @@ public:
     uint64_t                        segmentStartRVA = 0;
     uint64_t                        segmentFileSize = 0;
     uint64_t                        segmentMemSize = 0;
+    uint64_t                        segmentFilePos = 0;
     std::shared_ptr<uint8_t>        segmentData = nullptr;
 };
 
@@ -63,10 +64,13 @@ public:
     uint64_t  jmpSlotItemCount = 0;                     // jmpSlot的项数
     std::shared_ptr<uint8_t> jmpSlotRawData = nullptr;  // jmpSlot的数据
     // PE信息
-    COFFFileHeader coffHeader;                          //coff头
-    OptionalHeader64 pe64OptHeader;                     //可选头(包含数据目录)
-    std::vector<PESection> peSections;                  //节表
-
+    COFFFileHeader coffHeader;                          // coff头
+    uint32_t    coffHeaderFilePos;                      // coff头文件偏移
+    OptionalHeader64 pe64OptHeader;                     // 可选头(包含数据目录)
+    uint32_t    peOptHeaderFilePos;                     // 可选头文件偏移
+    std::vector<PESection> peSections;                  // 节表
+    uint32_t    peSectionHeaderFilePos;                 // 节表文件偏移
+    uint32_t    firstPESectionDataFilePos;              // PE首节数据的文件偏移
 
     void scanInputObjects();
     void scanObject(ObjectFile & obj);
