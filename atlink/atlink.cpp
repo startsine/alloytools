@@ -713,7 +713,7 @@ void Linker::buildAndFixupSegmentFullData()
 void Linker::buildImageFile()
 {
     uint32_t dosStubDataSize = sizeof(dosStubData);
-    uint16_t optHeaderSize = sizeof(OptionalHeader64) + DATA_DIR_COUNT * 8;   // 可选头包括数据目录
+    uint16_t optHeaderSize = sizeof(OptionalHeader64) + PE_NUMBEROF_DIRECTORY_ENTRIES * 8;   // 可选头包括数据目录
     uint16_t characteristics = 0;
     //
     FILE * exe = fopen_utf8("output.exe", "wb");
@@ -735,10 +735,21 @@ void Linker::buildImageFile()
     coffHeader.characteristics = to_le16(characteristics);
     fwrite(&coffHeader, 1, sizeof(coffHeader), exe);
     // 可选头（不带数据目录的部分）
-    memset(&pe32plusOptHeader, 0, sizeof(pe32plusOptHeader));
+    memset(&pe64OptHeader, 0, sizeof(pe64OptHeader));
 
-    fwrite(&pe32plusOptHeader, 1, sizeof(pe32plusOptHeader), exe);
-    // 数据目录
+    fwrite(&pe64OptHeader, 1, sizeof(pe64OptHeader), exe);
+    // section表
+    peSections.clear();
+    for (size_t i = 0; i < imageSegments.size(); i++) {
+        PESection section;
+        memset(&section, 0, sizeof(PESection));
+        peSections.push_back(section);
+    }
+    for (size_t i = 0; i < peSections.size(); i++) {
+        PESection & section = peSections[i];
+        fwrite(&section, 1, sizeof(PESection), exe);
+    }
+    
 
 
     fclose(exe);

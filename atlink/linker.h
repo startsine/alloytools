@@ -62,10 +62,10 @@ public:
     uint64_t  jmpSlotByteSize = 0;                      // jmpSlot的大小(字节)
     uint64_t  jmpSlotItemCount = 0;                     // jmpSlot的项数
     std::shared_ptr<uint8_t> jmpSlotRawData = nullptr;  // jmpSlot的数据
-    //
-    const uint32_t DATA_DIR_COUNT = 16;
-    COFFFileHeader coffHeader;
-    OptionalHeader64 pe32plusOptHeader;
+    // PE信息
+    COFFFileHeader coffHeader;                          //coff头
+    OptionalHeader64 pe64OptHeader;                     //可选头(包含数据目录)
+    std::vector<PESection> peSections;                  //节表
 
 
     void scanInputObjects();
