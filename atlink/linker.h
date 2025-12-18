@@ -7,6 +7,7 @@
 #include "Section.h"
 #include "Symbol.h"
 #include "Dependence.h"
+#include "pebase.h"
 
 #define IMAGE_SEGMENT_DATA_TYPE_EDATA                   1
 #define IMAGE_SEGMENT_DATA_TYPE_IDATA                   2
@@ -64,8 +65,7 @@ public:
     //
     const uint32_t DATA_DIR_COUNT = 16;
     COFFFileHeader coffHeader;
-    OptionalHeaderPlus pe32plusOptHeader;
-    PEDataDirectoryItem dataDir[DATA_DIR_COUNT];
+    OptionalHeader64 pe32plusOptHeader;
 
 
     void scanInputObjects();

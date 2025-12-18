@@ -713,7 +713,7 @@ void Linker::buildAndFixupSegmentFullData()
 void Linker::buildImageFile()
 {
     uint32_t dosStubDataSize = sizeof(dosStubData);
-    uint16_t optHeaderSize = sizeof(OptionalHeaderPlus) + DATA_DIR_COUNT * 8;   // 可选头包括数据目录
+    uint16_t optHeaderSize = sizeof(OptionalHeader64) + DATA_DIR_COUNT * 8;   // 可选头包括数据目录
     uint16_t characteristics = 0;
     //
     FILE * exe = fopen_utf8("output.exe", "wb");
