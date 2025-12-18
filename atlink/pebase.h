@@ -36,7 +36,8 @@ struct PEDataDirectory
     uint32_t    size;
 };
 
-#define PE_NUMBEROF_DIRECTORY_ENTRIES 16
+#define PE_NUMBEROF_DIRECTORY_ENTRIES 16 
+
 
 struct OptionalHeader64 {
     uint16_t        magic;
@@ -106,10 +107,7 @@ struct OptionalHeader64 {
 
 struct PESection {
     char            name[8];
-    union {
-        uint32_t    physicalAddress;
-        uint32_t    virtualSize;
-    } Misc;
+    uint32_t        virtualSize;
     uint32_t        virtualAddress;
     uint32_t        sizeOfRawData;
     uint32_t        pointerToRawData;
@@ -120,7 +118,61 @@ struct PESection {
     uint32_t        characteristics;
 };
 
+//
+// Section characteristics.
+//
+//      PE_SECTION_TYPE_REG                   0x00000000  // Reserved.
+//      PE_SECTION_TYPE_DSECT                 0x00000001  // Reserved.
+//      PE_SECTION_TYPE_NOLOAD                0x00000002  // Reserved.
+//      PE_SECTION_TYPE_GROUP                 0x00000004  // Reserved.
+#define PE_SECTION_TYPE_NO_PAD                0x00000008  // Reserved.
+//      PE_SECTION_TYPE_COPY                  0x00000010  // Reserved.
 
+#define PE_SECTION_CNT_CODE                   0x00000020  // Section contains code.
+#define PE_SECTION_CNT_INITIALIZED_DATA       0x00000040  // Section contains initialized data.
+#define PE_SECTION_CNT_UNINITIALIZED_DATA     0x00000080  // Section contains uninitialized data.
+
+#define PE_SECTION_LNK_OTHER                  0x00000100  // Reserved.
+#define PE_SECTION_LNK_INFO                   0x00000200  // Section contains comments or some other type of information.
+//      PE_SECTION_TYPE_OVER                  0x00000400  // Reserved.
+#define PE_SECTION_LNK_REMOVE                 0x00000800  // Section contents will not become part of image.
+#define PE_SECTION_LNK_COMDAT                 0x00001000  // Section contents comdat.
+//                                           0x00002000  // Reserved.
+//      PE_SECTION_MEM_PROTECTED - Obsolete   0x00004000
+#define PE_SECTION_NO_DEFER_SPEC_EXC          0x00004000  // Reset speculative exceptions handling bits in the TLB entries for this section.
+#define PE_SECTION_GPREL                      0x00008000  // Section content can be accessed relative to GP
+#define PE_SECTION_MEM_FARDATA                0x00008000
+//      PE_SECTION_MEM_SYSHEAP  - Obsolete    0x00010000
+#define PE_SECTION_MEM_PURGEABLE              0x00020000
+#define PE_SECTION_MEM_16BIT                  0x00020000
+#define PE_SECTION_MEM_LOCKED                 0x00040000
+#define PE_SECTION_MEM_PRELOAD                0x00080000
+
+#define PE_SECTION_ALIGN_1BYTES               0x00100000  //
+#define PE_SECTION_ALIGN_2BYTES               0x00200000  //
+#define PE_SECTION_ALIGN_4BYTES               0x00300000  //
+#define PE_SECTION_ALIGN_8BYTES               0x00400000  //
+#define PE_SECTION_ALIGN_16BYTES              0x00500000  // Default alignment if no others are specified.
+#define PE_SECTION_ALIGN_32BYTES              0x00600000  //
+#define PE_SECTION_ALIGN_64BYTES              0x00700000  //
+#define PE_SECTION_ALIGN_128BYTES             0x00800000  //
+#define PE_SECTION_ALIGN_256BYTES             0x00900000  //
+#define PE_SECTION_ALIGN_512BYTES             0x00A00000  //
+#define PE_SECTION_ALIGN_1024BYTES            0x00B00000  //
+#define PE_SECTION_ALIGN_2048BYTES            0x00C00000  //
+#define PE_SECTION_ALIGN_4096BYTES            0x00D00000  //
+#define PE_SECTION_ALIGN_8192BYTES            0x00E00000  //
+// Unused                                    0x00F00000
+#define PE_SECTION_ALIGN_MASK                 0x00F00000
+
+#define PE_SECTION_LNK_NRELOC_OVFL            0x01000000  // Section contains extended relocations.
+#define PE_SECTION_MEM_DISCARDABLE            0x02000000  // Section can be discarded.
+#define PE_SECTION_MEM_NOT_CACHED             0x04000000  // Section is not cachable.
+#define PE_SECTION_MEM_NOT_PAGED              0x08000000  // Section is not pageable.
+#define PE_SECTION_MEM_SHARED                 0x10000000  // Section is shareable.
+#define PE_SECTION_MEM_EXECUTE                0x20000000  // Section is executable.
+#define PE_SECTION_MEM_READ                   0x40000000  // Section is readable.
+#define PE_SECTION_MEM_WRITE                  0x80000000  // Section is writeable.
 
 
 

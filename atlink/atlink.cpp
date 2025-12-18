@@ -265,6 +265,7 @@ void Linker::buildSegmentList()
             else {
                 ImageSegment textSegment;
                 textSegment.segmentName = ".text";
+                textSegment.flags |= ImageSegmentExec;
                 ImageSegmentData imageData;
                 imageData.useSectionData = false;
                 imageData.dataType = IMAGE_SEGMENT_DATA_TYPE_JMPSLOT;
@@ -288,6 +289,7 @@ void Linker::buildSegmentList()
             else {
                 ImageSegment textSegment;
                 textSegment.segmentName = ".text";
+                textSegment.flags |= ImageSegmentExec;
                 ImageSegmentData imageData;
                 imageData.needSectionIndex = index;
                 textSegment.dataInfoList.push_back(imageData);
@@ -330,6 +332,7 @@ void Linker::buildSegmentList()
         else {
             ImageSegment dataSegment;
             dataSegment.segmentName = ".data";
+            dataSegment.flags |= ImageSegmentWrite;
             ImageSegmentData imageData;
             imageData.needSectionIndex = index;
             dataSegment.dataInfoList.push_back(imageData);
@@ -713,7 +716,7 @@ void Linker::buildAndFixupSegmentFullData()
 void Linker::buildImageFile()
 {
     uint32_t dosStubDataSize = sizeof(dosStubData);
-    uint16_t optHeaderSize = sizeof(OptionalHeader64) + PE_NUMBEROF_DIRECTORY_ENTRIES * 8;   // 可选头包括数据目录
+    uint16_t optHeaderSize = sizeof(OptionalHeader64);   // 可选头包括数据目录
     uint16_t characteristics = 0;
     //
     FILE * exe = fopen_utf8("output.exe", "wb");
@@ -771,14 +774,74 @@ void Linker::buildImageFile()
     pe64OptHeader.magic = to_le16(0x20b);
     pe64OptHeader.majorLinkerVersion = 1;
     pe64OptHeader.minorLinkerVersion = 0;
-
-    pe64OptHeader.sizeOfCode;
-
+    uint32_t sizeOfCode = 0, sizeOfInitializedData = 0;
+    for (size_t i = 0; i < imageSegments.size(); i++) {
+        uint64_t size = imageSegments[i].segmentMemSize;
+        if (size % segmentMemAlign != 0)
+            size += (segmentMemAlign - (size % segmentMemAlign));
+        if (imageSegments[i].flags & ImageSegmentExec) {
+            sizeOfCode += (uint32_t)size;
+        }
+        else {
+            sizeOfInitializedData += (uint32_t)size;
+        }
+    }
+    pe64OptHeader.sizeOfCode = to_le32(sizeOfCode);
+    pe64OptHeader.sizeOfInitializedData = to_le32(sizeOfInitializedData);
+    pe64OptHeader.addressOfEntryPoint = to_le32(startupPoint);
+    pe64OptHeader.baseOfCode = to_le32(firstSegmentStartRva);
+    pe64OptHeader.imageBase = to_le64(imageBase);
+    pe64OptHeader.sectionAlignment = to_le32(segmentMemAlign);
+    pe64OptHeader.fileAlignment = to_le32(segmentFileAlign);
+    pe64OptHeader.majorOperatingSystemVersion = to_le32(5);
+    pe64OptHeader.minorOperatingSystemVersion = to_le32(2);
+    pe64OptHeader.majorSubsystemVersion = to_le32(5);
+    pe64OptHeader.minorSubsystemVersion = to_le32(2);
+    uint32_t sizeOfImage = 0;
+    sizeOfImage = imageSegments[imageSegments.size() - 1].segmentStartRVA + imageSegments[imageSegments.size() - 1].segmentMemSize;
+    if (sizeOfImage % segmentMemAlign) {
+        sizeOfImage += (segmentMemAlign - (sizeOfImage % segmentMemAlign));
+    }
+    pe64OptHeader.sizeOfImage = to_le32(sizeOfImage);
+    pe64OptHeader.sizeOfHeaders = to_le32(firstPESectionDataFilePos);
+    pe64OptHeader.subsystem = to_le16(3);
+    pe64OptHeader.sizeOfStackReserve = to_le64(1024*1024);
+    pe64OptHeader.sizeOfStackCommit = to_le64(4*1024);
+    pe64OptHeader.sizeOfHeapReserve = to_le64(1024 * 1024);
+    pe64OptHeader.sizeOfHeapCommit = to_le64(4 * 1024);
+    pe64OptHeader.numberOfRvaAndSizes = to_le32(PE_NUMBEROF_DIRECTORY_ENTRIES);
     fseek(exe, peOptHeaderFilePos, SEEK_SET);
     fwrite(&pe64OptHeader, 1, sizeof(pe64OptHeader), exe);
     
-    //
+    // 节表 - 重写
+    for (size_t i = 0; i < imageSegments.size(); i++) {
+        ImageSegment & segment = imageSegments[i];
+        PESection & section = peSections[i];
+        uint32_t nameLength = segment.segmentName.length();
+        if (nameLength > 8) {
+            nameLength = 8;
+        }
+        memcpy(section.name, segment.segmentName.c_str(), nameLength);
+        section.virtualSize = to_le32(segment.segmentMemSize);
+        section.virtualAddress = to_le32(segment.segmentStartRVA);
+        section.sizeOfRawData = to_le32(segment.segmentFileSize);
+        section.pointerToRawData = to_le32(segment.segmentFilePos);
+        uint32_t characteristics = 0;
+        characteristics |= PE_SECTION_MEM_READ;
+        if (segment.flags & ImageSegmentExec) 
+            characteristics |= PE_SECTION_MEM_EXECUTE;
+        if (segment.flags & ImageSegmentWrite)
+            characteristics |= PE_SECTION_MEM_WRITE;
+        section.characteristics = to_le32(characteristics);
+    }
 
+    fseek(exe, peSectionHeaderFilePos, SEEK_SET);
+    for (size_t i = 0; i < peSections.size(); i++) {
+        PESection & section = peSections[i];
+        fwrite(&section, 1, sizeof(PESection), exe);
+    }
+
+    fflush(exe);
     fclose(exe);
 }
 

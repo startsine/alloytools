@@ -37,7 +37,13 @@ public:
     uint64_t                        segmentMemSize = 0;
     uint64_t                        segmentFilePos = 0;
     std::shared_ptr<uint8_t>        segmentData = nullptr;
+    uint32_t                        flags = 0;
 };
+
+#define ImageSegmentExec            0x01
+#define ImageSegmentWrite           0x02
+#define ImageSegmentUnInitData      0x04
+#define ImageSegmentShared          0x08
 
 class Linker
 {
@@ -55,6 +61,8 @@ public:
     size_t dataSegmentIndex = 0;
     uint32_t  segmentFileAlign = 512;
     uint32_t  segmentMemAlign = 4096;
+    uint64_t  startupPoint = 0x1000;
+    uint64_t  imageBase = 0x0000000140000000;
     uint32_t  firstSegmentStartRva = 0x1000;
     uint64_t  idataAddress = 0;                         // .idata的地址(RVA)
     uint64_t  idataSize = 0;                            // .idata的大小
