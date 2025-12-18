@@ -99,6 +99,7 @@ public:
     void buildSegmentDataMap();
     // 构建segmnet的完整数据
     void buildAndFixupSegmentFullData();
+    void fixUpReloc(ElfRel & reloc, uint8_t * data, ElfSection * pSection);
     // 
     void buildImageFile();
 

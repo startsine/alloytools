@@ -704,13 +704,34 @@ void Linker::buildAndFixupSegmentFullData()
                 ElfSection * pSection = needLinkedSections[needSectionIndex];
                 if (pSection->type != ELF_SECTION_TYPE_NOBITS) {
                     uint8_t * data = &pData[pSection->offsetInSegment];
-
+                    if (pSection->relocs != nullptr) {
+                        for (auto relInfo = pSection->relocs->begin(); relInfo != pSection->relocs->end(); relInfo++) {
+                            fixUpReloc(*relInfo, data, pSection);
+                        }
+                    }
                 }
             }
             else {
             }
         }
     }
+}
+
+void Linker::fixUpReloc(ElfRel & reloc, uint8_t * data, ElfSection * pSection)
+{
+    SrcFile * file = inputList.fileList[pSection->fileIndex];           // 本文件
+    if (file->fileType == FileType::ELF_OBJECT) {
+        ObjectFile * obj = (ObjectFile*) file;
+        ObjectSymbolList & objSymbols = obj->objSymbols;
+        Elf64ObjectSymbol & symbol = objSymbols.symbols[reloc.symbolIndex];
+        if (symbol.type == SYMBOL_TYPE_SECTION) {
+
+        }
+    }
+    else {
+        // TO-DO 报错
+    }
+    
 }
 
 void Linker::buildImageFile()
