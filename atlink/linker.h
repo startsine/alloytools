@@ -13,6 +13,8 @@
 #define IMAGE_SEGMENT_DATA_TYPE_IDATA                   2
 #define IMAGE_SEGMENT_DATA_TYPE_JMPSLOT                 3    // 导入调用的插桩
 
+
+
 class ImageSegmentData
 {
 public:

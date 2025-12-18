@@ -735,10 +735,9 @@ void Linker::buildImageFile()
     characteristics |= PE_FILE_LARGE_ADDRESS_AWARE;
     coffHeader.characteristics = to_le16(characteristics);
     fwrite(&coffHeader, 1, sizeof(coffHeader), exe);
-    // 可选头（不带数据目录的部分）
+    // 可选头（带数据目录）
     peOptHeaderFilePos = (uint32_t)ftell(exe);
     memset(&pe64OptHeader, 0, sizeof(pe64OptHeader));
-
     fwrite(&pe64OptHeader, 1, sizeof(pe64OptHeader), exe);
     // section表
     peSectionHeaderFilePos = (uint32_t)ftell(exe);
@@ -768,7 +767,17 @@ void Linker::buildImageFile()
             fwrite(segment.segmentData.get(), 1, segment.segmentFileSize, exe);
         }
     }
+    // 可选头（带数据目录）- 重写
+    pe64OptHeader.magic = to_le16(0x20b);
+    pe64OptHeader.majorLinkerVersion = 1;
+    pe64OptHeader.minorLinkerVersion = 0;
 
+    pe64OptHeader.sizeOfCode;
+
+    fseek(exe, peOptHeaderFilePos, SEEK_SET);
+    fwrite(&pe64OptHeader, 1, sizeof(pe64OptHeader), exe);
+    
+    //
 
     fclose(exe);
 }
