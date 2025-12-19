@@ -18,6 +18,8 @@ typedef struct
     uint64_t section_entsize;       // Size of entries, if section has table 
 } Elf64SectionEntry;
 
+#define ELF_SECTION_INDEX_UNDEF         0
+
 #define ELF_SECTION_FLAG_WRITE          (1 << 0)
 #define ELF_SECTION_FLAG_ALLOC          (1 << 1)
 #define ELF_SECTION_FLAG_EXEC           (1 << 2)

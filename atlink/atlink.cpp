@@ -719,14 +719,26 @@ void Linker::buildAndFixupSegmentFullData()
 
 void Linker::fixUpReloc(ElfRel & reloc, uint8_t * data, ElfSection * pSection)
 {
+    uint64_t value = 0;
     SrcFile * file = inputList.fileList[pSection->fileIndex];           // 本文件
     if (file->fileType == FileType::ELF_OBJECT) {
         ObjectFile * obj = (ObjectFile*) file;
         ObjectSymbolList & objSymbols = obj->objSymbols;
         Elf64ObjectSymbol & symbol = objSymbols.symbols[reloc.symbolIndex];
-        if (symbol.type == SYMBOL_TYPE_SECTION) {
+        if (symbol.shndx == ELF_SECTION_INDEX_UNDEF) {      // 外部全局符号
 
         }
+        else {
+            uint64_t flatSectionIndex = obj->startIndexOfFlatSections + symbol.shndx;
+            ElfSection * symbolSection = flatSections.sections[flatSectionIndex];
+            if (symbol.type == SYMBOL_TYPE_SECTION) {
+                value = symbolSection->startImageAddress;
+            }
+            else if (symbol.type == SYMBOL_TYPE_NOTYPE || symbol.type == SYMBOL_TYPE_OBJECT || symbol.type == SYMBOL_TYPE_FUNC) {
+                value = symbolSection->startImageAddress + symbol.value;
+            }
+        }
+        to_le32(value);
     }
     else {
         // TO-DO 报错
