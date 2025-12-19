@@ -726,7 +726,22 @@ void Linker::fixUpReloc(ElfRel & reloc, uint8_t * data, ElfSection * pSection)
         ObjectSymbolList & objSymbols = obj->objSymbols;
         Elf64ObjectSymbol & symbol = objSymbols.symbols[reloc.symbolIndex];
         if (symbol.shndx == ELF_SECTION_INDEX_UNDEF) {      // 外部全局符号
-
+            auto s = flatSymbols.finder.find(symbol.name);
+            if (s != flatSymbols.finder.end()) {
+                auto idxList = s->second;
+                auto idx = idxList[0];
+                ElfGlobalSymbol* globalSymbol = flatSymbols.flatGlobalSymbols[idx];
+                if (globalSymbol->external) {
+                    value = globalSymbol->value;
+                }
+                else {
+                    ElfSection * symbolSection = flatSections.sections[globalSymbol->flatSectionIndex];
+                    value = symbolSection->startImageAddress + symbol.value;
+                }
+            }
+            else {
+                // TO-DO 报错
+            }
         }
         else {
             uint64_t flatSectionIndex = obj->startIndexOfFlatSections + symbol.shndx;
@@ -737,6 +752,25 @@ void Linker::fixUpReloc(ElfRel & reloc, uint8_t * data, ElfSection * pSection)
             else if (symbol.type == SYMBOL_TYPE_NOTYPE || symbol.type == SYMBOL_TYPE_OBJECT || symbol.type == SYMBOL_TYPE_FUNC) {
                 value = symbolSection->startImageAddress + symbol.value;
             }
+        }
+        //
+        if (value == 0) {
+            // TO-DO 报错
+            return;
+        }
+        //
+        uint64_t originalValue64 = 0;
+        uint32_t originalValue32 = 0;
+        uint64_t position = 0;
+        switch (reloc.type)
+        {
+        case REL_X86_64_PC32: {
+            originalValue32 = get_value_from_le32(&data[reloc.offset]);
+            position = pSection->startImageAddress + reloc.offset;
+        }
+            break;
+        default:
+            break;
         }
         to_le32(value);
     }
