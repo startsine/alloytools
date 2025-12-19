@@ -100,6 +100,48 @@ uint64_t to_le64(uint64_t a)
     return (a0 << 56) | (a1 << 48) | (a2 << 40) | (a3 << 32) | (a4 << 24) | (a5 << 16) | (a6 << 8) | a7;
 }
 
+uint16_t get_value_from_le16(uint8_t * p)
+{
+    return ((*(p + 1)) << 8) | (*p);
+}
+
+uint32_t get_value_from_le32(uint8_t * p)
+{
+    return ((*(p + 3)) << 24) | ((*(p + 2)) << 16) | ((*(p + 1)) << 8) | (*p);
+}
+
+uint64_t get_value_from_le64(uint8_t * p)
+{
+    return ((*(p + 7)) << 56) | ((*(p + 6)) << 48) | ((*(p + 5)) << 40) | ((*(p + 4)) << 32) | ((*(p + 3)) << 24) | ((*(p + 2)) << 16) | ((*(p + 1)) << 8) | (*p);
+}
+
+void put_value_to_le16(uint8_t * p, uint16_t v)
+{
+    *(p + 0) = v & 0xff;
+    *(p + 1) = (v >> 8) & 0xff;
+}
+
+void put_value_to_le32(uint8_t * p, uint32_t v)
+{
+    *(p + 0) = v & 0xff;
+    *(p + 1) = (v >> 8) & 0xff;
+    *(p + 2) = (v >> 16) & 0xff;
+    *(p + 3) = (v >> 24) & 0xff;
+}
+
+void put_value_to_le64(uint8_t * p, uint64_t v)
+{
+    *(p + 0) = v & 0xff;
+    *(p + 1) = (v >> 8) & 0xff;
+    *(p + 2) = (v >> 16) & 0xff;
+    *(p + 3) = (v >> 24) & 0xff;
+    *(p + 4) = (v >> 32) & 0xff;
+    *(p + 5) = (v >> 40) & 0xff;
+    *(p + 6) = (v >> 48) & 0xff;
+    *(p + 7) = (v >> 56) & 0xff;
+}
+
+
 
 
 

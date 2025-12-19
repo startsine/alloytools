@@ -765,14 +765,17 @@ void Linker::fixUpReloc(ElfRel & reloc, uint8_t * data, ElfSection * pSection)
         switch (reloc.type)
         {
         case REL_X86_64_PC32: {
-            originalValue32 = get_value_from_le32(&data[reloc.offset]);
-            position = pSection->startImageAddress + reloc.offset;
+            // 32-bit 相对寻址
+            originalValue32 = get_value_from_le32(&data[reloc.offset]);         // 获得重定位插槽的原始值
+            position = pSection->startImageAddress + reloc.offset;              // 重定位插槽的位置
+            int relValue = (value - position) + reloc.addend;                   // 得到相对偏移
+            relValue += (int)originalValue32;                                   // 加原始值
+            put_value_to_le32(&data[reloc.offset], (uint32_t)relValue);         // 
         }
             break;
         default:
             break;
         }
-        to_le32(value);
     }
     else {
         // TO-DO 报错
@@ -871,7 +874,7 @@ void Linker::buildImageFile()
     }
     pe64OptHeader.sizeOfImage = to_le32(sizeOfImage);
     pe64OptHeader.sizeOfHeaders = to_le32(firstPESectionDataFilePos);
-    pe64OptHeader.subsystem = to_le16(3);
+    pe64OptHeader.subsystem = to_le16(2);
     pe64OptHeader.sizeOfStackReserve = to_le64(1024*1024);
     pe64OptHeader.sizeOfStackCommit = to_le64(4*1024);
     pe64OptHeader.sizeOfHeapReserve = to_le64(1024 * 1024);
